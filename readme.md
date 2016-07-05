@@ -58,7 +58,7 @@ class_name: AcceptanceTester
 modules:
     enabled:
         - WebDriver:
-            url: 'http://songbird.dev'
+            url: 'http://songbird.app'
             browser: chrome
             window_size: 1024x768
             capabilities:
