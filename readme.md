@@ -146,7 +146,7 @@ Install latest version of [Java JDK](http://www.oracle.com/technetwork/java/java
 -> java -Dwebdriver.chrome.driver=./chromedriver -jar selenium-server-standalone-2.53.1.jar
 ```
 
-On the previous terminal, run the acceptance test again. You should see selenium firing up a new firefox browser and running the test.
+On the previous terminal, run the acceptance test again. You should see selenium firing up a new chrome browser and running the test.
 
 ```
 -> bin/codecept run acceptance AppBundleCest
