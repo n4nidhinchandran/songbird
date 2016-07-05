@@ -194,6 +194,10 @@ Don't forget to commit your code before moving on to the next chapter.
 
 In this chapter, we discussed the importance of testing and touched on TDD and BDD. In our context, we will be mainly writing BDD tests. We installed codeception and selenium and wrote a simple acceptance test that tests the app/example page.
 
+Next Chapter: [Chapter 5: The Testing Framework Part 2](https://github.com/bernardpeh/songbird/tree/chapter_5)
+
+Previous Chapter: [Chapter 3: What is SongBird](https://github.com/bernardpeh/songbird/tree/chapter_3)
+
 ## Exercises (Optional)
 
 * Try configure codeception to allow running of different acceptance profile. Can you test with PhpBrowser or phantomjs easily? Do you see any benefit of doing that? See [advanced codeception](http://codeception.com/docs/07-AdvancedUsage) for help.
@@ -208,9 +212,5 @@ In this chapter, we discussed the importance of testing and touched on TDD and B
 
 * [Codeception documentation](http://codeception.com/docs)
 
-## Summary
 
-Next Chapter: [Chapter 5: The Testing Framework Part 2](https://github.com/bernardpeh/songbird/tree/chapter_5)
-
-Previous Chapter: [Chapter 3: What is SongBird](https://github.com/bernardpeh/songbird/tree/chapter_3)
 
