@@ -1,101 +1,216 @@
-# Chapter 3: Creating the Dev Environment
+# Chapter 4: The Testing Framework Part 1
 
-So that we speak the same language throughout the book, we need a dev (development) environment that it is consistent in everyone's host. That best way to do that is to create a virtual machine (VM) via [vagrant](https://www.vagrantup.com). This is a popular technique nowadays and we will be using [Homestead](https://github.com/laravel/homestead) for this purpose.
+No application is complete without going through a rigorous testing process. Software Testing is a big topic by itself.
 
-The idea is to do **actual coding in your host** (main operating system) and let the VM run the web server, sharing the web folder between the 2 machines. Note that 99% of the time, you don't need to touch the VM except to make sure that it is up and running.
+Today, many developers know [TDD](https://en.wikipedia.org/wiki/Test-driven_development) and [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development). Test First Development ensures that your software is reliable but requires a lot of patience and extra work to implement it correctly. Think of it like a quality control process. The more checks you have, the less bugs your have. Of course, you can cost cut by not having checks and hope that your product is still bug free. This is quite unlikely especially if the software is complex.
+
+Personally, I prefer to write user stories and scenarios first (I like to think of them as pseudocode) rather than spending time coding the tests. Once I have the user stories and scenarios defined, I will jump in and code functionality A. When functionality A is completed, I will code the test cases and ensure they pass before moving on. I will repeat the cycle for functionality B before moving on to functionality C. The idea is to not break existing functionalities while adding on new functionalities.
+
+Everyone's testing approach is different. You could implement your own approach.
+
+I will be writing acceptance tests in most cases. There are many frameworks for acceptance testing. [Behat](http://docs.behat.org/) and [Mink](http://mink.behat.org/) is the industrial standard at the moment. In this book, we will be using a bit of phpunit but mainly [Codeception](http://codeception.com/) as our testing framework.
 
 ## Objectives
 
-> * Install all pre-requisites for development.
+> * Pre-setup
 
-> * Configure your host to access the VM.
+> * Installation
+
+> * Create a basic acceptance test
+
+> * Run a simple acceptance test successfully
+
+## Pre-setup
+
+We are still in the master branch. Do a 'git status' to see which branch you are in to confirm. Let us create a new branch before doing anything.
+
+```
+-> git status
+-> git checkout -b my_chapter4
+```
 
 ## Installation
 
-* In your host machine, make sure you have php say [php 5.6](http://php.net/manual/en/install.php) and timezone configured, [vagrant](https://www.vagrantup.com/downloads.html), [virtualbox](https://www.virtualbox.org/wiki/Downloads), [composer](https://getcomposer.org/doc/00-intro.md) and [git](https://git-scm.com) **installed**.
-
-* Mac users can install php 5.6 using
-
 ```
--> curl -s http://php-osx.liip.ch/install.sh | bash -s 5.6
--> echo "export PATH=/usr/local/php5/bin:$PATH" >> ~/.profile
--> sudo vi /usr/local/php5/php.d/99-liip-developer.ini
-# add the date.timezone settings to your preferred timezone. eg
-# date.timezone = Australia/Melbourne
-# then shutdown the terminal and restart again
+# composer.json
+
+# add the codeception line under require-dev
+"require-dev": {
+    ...
+    "codeception/codeception": "~2.1"
+},
 ```
 
-* If you are on Windows OS install [NFS support plugin](https://github.com/GM-Alex/vagrant-winnfsd)
+Don't worry about the specific version number of the bundle for now. The reason I used these version number was because I tested it with them and they will work if you use them.
 
-* Login in [github](http://github.com) and [fork](https://help.github.com/articles/fork-a-repo/) [SongBird repo](https://github.com/bernardpeh/songbird)
-
-```
-# Now you want to clone your new forked repo under your home dir.
--> cd ~
--> git clone git@github.com:your_username/songbird.git
-```
-
-* run vagrant
+Now we can run composer update and initialise codeception
 
 ```
-# now we are going to bring up the virtual machine. This should take about 30 mins depending on your internet connnection. Have a cup of coffee.
+-> composer update
+-> bin/codecept bootstrap
+```
 
--> vagrant up
+Let us configure codecept acceptance test to work in Symfony.
 
-# you will be prompted to enter admin password for mounting nfs.
+```
+# tests/acceptance.suite.yml
+class_name: AcceptanceTester
+modules:
+    enabled:
+        - WebDriver:
+            url: 'http://songbird.dev'
+            browser: chrome
+            window_size: 1024x768
+            capabilities:
+                unexpectedAlertBehaviour: 'accept'
+                webStorageEnabled: true
+        - \Helper\Acceptance
+```
+
+Acceptance Testing is like Black Box Testing - We try to simulate real users interacting with our app. We ignore the inner workings of the code and only care if it works from the end user's point of view.
+
+Here, we are using [selenium](http://seleniumhq.org) webdriver to simulate browser testing ([chrome](https://www.google.com.au/intl/en/chrome/browser/desktop/index.html)). Codeception by default comes with PhpBrowser which doesn't support javascript. Selenium is slow but is the veteran when comes to acceptance testing. We could also use a headless browser like [phantomjs](http://phantomjs.org) which is faster but I found it buggy at the time of writing. In this book, I will be using selenium.
+
+We can now generate the acceptance actions based on the updated acceptance suite:
+
+```
+-> bin/codecept build
+```
+
+## The First Test
+
+We know that the default Symfony comes with the AppBundle example. Let us now test the bundle by creating a test suite for it.
+
+
+```
+-> bin/codecept generate:cest acceptance AppBundle
+```
+
+The auto generated Cest class should look like this:
+
+```
+# tests/acceptance/AppBundleCest.php
+
+class AppBundleCest
+{
+    public function _before(AcceptanceTester $I)
+    {
+    }
+
+    public function _after(AcceptanceTester $I)
+    {
+    }
+
+   ...
+}
+```
+
+Let us write our own test. All new Symfony installation homepage should have a successful message.
+
+
+```
+# tests/acceptance/AppBundleCest.php
 ...
+# replaced tryToTest function with InstallationTest function
+public function InstallationTest(AcceptanceTester $I)
+{
+    $I->wantTo('Check if Symfony is installed successfully.');
+    $I->amOnPage('/');
+    $I->see('Welcome to');
+}
 ```
 
-* You can now install symfony libraries:
+Now run the test:
 
 ```
--> cd symfony
--> composer udpate
+-> bin/codecept run acceptance AppBundleCest
+```
 
-# when prompted, leave default settings except for the followings:
-# database_host: 192.168.56.111
-# database_name: songbird
-# database_user: songbird
-# database_password: songbird
+and you should get an error complaining that there is no selenium server running...
+
+```
+[Codeception\Exception\ConnectionException]
+  Curl error thrown for http POST to /session with params: {"desiredCapabilities":{"unexpectedAlertBehaviour
+  ":"accept","webStorageEnabled":true,"browserName":"chrome"}}
+  Failed to connect to 127.0.0.1 port 4444: Connection refused
+
+  Please make sure that Selenium Server or PhantomJS is running.
+```
+
+Install latest version of [Java JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html),  download [selenium standalone server](http://www.seleniumhq.org/download/) and [chrome driver](http://chromedriver.storage.googleapis.com/index.html). Remember to start selenium server in a **new terminal**.
+
+```
+-> mkdir scripts
+-> cd scripts
+# download selenium server and chromedriver to this dir. In a new terminal, start selenium server. I am using v2.53.1 for example.
+-> java -Dwebdriver.chrome.driver=./chromedriver -jar selenium-server-standalone-2.53.1.jar
+```
+
+On the previous terminal, run the acceptance test again. You should see selenium firing up a new firefox browser and running the test.
+
+```
+-> bin/codecept run acceptance AppBundleCest
 ...
-# We are using smtp port 8025 to catch all mails.
-# mailer_host: 127.0.0.1:8025
+# OK (1 test, 1 assertion)
+```
+
+The selenium server jar file is a binary. To make life easy, we are going to commit selenium-server-standalone-xxx.jar. We need to tell git not to convert the line endings (google for it if interested)
+
+```
+# .gitattributes
+
 ...
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.jar binary
 ```
 
-* add IP of your VM to your [host file](http://www.rackspace.com/knowledge_center/article/how-do-i-modify-my-hosts-file)
+Don't forget to commit your code before moving on to the next chapter.
 
 ```
-192.168.56.111 songbird.app adminer.app
+-> git status
+# see all files modified or created. Commit all of them
+-> git add .gitignore
+-> git add .gitattributes
+-> git add composer.json
+-> git add codeception.yml
+-> git add tests
+-> git add scripts
+-> git commit -m"added codeception and created basic test"
+# update remote repo so you dont lose it
+-> git push -u origin my_chapter4
 ```
 
-* Open up browser and go to https://songbird.app/. Add the exception in the browser since the vm self-signed the ssl certificate. If you see an installation successful page, you are on the right track.
+## Stuck? Checkout my code
 
-![Welcome Page](images/welcome_page.png)
-
-* Now try this url https://songbird.app/app_dev.php and you should see the same successful page but with a little icon/toolbar at the bottom of the page. That's right, you are now in dev mode. Why the "app_dev.php"? That is like the default page for the dev environment. All url rewrite goes to this page and this is something unique to Symfony.
-
-* Also try https://adminer.app and you should see the adminer page as well.
+```
+# Remember to commit or stash your changes, then checkout mine.
+-> git checkout -b chapter_4 origin/chapter_4
+-> git clean -fd
+```
 
 ## Summary
 
-In this chapter, we setup the development environment from a ready made instance of virtualbox (Homestead). We installed Symfony and configured the host to access SongBird from the host machine.
-
-Next Chapter: [Chapter 4: The Testing Framework Part 1](https://github.com/bernardpeh/songbird/tree/chapter_4)
-
-Previous Chapter: [Chapter 2: What is SongBird](https://github.com/bernardpeh/songbird/tree/chapter_2)
+In this chapter, we discussed the importance of testing and touched on TDD and BDD. In our context, we will be mainly writing BDD tests. We installed codeception and selenium and wrote a simple acceptance test that tests the app/example page.
 
 ## Exercises (Optional)
 
-* Try running Symfony's build-in webserver. What command would you use?
+* Try configure codeception to allow running of different acceptance profile. Can you test with PhpBrowser or phantomjs easily? Do you see any benefit of doing that? See [advanced codeception](http://codeception.com/docs/07-AdvancedUsage) for help.
 
-* Try using [docker](https://www.docker.com/) rather than [vagrant](https://www.vagrantup.com) for development. What are the pros and cons of each method?
+## Resources
 
-* How many ways are there to install Symfony?
+* [TDD](https://en.wikipedia.org/wiki/Test-driven_development)
 
-## References
+* [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development)
 
-* [Symfony Installation](https://symfony.com/doc/current/book/installation.html)
+* [PhantomJS](http://phantomjs.org/download.html)
 
-* [Homestead with Symfony](http://symfony.com/doc/current/cookbook/workflow/homestead.html)
+* [Codeception documentation](http://codeception.com/docs)
+
+## Summary
+
+Next Chapter: [Chapter 5: The Testing Framework Part 2](https://github.com/bernardpeh/songbird/tree/chapter_5)
+
+Previous Chapter: [Chapter 3: What is SongBird](https://github.com/bernardpeh/songbird/tree/chapter_3)
 
