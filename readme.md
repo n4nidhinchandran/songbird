@@ -40,8 +40,6 @@ The idea is to do **actual coding in your host** (main operating system) and let
 ```
 # now we are going to bring up the virtual machine. This should take about 30 mins depending on your internet connnection. Have a cup of coffee.
 
--> cd songbird
--> composer update
 -> vagrant up
 
 # you will be prompted to enter admin password for mounting nfs.

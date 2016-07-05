@@ -12,11 +12,11 @@ keys:
     - ~/.ssh/id_rsa
 
 folders:
-    - map: "songbird/symfony"
+    - map: "symfony"
       to: "/home/vagrant/symfony"
       type: "nfs"
 
-    - map: "songbird/adminer"
+    - map: "adminer"
       to: "/home/vagrant/adminer"
       type: "nfs"
 
