@@ -160,7 +160,7 @@ Now test your automation by running
 -> ./scripts/start_selenium
 
 # back in your own terminal
--> scripts/runtest
+-> ./scripts/runtest
 ...
 OK (1 test, 1 assertion)
 ```
