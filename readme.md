@@ -55,8 +55,8 @@ The idea is to do **actual coding in your host** (main operating system) and let
 # when prompted, leave default settings except for the followings:
 # database_host: 192.168.56.111
 # database_name: songbird
-# database_user: songbird
-# database_password: songbird
+# database_user: homestead
+# database_password: secret
 ...
 # We are using smtp port 8025 to catch all mails.
 # mailer_host: 127.0.0.1:8025
@@ -69,7 +69,7 @@ The idea is to do **actual coding in your host** (main operating system) and let
 192.168.56.111 songbird.app adminer.app
 ```
 
-* Open up browser and go to https://songbird.app/. Add the exception in the browser since the vm self-signed the ssl certificate. If you see an installation successful page, you are on the right track.
+* Open up browser and go to http://songbird.app/. Add the exception in the browser since the vm self-signed the ssl certificate. If you see an installation successful page, you are on the right track.
 
 ![Welcome Page](images/welcome_page.png)
 
