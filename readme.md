@@ -1,195 +1,394 @@
-# Chapter 5: The Testing Framework Part 2
+# Chapter 6: The User Management System Part 1
 
-Since we are ready to build the application, let us remove the route for the default homepage and we are going to make sure that we have done that correctly.
+User Management System is a core part of any CMS. We will create this component using the popular [FOSUserBundle](https://github.com/FriendsOfSymfony/FOSUserBundle).
 
 ## Objectives
 
-> * Modifying the DefaultController.php
+> * Install FOSUserBundle
 
-> * Making sure the / route is removed
+> * Integrate FOSUserBundle
 
-> * Creating custom bash script to run acceptance test
+> * Create the User Entity
 
 ## Pre-setup
 
-Make sure you are in my_chapter5 branch.
+Make sure we are in the right branch. Let us branch off from the previous chapter.
 
 ```
--> git branch
-## if not done
-git checkout -b my_chapter5
+-> git checkout -b my_chapter6
 ```
 
-## Modifying DefaultController.php
+## Installing the FOSUserBundle
 
-Previously, we could access the route "/" because the route exists in DefaultController.php. Removing the @route annotation will remove the route. I simply took out the @.
+Add the bundle in composer.json
 
 ```
-#  src/AppBundle/Controller/DefaultController.php
+# composer.json
+...
+"require": {
+    ....
+    "friendsofsymfony/user-bundle": "~2.0@dev",
+    ...
+}
+```
 
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Request;
+and install it
 
-class DefaultController extends Controller
+```
+-> composer update
+```
+
+Note that you can also automate these 2 steps using
+
+```
+composer require friendsofsymfony/user-bundle:~2.0@dev
+
+```
+
+Now in AppKernel, we need to register the bundles
+
+```
+# app/AppKernel.php
+...
+public function registerBundles()
 {
-    /**
-     * not using the homepage route for now
-     *
-     * Route("/", name="homepage")
-     */
-    public function indexAction(Request $request)
+    $bundles = array(
+        ...
+        new AppBundle\AppBundle(),
+        // init my fosuser
+        new FOS\UserBundle\FOSUserBundle(),
+        new AppBundle\User()
+    );
+}
+```
+
+AppBundle\User() will look for the User class in User.php (under the AppBundle namespace). We want the User class to inherit all properties of FOSUserBundle.
+
+```
+# src/AppBundle/User.php
+
+namespace AppBundle;
+
+use Symfony\Component\HttpKernel\Bundle\Bundle;
+
+class User extends Bundle
+{
+    // use a child bundle
+    public function getParent()
     {
-        // replace this example code with whatever you need
-        return $this->render('default/index.html.twig', array(
-            'base_dir' => realpath($this->container->getParameter('kernel.root_dir').'/..'),
-        ));
+	return 'FOSUserBundle';
     }
 }
 ```
 
-Now, refresh http://songbird.app/app_dev.php and you should see a 404 error.
+Next we need to configure FOSUserBundle. Don't worry if certain directives doesn't make sense. It will as you progress further. Note that yaml files cannot contain tabs.
 
 ```
-No route found for "GET /"
-```
-
-This is correct because the url is no longer configured. How can you be sure? Let us check it out from the command line
-
-```
--> app/console debug:router
-
-[router] Current routes
- Name                     Method Scheme Host Path
- _wdt                     ANY    ANY    ANY  /_wdt/{token}
- _profiler_home           ANY    ANY    ANY  /_profiler/
- _profiler_search         ANY    ANY    ANY  /_profiler/search
- _profiler_search_bar     ANY    ANY    ANY  /_profiler/search_bar
- _profiler_purge          ANY    ANY    ANY  /_profiler/purge
- _profiler_info           ANY    ANY    ANY  /_profiler/info/{about}
- _profiler_phpinfo        ANY    ANY    ANY  /_profiler/phpinfo
- _profiler_search_results ANY    ANY    ANY  /_profiler/{token}/search/results
- _profiler                ANY    ANY    ANY  /_profiler/{token}
- _profiler_router         ANY    ANY    ANY  /_profiler/{token}/router
- _profiler_exception      ANY    ANY    ANY  /_profiler/{token}/exception
- _profiler_exception_css  ANY    ANY    ANY  /_profiler/{token}/exception.css
- _configurator_home       ANY    ANY    ANY  /_configurator/
- _configurator_step       ANY    ANY    ANY  /_configurator/step/{index}
- _configurator_final      ANY    ANY    ANY  /_configurator/final
- _twig_error_test         ANY    ANY    ANY  /_error/{code}.{_format}
-```
-
-Looks like there is no trace of the / path. This is all good but to do a proper job, we have to make sure that this logic is remembered in the future. We need to record this logic in a test.
-
-## Making sure the / route is removed
-
-To make sure that / route is correctly removed and not accidentally added again in the future, let us add a test for it.
-
-
-```
-# tests/acceptance/AppBundleCest.php
+# app/config/config.yml
 ...
-   /**
-     * check that homepage is not active
+# turn on translator
+translator:      { fallbacks: ["%locale%"] }
+...
+
+# fosuser config
+fos_user:
+    db_driver: orm
+    firewall_name: main
+    user_class: AppBundle\Entity\User
+```
+
+and setup the security and firewall, your file should look like this
+
+```
+# app/config/security.yml
+security:
+  encoders:
+          FOS\UserBundle\Model\UserInterface: bcrypt
+
+  # http://symfony.com/doc/current/book/security.html#where-do-users-come-from-user-providers
+  providers:
+      in_memory:
+          memory: ~
+      fos_userbundle:
+          id: fos_user.user_provider.username
+
+  role_hierarchy:
+          ROLE_ADMIN:       ROLE_USER
+          ROLE_SUPER_ADMIN: ROLE_ADMIN
+
+  firewalls:
+      # disables authentication for assets and the profiler, adapt it according to your needs
+      dev:
+          pattern: ^/(_(profiler|wdt)|css|images|js)/
+          security: false
+
+      main:
+          pattern: ^/
+          form_login:
+              provider: fos_userbundle
+              csrf_provider: security.csrf.token_manager
+          logout:       true
+          anonymous:    true
+
+  access_control:
+          - { path: ^/login$, role: IS_AUTHENTICATED_ANONYMOUSLY }
+          - { path: ^/register, role: IS_AUTHENTICATED_ANONYMOUSLY }
+          - { path: ^/resetting, role: IS_AUTHENTICATED_ANONYMOUSLY }
+          - { path: ^/admin/, role: ROLE_ADMIN }
+```
+
+## Creating the User Entity
+
+Have a quick read if you are unfamiliar with [doctrine and entity](http://symfony.com/doc/current/book/doctrine.html).
+
+Symfony allows us to automate lots of things using command line, including the creation of entities. We will create the user entity with 2 custom fields called firstname and lastname.
+
+```
+-> app/console generate:doctrine:entity
+
+# You will be prompted a series of questions.
+
+The Entity shortcut name: AppBundle:User
+
+Configuration format (yml, xml, php, or annotation) [annotation]: annotation
+
+New field name (press <return> to stop adding fields): firstname
+Field type [string]:
+Field length [255]:
+Is nullable [false]: true
+Unique [false]:
+
+New field name (press <return> to stop adding fields): lastname
+Field type [string]:
+Field length [255]:
+Is nullable [false]: true
+Unique [false]:
+
+Do you want to generate an empty repository class [no]? yes
+
+You are going to generate a "AppBundle:User" Doctrine2 entity
+using the "annotation" format.
+
+Do you confirm generation [yes]?
+```
+
+Once you are familiar with the command line, you should be able to generate the entity and other files without prompts and we will be doing that in the future chapters.
+
+[FOSUserBundle Groups](https://github.com/FriendsOfSymfony/FOSUserBundle/blob/master/Resources/doc/groups.md) are useful when you want to group users together. For the sake of simplicity, we won't be using this feature. However, you should be able to add this feature in easily once you are comfortable with the Symfony workflow.
+
+Now, the entity class is generated under src/AppBundle/Entity folder. We need to extend the fosuserbundle and make the id protected because of inheritance.
+
+```
+## src/AppBundle/Entity/User.php
+
+namespace AppBundle\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * User
+ *
+ * @ORM\Table(name="user")
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\UserRepository")
+ */
+class User
+{
+    /**
+     * @var int
      *
-     * @param AcceptanceTester $I
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
      */
-    public function RemovalTest(AcceptanceTester $I)
+    protected $id;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="firstname", type="string", length=255, nullable=true)
+     */
+    private $firstname;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="lastname", type="string", length=255, nullable=true)
+     */
+    private $lastname;
+
+
+    /**
+     * Get id
+     *
+     * @return int
+     */
+    public function getId()
     {
-        $I->wantTo('Check if / is not active.');
-        $I->amOnPage('/');
-        $I->see('404 Not Found');
+        return $this->id;
     }
+
+    /**
+     * Set firstname
+     *
+     * @param string $firstname
+     *
+     * @return User
+     */
+    public function setFirstname($firstname)
+    {
+        $this->firstname = $firstname;
+
+        return $this;
+    }
+
+    /**
+     * Get firstname
+     *
+     * @return string
+     */
+    public function getFirstname()
+    {
+        return $this->firstname;
+    }
+
+    /**
+     * Set lastname
+     *
+     * @param string $lastname
+     *
+     * @return User
+     */
+    public function setLastname($lastname)
+    {
+        $this->lastname = $lastname;
+
+        return $this;
+    }
+
+    /**
+     * Get lastname
+     *
+     * @return string
+     */
+    public function getLastname()
+    {
+        return $this->lastname;
+    }
+}
 ```
 
-and run the test again,
+You will noticed all the getters and setters already generated for you. Cool!
+
+THere is also another new Repository/UserRepository.php generated.
+
+Now, we need to configure the routes. The default routes provided by FOSUser is a good start.
 
 ```
-# clear prod cache because test is running in prod env
--> app/console cache:clear --env=prod
-
-# remember to start selenium server
--> bin/codecept run acceptance
+# app/config/routing.yml
 ...
-Time: 10.47 seconds, Memory: 11.50MB
+# FOS user bundle default routing
+fos_user_security:
+    resource: "@FOSUserBundle/Resources/config/routing/security.xml"
 
-OK (1 test, 1 assertion)
+fos_user_profile:
+    resource: "@FOSUserBundle/Resources/config/routing/profile.xml"
+    prefix: /profile
+
+fos_user_resetting:
+    resource: "@FOSUserBundle/Resources/config/routing/resetting.xml"
+    prefix: /resetting
+
+fos_user_change_password:
+    resource: "@FOSUserBundle/Resources/config/routing/change_password.xml"
+    prefix: /profile
 ```
 
-## Creating custom bash script to run acceptance test
-
-We have to remember to clear the cache every time we run the test so that we don't test on the cached version. Let us automate this by creating a script in the scripts dir called "runtest" and make it executable.
+To check that the new routes have been installed correctly,
 
 ```
--> touch scripts/runtest
--> chmod u+x scripts/runtest
-```
+-> app/console debug:router | grep fos
 
-In the runtest script,
-
-```
-# scripts/runtest
-
-#!/bin/bash
-
-app/console cache:clear --no-warmup
-bin/codecept run acceptance
-```
-
-We have to also remember to start selenium server before we run the test. To make our live easy, let us create a script to automate starting selenium
+ fos_user_security_login           GET|POST ANY    ANY  /login
+ fos_user_security_check           POST     ANY    ANY  /login_check
+ fos_user_security_logout          GET      ANY    ANY  /logout
+ fos_user_profile_show             GET      ANY    ANY  /profile/
+ fos_user_profile_edit             GET|POST ANY    ANY  /profile/edit
+ fos_user_resetting_request        GET      ANY    ANY  /resetting/request
+ fos_user_resetting_send_email     POST     ANY    ANY  /resetting/send-email
+ fos_user_resetting_check_email    GET      ANY    ANY  /resetting/check-email
+ fos_user_resetting_reset          GET|POST ANY    ANY  /resetting/reset/{token}
+ fos_user_change_password          GET|POST ANY    ANY  /profile/change-password
 
 ```
--> touch scripts/start_selenium
--> chmod u+x start_selenium
-```
 
-in start_selenium,
+or we can use the router:match command to match the exact url and get more details
 
 ```
-# scripts/start_selenium
+-> app/console router:match /profile/
+Route "fos_user_profile_show" matches
 
-#!/bin/bash
-
-java -Dwebdriver.chrome.driver=scripts/chromedriver -jar scripts/selenium-server-standalone-2.53.1.jar
+[router] Route "fos_user_profile_show"
+Name         fos_user_profile_show
+Path         /profile/
+Path Regex   #^/profile/$#s
+Host         ANY
+Host Regex
+Scheme       ANY
+Method       GET
+Class        Symfony\Component\Routing\Route
+Defaults     _controller: FOSUserBundle:Profile:show
+Requirements NO CUSTOM
+Options      compiler_class: Symfony\Component\Routing\RouteCompiler
 ```
 
-Now test your automation by running
+See how much work has done for you by inheriting the FOSUserBundle... This step allows you to use many default functionality like password reset and user profile update without writing a single line of code! Now, let us test one of the routes by going to
 
 ```
-# open a new terminal
--> ./scripts/start_selenium
-
-# back in your own terminal
--> scripts/runtest
-...
-OK (1 test, 1 assertion)
+http://songbird.dev/app_dev.php/login
 ```
 
-We are almost done. Remember to commit all your changes before moving on to the next chapter.
+<img src="http://practicalsymfony.com/wp-content/uploads/2015/06/songbird-dev-app_dev.php-login.jpg" alt="songbird dev-app_dev.php-login" width="669" height="183" class="aligncenter size-full wp-image-203" />
+
+You should see a simple login page.
+
+To verify that the schema is correct, let us generate it:
+
+```
+-> app/console doctrine:schema:create
+```
+
+Login to http://192.168.56.111/adminer/ with username: songbird, password: songbird and click on the songbird db. You should see there are 0 rows for the user and click on the user schema. You should see your firstname and lastname fields in additional to all the default FOSUserBundle fields.
+
+![adminer](images/adminer.png)
+
+We are gearing up. Ready for more?
 
 ## Summary
 
-In this chapter, we have removed the default / route and updated our test criteria. We have also created a few bash scripts to automate the task of running codecept test. We will add more to this scripts in the future.
+In this chapter, we have installed FOSUserBundle and extended it in AppBundle. We have verified that the installation was correct by looking at the default login page and database schema.
 
-Next Chapter: [Chapter 6: The User Management System Part 1](https://github.com/bernardpeh/songbird/tree/chapter_6)
+Remember to commit all your changes before moving on.
 
-Previous Chapter: [Chapter 4: The Testing Framework Part 1](https://github.com/bernardpeh/songbird/tree/chapter_4)
+Next Chapter: [Chapter 7: The User Management System Part 2](https://github.com/bernardpeh/songbird/tree/chapter_7)
+
+Previous Chapter: [Chapter 5: The Testing Framework Part 2](https://github.com/bernardpeh/songbird/tree/chapter_5)
+
+
 
 ## Stuck? Checkout my code
 
 ```
--> git checkout -b chapter_5 origin/chapter_5
+-> git checkout -b chapter_6 origin/chapter_6
 -> git clean -fd
 ```
+## Exercises (Optional)
+
+* Try installing the UserBundle as a separate bundle. Are there any pros and cons of doing that as compared to putting all the bundles in AppBundle?
 
 ## References
 
-* [TDD](https://en.wikipedia.org/wiki/Test-driven_development)
+* [FOSUserBundle Doc](https://github.com/FriendsOfSymfony/FOSUserBundle/blob/master/Resources/doc/index.md)
 
-* [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development)
-
-* [PhantomJS](http://phantomjs.org/download.html)
-
-* [Codeception documentation](http://codeception.com/docs)
+* [Routing](http://symfony.com/doc/current/book/routing.html)
 
 
