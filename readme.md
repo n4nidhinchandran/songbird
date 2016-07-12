@@ -84,7 +84,7 @@ We haven't added any data yet. The database should be empty as per the previous 
 Let us add some data. Go to
 
 ```
-http://songbird.dev/app_dev.php/user/new
+http://songbird.app/app_dev.php/user/new
 ```
 
 and enter a dummy firstname and lastname, then click create.
