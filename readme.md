@@ -354,7 +354,7 @@ To verify that the schema is correct, let us generate it:
 
 Login to http://adminer.app/ with username: homestead, password: secret and click on the songbird db. You should see there are 0 rows for the user and click on the user schema. You should see your firstname and lastname fields in additional to all the default FOSUserBundle fields.
 
-![adminer](images/adminer.png)
+![adminer](images/chapter_5_adminer.png)
 
 We are gearing up. Ready for more?
 
