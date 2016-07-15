@@ -73,9 +73,9 @@ The idea is to do **actual coding in your host** (main operating system) and let
 
 ![Welcome Page](images/welcome_page.png)
 
-* Now try this url https://songbird.app/app_dev.php and you should see the same successful page but with a little icon/toolbar at the bottom of the page. That's right, you are now in dev mode. Why the "app_dev.php"? That is like the default page for the dev environment. All url rewrite goes to this page and this is something unique to Symfony.
+* Now try this url http://songbird.app/app_dev.php and you should see the same successful page but with a little icon/toolbar at the bottom of the page. That's right, you are now in dev mode. Why the "app_dev.php"? That is like the default page for the dev environment. All url rewrite goes to this page and this is something unique to Symfony.
 
-* Also try https://adminer.app and you should see the adminer page as well.
+* Also try http://adminer.app and you should see the adminer page as well.
 
 ## Summary
 
