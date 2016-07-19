@@ -366,7 +366,7 @@ Remember to commit all your changes before moving on.
 
 Next Chapter: [Chapter 7: The User Management System Part 2](https://github.com/bernardpeh/songbird/tree/chapter_7)
 
-Previous Chapter: [Chapter 5: The Testing Framework Part 2](https://github.com/bernardpeh/songbird/tree/chapter_5)
+Previous Chapter: [Chapter 5: The Testing Framework Part 2 (Optional)](https://github.com/bernardpeh/songbird/tree/chapter_5)
 
 
 
