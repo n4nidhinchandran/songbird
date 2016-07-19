@@ -1,4 +1,6 @@
-# Chapter 4: The Testing Framework Part 1
+# Chapter 4: The Testing Framework Part 1 (Optional)
+
+This chapter talks about [Codeception](http://codeception.com/). Feel free to skip it if you already have a testing framework in place.
 
 No application is complete without going through a rigorous testing process. Software Testing is a big topic by itself.
 
@@ -194,7 +196,7 @@ Don't forget to commit your code before moving on to the next chapter.
 
 In this chapter, we discussed the importance of testing and touched on TDD and BDD. In our context, we will be mainly writing BDD tests. We installed codeception and selenium and wrote a simple acceptance test that tests the app/example page.
 
-Next Chapter: [Chapter 5: The Testing Framework Part 2](https://github.com/bernardpeh/songbird/tree/chapter_5)
+Next Chapter: [Chapter 5: The Testing Framework Part 2 (Optional)](https://github.com/bernardpeh/songbird/tree/chapter_5)
 
 Previous Chapter: [Chapter 3: What is SongBird](https://github.com/bernardpeh/songbird/tree/chapter_3)
 
