@@ -625,7 +625,7 @@ We have installed a popular Admin system called SonataAdminBundle. We then integ
 
 Remember to commit your changes before moving on to the next chapter.
 
-Next Chapter: [Chapter 10: BDD with Codeception](https://github.com/bernardpeh/songbird/tree/chapter_10)
+Next Chapter: [Chapter 10: BDD with Codeception (Optional)](https://github.com/bernardpeh/songbird/tree/chapter_10)
 
 Previous Chapter: [Chapter 8: Fixtures, Fixtures, Fixtures](https://github.com/bernardpeh/songbird/tree/chapter_8)
 
