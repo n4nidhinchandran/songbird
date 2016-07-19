@@ -1,4 +1,6 @@
-# Chapter 5: The Testing Framework Part 2
+# Chapter 5: The Testing Framework Part 2 (Optional)
+
+This chapter talks about [Codeception](http://codeception.com/). Feel free to skip it if you already have a testing framework in place.
 
 Since we are ready to build the application, let us remove the route for the default homepage and we are going to make sure that we have done that correctly.
 
@@ -173,7 +175,7 @@ In this chapter, we have removed the default / route and updated our test criter
 
 Next Chapter: [Chapter 6: The User Management System Part 1](https://github.com/bernardpeh/songbird/tree/chapter_6)
 
-Previous Chapter: [Chapter 4: The Testing Framework Part 1](https://github.com/bernardpeh/songbird/tree/chapter_4)
+Previous Chapter: [Chapter 4: The Testing Framework Part 1 (Optional)](https://github.com/bernardpeh/songbird/tree/chapter_4)
 
 ## Stuck? Checkout my code
 
