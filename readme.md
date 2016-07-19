@@ -600,6 +600,7 @@ git rm src/AppBundle/Form/UserType.php
 git rm -rf src/AppBundle/Tests/Controller/UserControllerTest.php
 # All efforts gone? Don't worry, we will write new tests in the next chapter
 git rm -rf tests
+git rm codeception.yml
 # add all changes
 git add .
 ```
