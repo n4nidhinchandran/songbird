@@ -58,8 +58,8 @@ The idea is to do **actual coding in your host** (main operating system) and let
 # database_user: homestead
 # database_password: secret
 ...
-# We are using smtp port 8025 to catch all mails.
-# mailer_host: 127.0.0.1:8025
+# We are using smtp port 1025 to catch all mails.
+# mailer_host: 127.0.0.1:1025
 ...
 ```
 
