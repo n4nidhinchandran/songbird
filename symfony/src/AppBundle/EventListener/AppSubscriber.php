@@ -36,25 +36,29 @@ class AppSubscriber implements EventSubscriberInterface
      */
     public function checkUserRights(GenericEvent $event)
     {
+
+        // if super admin, allow all
+        if ($this->container->get('security.authorization_checker')->isGranted('ROLE_SUPER_ADMIN')) {
+            return;
+        }
+
         $entity = $this->container->get('request_stack')->getCurrentRequest()->query->get('entity');
         $action = $this->container->get('request_stack')->getCurrentRequest()->query->get('action');
         $user_id = $this->container->get('request_stack')->getCurrentRequest()->query->get('id');
         // if user management
         if ($entity == 'User') {
-            // if not admin throw error
-            if (!$this->container->get('security.authorization_checker')->isGranted('ROLE_SUPER_ADMIN')) {
-                throw new AccessDeniedException();
+            // if edit and show
+            if ($action == 'edit' || $action == 'show') {
+                // check user is himself
+                if ($user_id == $this->container->get('security.token_storage')->getToken()->getUser()->getId()) {
+                    return;
+                }
             }
-
         }
 
+        // throw exception in all cases
+        throw new AccessDeniedException();
 
-//        $user_id = $event->getAdmin()->getRequest()->attributes->all()['id'];
-//        // we can get container from ->getAdmin()->getConfigurationPool()->getContainer()
-//        $session_id = $event->getAdmin()->getConfigurationPool()->getContainer()->get('security.token_storage')->getToken()->getUser()->getId();
-//        if ($user_id != $session_id) {
-//            throw new AccessDeniedException();
-//        }
     }
 
 }
