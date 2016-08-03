@@ -111,6 +111,19 @@ We will install the default styles from the bundle
 app/console assets:install
 ```
 
+Say for now, we want ROLE_USER to access the admin dashboard.
+
+```
+# app/config/security.yml
+...
+    access_control:
+        - { path: ^/login$, role: IS_AUTHENTICATED_ANONYMOUSLY }
+        # We do not allow user registration
+        # - { path: ^/register, role: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/resetting, role: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/admin/, role: ROLE_USER }
+```
+
 Now, try logging in
 
 ```
@@ -291,19 +304,9 @@ easy_admin:
                   - { property: 'last_login', type: 'datetime', format: 'j/n/Y' }
 ```
 
-We have trimed down all the fields to include only the relevant ones. The preUpdate function allows us to perform our own tasks like encrypting the password before the actual update function is called.
+We have trimed down all the fields to include only the relevant ones.
 
-Now if you click on the "create" link in the User Admin block, you will only see the important fields. Let us fill in the form with random values and click "create and return to list".
-
-![admin user create](images/admin_user_create.png)
-
-Another thing to note is the configureFormFields function. I have added a few fields (enabled, locked, roles) that are only editable by the super admin.
-
-Now look at the list view
-
-![admin user create](images/admin_user_list.png)
-
-Everything is looking good. Looking at adminer, you can see that the password has also been encrypted correctly, indicating that the preUpdate function is working.
+Everything is looking good. Looking at adminer, you can see that the password has also been encrypted correctly, indicating that the AdminController's preUpdate function is working.
 
 
 ## Redirecting Users to Dashboard After Login
@@ -325,115 +328,33 @@ Easy.
 
 ## User Roles and Security
 
-At the moment, normal user cannot login to the admin area. What if we want ROLE_USER to login to /admin as well and restrict them to certain areas only? That is where [security handlers](https://sonata-project.org/bundles/admin/master/doc/reference/security.html) come in.
+What if we want ROLE_USER to login to /admin as well but restrict them to certain areas only?
 
-In our case, we will use the role handler rather than acl to handle user access. We need to activate the handler in the config file.
+We need to subscribe to some events so that we can add some rules based on user's role. Remember the services.yml? Dependency Injection will save the day.
 
 ```
-# app/config/config.yml
+# src/AppBundle/Resources/services.yml
+
+services:
+
+    app.subscriber:
+            class: AppBundle\EventListener\AppSubscriber
+            arguments:
+                - "@service_container"
+            tags:
+                - { name: kernel.event_subscriber }
+```
+
+Let's now create the AppSubscriber class
+
+```
+# src/AppBundle/EventListener/AppSubscriber.php
 ...
-# role login
-sonata_admin:
-    security:
-        handler: sonata.admin.security.handler.role
-...
-```
 
-Say for now, we want ROLE_USER to access the admin dashboard but not the user management section.
-
-```
-# app/config/security.yml
-...
-    access_control:
-        - { path: ^/login$, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        # We do not allow user registration
-        # - { path: ^/register, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/resetting, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/admin/, role: ROLE_USER }
-```
-
-Try logging in again as test1:test1 and you should see a plain dashboard.
-
-Now say we like test1 user to be able to view and edit his own profile but not other users? Firstly, we need to give ROLE_USER access right to view and edit the users.
-
-To get the user admin service:
-
-```
--> app/console sonata:admin:list
-
-Admin services:
-  songbird.admin.user         AppBundle\Entity\User
-```
-
-Now, add the service under the ROLE_USER section in the security file
-
-```
-# app/config/security.yml
-...
-role_hierarchy:
-        ROLE_USER:
-            # in this format: ROLE_service_name_in_underscore_ACTION
-            - ROLE_SONGBIRD_ADMIN_USER_VIEW
-            - ROLE_SONGBIRD_ADMIN_USER_EDIT
 ...
 ```
 
-Then, we need some custom logic to filter the users. We can override the parent's CRUD functions but this is an ugly solution. How can we do that elegantly?
-
-What we will do here is to create an [event listener](http://symfony.com/doc/current/cookbook/event_dispatcher/event_listener.html) to listen to events that are fired by the Sonata Admin (You can see all the events in Sonata\AdminBundle\Event\AdminEventExtension.php). We want to hook on to the sonata.admin.event.configure.form (for edit and create route) and sonata.admin.event.configure.show event (for read route).
-
-Now in services.yml file, we can do something like that
-
-```
-# src/AppBundle/Resources/config/services.yml
-...
-    songbird.admin.user.show.filter:
-        class: AppBundle\EventListener\UserCustomAction
-        tags:
-            - { name: kernel.event_listener, event: sonata.admin.event.configure.show, method: sonataAdminCheckUserRights }
-
-    songbird.admin.user.form.filter:
-        class: AppBundle\EventListener\UserCustomAction
-        tags:
-            - { name: kernel.event_listener, event: sonata.admin.event.configure.form, method: sonataAdminCheckUserRights }
-...
-```
-
-We are trying to call the AppBundle\EventListerner\UserCustomAction::sonataAdminCheckUserRights function every time the sonata.admin.event.configure.form and sonata.admin.event.configure.show events are dispatched.
-
-```
-# src/AppBundle/EventListener/UserCustomAction.php
-
-namespace AppBundle\EventListener;
-
-use Sonata\AdminBundle\Event\ConfigureEvent;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-
-class UserCustomAction
-{
-
-    /**
-     * show an error if user is not superadmin and tries to manage other user details
-     *
-     * @param  ConfigureEvent $event sonata admin event
-     * @return null
-     */
-    public function sonataAdminCheckUserRights(ConfigureEvent $event)
-    {
-        // ignore this if user is admin
-        if ($event->getAdmin()->isGranted('ROLE_SUPER_ADMIN')) {
-            return;
-        }
-
-        $user_id = $event->getAdmin()->getRequest()->attributes->all()['id'];
-        // we can get container from ->getAdmin()->getConfigurationPool()->getContainer()
-        $session_id = $event->getAdmin()->getConfigurationPool()->getContainer()->get('security.token_storage')->getToken()->getUser()->getId();
-        if ($user_id != $session_id) {
-            throw new AccessDeniedException();
-        }
-    }
-}
-```
+Basically, we have created a checkUserRights function
 
 In UserCustomAction.php, we try to match the user session id and the id of the user in the url. Unless the user is a super admin, we throw an access denied error when the user is trying to access someone else profile.
 
@@ -522,3 +443,5 @@ Previous Chapter: [Chapter 8: Fixtures, Fixtures, Fixtures](https://github.com/b
 * [EasyAdminBundle and FOSUserBundle Integration](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/tutorials/fosuserbundle-integration.md)
 
 * [EasyAdminBundle views configuration](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/book/4-edit-new-configuration.md#customizing-the-behavior-of-edit-and-new-views)
+
+* [Event Listener and Subscribers](https://symfony.com/doc/current/doctrine/event_listeners_subscribers.html)

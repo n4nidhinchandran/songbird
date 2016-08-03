@@ -13,9 +13,6 @@ security:
           ROLE_ADMIN:       ROLE_USER
           ROLE_SUPER_ADMIN: ROLE_ADMIN
           ROLE_USER:
-              # in this format: ROLE_service_name_in_underscore_ACTION
-              - ROLE_SONGBIRD_ADMIN_USER_VIEW
-              - ROLE_SONGBIRD_ADMIN_USER_EDIT
 
   firewalls:
       # disables authentication for assets and the profiler, adapt it according to your needs

@@ -1,19 +1,8 @@
 services:
 
-    songbird.admin.user:
-        class: AppBundle\Admin\UserAdmin
-        arguments: [~, AppBundle\Entity\User, AppBundle:UserAdmin]
-        tags:
-            - { name: sonata.admin, manager_type: orm, group: admin, label: User }
-        calls:
-            - [setUserManager, ['@fos_user.user_manager']]
-
-    songbird.admin.user.show.filter:
-        class: AppBundle\EventListener\UserCustomAction
-        tags:
-            - { name: kernel.event_listener, event: sonata.admin.event.configure.show, method: sonataAdminCheckUserRights }
-
-    songbird.admin.user.form.filter:
-        class: AppBundle\EventListener\UserCustomAction
-        tags:
-            - { name: kernel.event_listener, event: sonata.admin.event.configure.form, method: sonataAdminCheckUserRights }
+    app.subscriber:
+            class: AppBundle\EventListener\AppSubscriber
+            arguments:
+                - "@service_container"
+            tags:
+                - { name: kernel.event_subscriber }
