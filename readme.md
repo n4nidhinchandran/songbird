@@ -349,41 +349,95 @@ Let's now create the AppSubscriber class
 
 ```
 # src/AppBundle/EventListener/AppSubscriber.php
-...
 
+namespace AppBundle\EventListener;
+
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\EventDispatcher\GenericEvent;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use JavierEguiluz\Bundle\EasyAdminBundle\Event\EasyAdminEvents;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
+class AppSubscriber implements EventSubscriberInterface
+{
+    protected $container;
+
+    public function __construct(ContainerInterface $container) // this is @service_container
+    {
+        $this->container = $container;
+    }
+
+    public static function getSubscribedEvents()
+    {
+        // return the subscribed events, their methods and priorities
+        return array(
+            EasyAdminEvents::PRE_LIST => 'checkUserRights',
+            EasyAdminEvents::PRE_EDIT => 'checkUserRights'
+        );
+    }
+
+    /**
+     * show an error if user is not superadmin and tries to manage restricted stuff
+     *
+     * @param GenericEvent $event event
+     * @return null
+     * @throws AccessDeniedException
+     */
+    public function checkUserRights(GenericEvent $event)
+    {
+
+        // if super admin, allow all
+        if ($this->container->get('security.authorization_checker')->isGranted('ROLE_SUPER_ADMIN')) {
+            return;
+        }
+
+        $entity = $this->container->get('request_stack')->getCurrentRequest()->query->get('entity');
+        $action = $this->container->get('request_stack')->getCurrentRequest()->query->get('action');
+        $user_id = $this->container->get('request_stack')->getCurrentRequest()->query->get('id');
+        // if user management
+        if ($entity == 'User') {
+            // if edit and show
+            if ($action == 'edit' || $action == 'show') {
+                // check user is himself
+                if ($user_id == $this->container->get('security.token_storage')->getToken()->getUser()->getId()) {
+                    return;
+                }
+            }
+        }
+
+        // throw exception in all cases
+        throw new AccessDeniedException();
+
+    }
+
+}
 ...
 ```
 
-Basically, we have created a checkUserRights function
+Basically, we have created a checkUserRights function to allow the rightful owner to edit and see his own profile only.
 
-In UserCustomAction.php, we try to match the user session id and the id of the user in the url. Unless the user is a super admin, we throw an access denied error when the user is trying to access someone else profile.
-
-Try logging in as test1:test1 (user id = 2) annd access other people profile like so
+Try logging in as test1:test1 (user id = 2) and see own profile
 
 ```
-http://songbird.app/app_dev.php/admin/app/user/1/show
-http://songbird.app/app_dev.php/admin/app/user/3/show
+http://songbird.app/app_dev.php/admin/?action=showt&entity=User&id=2
+```
+
+If you try to see other people's profile, you should get an access denied error.
+
+```
+http://songbird.app/app_dev.php/admin/?action=show&entity=User&id=3
 ```
 
 or view the user list url
 
 ```
-http://songbird.app/app_dev.php/admin/app/user/list
+http://songbird.app/app_dev.php/admin/?action=list&entity=User
 ```
 
-You should get an access denied error. If however, test1 is trying to access his own profile
+There is one more thing we need to clean up. If you login as yourself, you shouldn't be able to
 
-```
-http://songbird.app/app_dev.php/admin/app/user/2/show
-```
+...
 
-everything should be ok.
-
-How do you see all the routes available? remember the magic command?
-
-```
--> app/console debug:router
-```
 
 <h2>Cleaning Up</h2>
 
