@@ -2,6 +2,7 @@ imports:
     - { resource: parameters.yml }
     - { resource: security.yml }
     - { resource: services.yml }
+    - {resource: easyadmin/ }
 
 # Put parameters here that don't need to change on each machine where the app is deployed
 # http://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
@@ -70,16 +71,3 @@ fos_user:
     db_driver: orm
     firewall_name: main
     user_class: AppBundle\Entity\User
-
-# role login
-sonata_admin:
-    security:
-        handler: sonata.admin.security.handler.role
-
-# sonata block
-sonata_block:
-    default_contexts: [cms]
-    blocks:
-        # Enable the SonataAdminBundle block
-        sonata.admin.block.admin_list:
-            contexts:   [admin]

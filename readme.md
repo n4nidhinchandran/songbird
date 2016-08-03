@@ -2,14 +2,14 @@
 
 We have used FOSUserBundle to create a User CRUD in the previous chapters. It's looking ugly at the moment but its functional. However, anyone can access the user management if they have the right url. We need an admin area where administrators can login and manage the users. All administrative activities should happen behind the admin url, something along the lines of /admin/users for example.
 
-Again, we will try to simplify the process by reusing a 3rd party module that others have created. [EasyAdmin](https://github.com/javiereguiluz/EasyAdminBundle) and [SonataAdmin](https://github.com/sonata-project/SonataAdminBundle) are quite popular at the moment. In this book we will be using the later to build the admin panel. Before we start building it, we should ask ourselves an even ambitious question "Wouldn't it be nice if someone could combine the FOSUserBundle and SonataAdmin into one bundle and we could just install that single bundle?". As you would expect, this has been done and this bundle is called [SonataUserBundle](https://github.com/sonata-project/SonataUserBundle).
+Again, we will try to simplify the process by reusing a 3rd party module that others have created. [SonataAdmin](https://github.com/sonata-project/SonataAdminBundle) and [EasyAdmin](https://github.com/javiereguiluz/EasyAdminBundle) are quite popular at the moment. SonataAdmin is more advanced but complex to setup. In this book, we will be using EasyAdmin to build the admin panel.
 
-It wouldn't be fun if we just use the ready made solution. In this and the next few chapters, we will attempt to integrate FOSUserBundle and SonataBundle.
+It wouldn't be fun if we just use the ready made solution. In this and the next few chapters, we will attempt to build up the admin area bit by bit.
 
 ## Objectives
 
-> * Install SonataAdminBundle
-> * Integrate FOSUserBundle and SonataAdminBundle
+> * Install EasyAdminBundle
+> * Integrate FOSUserBundle and EasyAdminBundle
 > * Filtering the User fields
 > * Redirecting Users to Dashboard After Login
 > * User Roles and Security
@@ -26,7 +26,7 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 -> git checkout -b my_chapter9
 ```
 
-## Install SonataAdminBundle
+## Install EasyAdminBundle
 
 As usual, let us add the required bundles in the composer.json file
 
@@ -35,8 +35,7 @@ As usual, let us add the required bundles in the composer.json file
 
 "require": }
     ....
-    "sonata-project/admin-bundle": "^3.4",
-    "sonata-project/doctrine-orm-admin-bundle": "^3.0"
+    "javiereguiluz/easyadmin-bundle": "^1.15"
     ....
 ```
 
@@ -44,6 +43,9 @@ then run composer update
 
 ```
 -> composer update
+
+# if composer is playing up with memory issues
+# php -d memory_limit=-1 path_to_composer update
 ```
 
 and remember to activate the required bundles in AppKernel.php
@@ -51,57 +53,56 @@ and remember to activate the required bundles in AppKernel.php
 ```
 # app/AppKernel.php
 ...
-// Sonata Admin dependencies
-new Sonata\CoreBundle\SonataCoreBundle(),
-new Sonata\BlockBundle\SonataBlockBundle(),
-new Knp\Bundle\MenuBundle\KnpMenuBundle(),
-new Sonata\DoctrineORMAdminBundle\SonataDoctrineORMAdminBundle(),
-new Sonata\AdminBundle\SonataAdminBundle(),
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+            new JavierEguiluz\Bundle\EasyAdminBundle\EasyAdminBundle(),
+        );
+    }
 ...
 ```
 
-Update the config file with new parameters.
+Create a new easyadmin config file
+
+```
+# app/config/easyadmin/user.yml
+
+easy_admin:
+    entities:
+        User:
+            class: AppBundle\Entity\User
+
+```
+
+The main config file then needs to load everything under the easyadmin folder
 
 ```
 # app/config/config.yml
+imports:
+    - { resource: parameters.yml }
+    - { resource: security.yml }
+    - { resource: services.yml }
+    - {resource: easyadmin/ }
 ...
-#sonata block
-sonata_block:
-    default_contexts: [cms]
-    blocks:
-        # Enable the SonataAdminBundle block
-        sonata.admin.block.admin_list:
-            contexts:   [admin]
 ```
-
 and routing file
 
 ```
 # app/config/routing.yml
 ...
-# sonata admin
-admin:
-    resource: '@SonataAdminBundle/Resources/config/routing/sonata_admin.xml'
-    prefix: /admin
-
-_sonata_admin:
-    resource: .
-    type: sonata_admin
-    prefix: /admin
+easy_admin_bundle:
+    resource: "@EasyAdminBundle/Controller/"
+    type:     annotation
+    prefix:   /admin
 ```
 
 If everything goes well, there will be new routes added
 
 ```
 -> app/console debug:router | grep admin
- sonata_admin_redirect                    ANY      ANY    ANY  /admin/
- sonata_admin_dashboard                   ANY      ANY    ANY  /admin/dashboard
- sonata_admin_retrieve_form_element       ANY      ANY    ANY  /admin/core/get-form-field-element
- sonata_admin_append_form_element         ANY      ANY    ANY  /admin/core/append-form-field-element
- sonata_admin_short_object_information    ANY      ANY    ANY  /admin/core/get-short-object-description.{_format}
- sonata_admin_set_object_field_value      ANY      ANY    ANY  /admin/core/set-object-field-value
- sonata_admin_search                      ANY      ANY    ANY  /admin/search
- sonata_admin_retrieve_autocomplete_items ANY      ANY    ANY  /admin/core/get-autocomplete-items
+   easyadmin                        ANY        ANY      ANY    /admin/
+   admin                            ANY        ANY      ANY    /admin/
 ```
 
 We will install the default styles from the bundle
@@ -125,72 +126,47 @@ password: admin
 
 wow, we can now see the admin dashboard. If you have accidentally deleted or modified the admin user, remember that you can reset the db with the "scripts/resetapp" script.
 
-![admin dashboard](images/admin_dashboard.png)
+![admin dashboard](images/admin_dashboard1.png)
 
 Looks pretty empty huh?
 
-## Integrate FOSUserBundle and SonataAdminBundle
+## Integrate FOSUserBundle and EasyAdminBundle
 
-We need to extend Sonata Admin class to add functionality in the admin area. In this case, we want to have user management functionality in Sonata admin area. Sonata provides a command line for that:
-
-```
--> app/console sonata:admin:generate AppBundle/Entity/User
-
-  Welcome to the Sonata admin generator
-
-The fully qualified model class [AppBundle/Entity/User]:
-The bundle name [AppBundle]:
-The admin class basename [UserAdmin]:
-Do you want to generate a controller [no]? yes
-The controller class basename [UserAdminController]:
-Do you want to update the services YAML configuration file [yes]?
-The admin service ID [app.admin.user]:
-```
-
-services.yml is important because that is where the dependency injection happens. Without it, we can't hook additional services to the sonata admin service.
+Create a new admin controller
 
 ```
+#src/AppBundle/Controller/AdminController.php
+namespace AppBundle\Controller;
+
+use JavierEguiluz\Bundle\EasyAdminBundle\Controller\AdminController as BaseAdminController;
+
+class AdminController extends BaseAdminController
+{
+    public function createNewUserEntity()
+    {
+        return $this->get('fos_user.user_manager')->createUser();
+    }
+
+    public function prePersistUserEntity($user)
+    {
+        $this->get('fos_user.user_manager')->updateUser($user, false);
+    }
+
+    public function preUpdateUserEntity($user)
+    {
+        $this->get('fos_user.user_manager')->updateUser($user, false);
+    }
+}
+```
+
+services.yml is important because that is where the dependency injection happens. Without it, we can't hook additional services to our bundle.
+Let us create a dummy one for now.
+
+```
+# src/AppBundle/Resources/config/services.yml
+
 services:
     # note that this name is important. Its how we reference the class throughout the site.
-    songbird.admin.user:
-        class: AppBundle\Admin\UserAdmin
-        arguments: [~, AppBundle\Entity\User, AppBundle:UserAdmin]
-        tags:
-            - { name: sonata.admin, manager_type: orm, group: admin, label: User }
-        calls:
-            - [setUserManager, ['@fos_user.user_manager']]
-```
-
-In the yml, we pass on several important parameters to the UserAdmin class. We then pass the fos_user.user_manager (FOS\UserBundle\Doctrine\UserManager) class into the setUserManager function so that we can access it easily within the UserAdmin class.
-
-
-```
-# src/AppBundle/Admin/UserAdmin.php
-...
-use FOS\UserBundle\Model\UserManagerInterface;
-...
-class UserAdmin extends Admin
-{
-    private $userManager;
-    ...
-    /**
-     * setUserManager
-     * @param UserManagerInterface $userManager fosuserbundle user manager
-     */
-    public function setUserManager(UserManagerInterface $userManager)
-    {
-        $this->userManager = $userManager;
-    }
-
-    /**
-     * @return UserManagerInterface
-     */
-    public function getUserManager()
-    {
-        return $this->userManager;
-    }
-   ..
-}
 ```
 
 Next, we need to create the a yml [service extension](http://symfony.com/doc/current/cookbook/bundles/extension.html) and the configuration class so that the framework can load it during the bootstrap.
@@ -266,155 +242,53 @@ class Configuration implements ConfigurationInterface
 }
 ```
 
-Now refresh the dashboard url.
-
-```
-http://songbird.dev/app_dev.php/admin/dashboard
-```
-
-The user admin block is automatically added to the dashboard simply by configuring the config.yml. We have achieved this without coding.
-
-![admin user block](images/admin_user_block.png)
-
 ## Filtering the User fields
 
-The user table has many fields. Remember that you specified what fields you want to display in src/AppBundle/Form/UserType.php? By using SonataAdmin, the creation of forms is now managed by the UserAdmin class. It should be self explanatory. Let us modify the fields.
+The user table has many fields. Remember that you specified what fields you want to display in src/AppBundle/Form/UserType.php? By using EasyAdmin, the creation of forms is now managed by the config. It should be self explanatory. Let us modify the fields.
 
 ```
-# src/appBundle/Admin/UserAdmin.php
+# app/config/easyadmin/user.yml
 
-...
-use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
-use Symfony\Component\Form\Extension\Core\Type\PasswordType;
-...
-
-class UserAdmin extends Admin
-{
-    private $userManager;
-
-    /**
-     * @param DatagridMapper $datagridMapper
-     */
-    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
-    {
-        $datagridMapper
-            ->add('id')
-            ->add('username')
-            ->add('email')
-            ->add('firstname')
-            ->add('lastname')
-            ->add('enabled')
-            ->add('lastLogin')
-            ->add('locked')
-            ->add('roles')
-            ->add('modified')
-            ->add('created')
-        ;
-    }
-
-
-    /**
-     * @param ListMapper $listMapper
-     */
-    protected function configureListFields(ListMapper $listMapper)
-    {
-        $listMapper
-            ->add('id')
-            ->add('firstname')
-            ->add('lastname')
-            ->add('username')
-            ->add('email')
-            ->add('enabled')
-            ->add('locked')
-            ->add('roles')
-            ->add('modified')
-            ->add('_action', 'actions', array(
-                'actions' => array(
-                    'show' => array(),
-                    'edit' => array(),
-                    'delete' => array(),
-                )
-            ))
-        ;
-    }
-
-    /**
-     * @param FormMapper $formMapper
-     */
-    protected function configureFormFields(FormMapper $formMapper)
-    {
-        // if its an edit route, make password non-compulsory
-        $passwordRequired = (preg_match('/_edit$/', $this->getRequest()->get('_route'))) ? false : true;
-
-        $formMapper
-            ->add('username')
-            ->add('email')
-            ->add('firstname')
-            ->add('lastname')
-            ->add('plainPassword', RepeatedType::class, array(
-                'type' => PasswordType::class,
-                'invalid_message' => 'The password fields must match.',
-                'required' => $passwordRequired,
-                'first_options'  => array('label' => 'Password'),
-                'second_options' => array('label' => 'Repeat Password'),
-            ))
-        ;
-        // allow these fields if super admin
-        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
-            $formMapper
-                ->add('enabled', 'checkbox', array(
-                    'label' => 'Account Enabled',
-                    'required' => false
-                ))
-                ->add('locked', 'checkbox', array(
-                    'label' => 'Account Locked',
-                    'required' => false
-                ))
-                ->add('roles')
-            ;
-        }
-    }
-
-
-    /**
-     * @param ShowMapper $showMapper
-     */
-    protected function configureShowFields(ShowMapper $showMapper)
-    {
-        $showMapper
-            ->add('firstname')
-            ->add('lastname')
-            ->add('username')
-            ->add('email')
-            ->add('enabled')
-            ->add('lastLogin')
-            ->add('locked')
-            ->add('roles');
-    }
-
-    public function preUpdate($user)
-    {
-        $this->getUserManager()->updateCanonicalFields($user);
-        $this->getUserManager()->updatePassword($user);
-    }
-
-    /**
-     * setUserManager
-     * @param UserManagerInterface $userManager fosuserbundle user manager
-     */
-    public function setUserManager(UserManagerInterface $userManager)
-    {
-        $this->userManager = $userManager;
-    }
-
-    /**
-     * @return UserManagerInterface
-     */
-    public function getUserManager()
-    {
-        return $this->userManager;
-    }
-}
+easy_admin:
+    entities:
+        User:
+            class: AppBundle\Entity\User
+            label: 'User Management'
+            # for new user
+            new:
+                fields:
+                  - username
+                  - firstname
+                  - lastname
+                  - { property: 'plainPassword', type: 'repeated', type_options: { type: 'Symfony\Component\Form\Extension\Core\Type\PasswordType', first_options: {label: 'Password'}, second_options: {label: 'Repeat Password'}, invalid_message: 'The password fields must match.'}}
+                  - { property: 'email', type: 'email', type_options: { trim: true } }
+                  - roles
+                  - enabled
+            edit:
+                  fields:
+                    - username
+                    - firstname
+                    - lastname
+                    - { property: 'plainPassword', type: 'repeated', type_options: { type: 'Symfony\Component\Form\Extension\Core\Type\PasswordType', required: false, first_options: {label: 'Password'}, second_options: {label: 'Repeat Password'}, invalid_message: 'The password fields must match.'}}
+                    - { property: 'email', type: 'email', type_options: { trim: true } }
+                    - roles
+                    - enabled
+                    - locked
+                    - expired
+            list:
+                title: 'User Listing'
+                fields:
+                  - id
+                  - username
+                  - email
+                  - firstname
+                  - lastname
+                  - last_login
+                  - enabled
+                  - locked
+                  - expired
+                  - roles
+                  - { property: 'last_login', type: 'datetime', format: 'j/n/Y' }
 ```
 
 We have trimed down all the fields to include only the relevant ones. The preUpdate function allows us to perform our own tasks like encrypting the password before the actual update function is called.
@@ -639,16 +513,12 @@ Previous Chapter: [Chapter 8: Fixtures, Fixtures, Fixtures](https://github.com/b
 
 ## Exercises
 
-* Try installing the [SonataUserBundle](https://sonata-project.org/bundles/user/2-2/doc/index.html) yourself and see the differences in this approach and Sonata's approach.
-
-* Try implementing the [acl](https://sonata-project.org/bundles/admin/master/doc/reference/security.html) rather than role based approach.
+* Try installing the [SonataAdminBundle](https://sonata-project.org/bundles/admin/master/doc/index.html) yourself and see the differences in both approach.
 
 ## References
 
-* [Sonata Admin Bundle](https://sonata-project.org/bundles/admin/3-x/doc/index.html)
+* [EasyAdminBundle](https://github.com/javiereguiluz/EasyAdminBundle)
 
-* [Sonata Block Bundle](https://sonata-project.org/bundles/block/master/doc/index.html)
+* [EasyAdminBundle and FOSUserBundle Integration](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/tutorials/fosuserbundle-integration.md)
 
-* [SonataUserBundle](https://sonata-project.org/bundles/user/3-x/doc/index.html)
-
-* [Sonata Admin Events](https://sonata-project.org/bundles/admin/master/doc/reference/events.html)
+* [EasyAdminBundle views configuration](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/book/4-edit-new-configuration.md#customizing-the-behavior-of-edit-and-new-views)
