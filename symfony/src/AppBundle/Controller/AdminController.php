@@ -2,6 +2,7 @@
 namespace AppBundle\Controller;
 
 use JavierEguiluz\Bundle\EasyAdminBundle\Controller\AdminController as BaseAdminController;
+use JavierEguiluz\Bundle\EasyAdminBundle\Event\EasyAdminEvents;
 
 class AdminController extends BaseAdminController
 {
@@ -25,7 +26,7 @@ class AdminController extends BaseAdminController
      */
     public function showUserAction()
     {
-
+        $this->dispatch(EasyAdminEvents::PRE_SHOW);
         $id = $this->request->query->get('id');
         $easyadmin = $this->request->attributes->get('easyadmin');
         $entity = $easyadmin['item'];
@@ -52,6 +53,7 @@ class AdminController extends BaseAdminController
      */
     protected function editUserAction()
     {
+        $this->dispatch(EasyAdminEvents::PRE_EDIT);
         $id = $this->request->query->get('id');
         $easyadmin = $this->request->attributes->get('easyadmin');
         $entity = $easyadmin['item'];

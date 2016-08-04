@@ -31,6 +31,7 @@ class AppSubscriber implements EventSubscriberInterface
         return array(
             EasyAdminEvents::PRE_LIST => 'checkUserRights',
             EasyAdminEvents::PRE_EDIT => 'checkUserRights',
+            EasyAdminEvents::PRE_SHOW => 'checkUserRights',
         );
     }
 
@@ -52,6 +53,7 @@ class AppSubscriber implements EventSubscriberInterface
         $entity = $this->container->get('request_stack')->getCurrentRequest()->query->get('entity');
         $action = $this->container->get('request_stack')->getCurrentRequest()->query->get('action');
         $user_id = $this->container->get('request_stack')->getCurrentRequest()->query->get('id');
+
         // if user management
         if ($entity == 'User') {
             // if edit and show
