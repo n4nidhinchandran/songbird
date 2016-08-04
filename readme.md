@@ -583,7 +583,7 @@ Since we are not going to use FOSUserBundle /profile url to change update user p
 
 ## Summary
 
-We have installed a popular Admin system called SonataAdminBundle. We then integrated FOSUserBundle with SonataAdminBundle and customised some fields. We have also configured the security of the system such that unless the logged in user is a super admin, the user can only update his own profile.
+We have installed a popular Admin system called EasyAdminBundle. We then integrated FOSUserBundle with EasyAdminBundle and customised some fields. We have also configured the security of the system such that unless the logged in user is a super admin, the user can only update his own profile.
 
 Remember to commit your changes before moving on to the next chapter.
 
