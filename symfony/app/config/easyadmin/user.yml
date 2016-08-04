@@ -14,6 +14,7 @@ easy_admin:
                   - roles
                   - enabled
             edit:
+                  actions: ['-delete', '-list']
                   fields:
                     - username
                     - firstname
@@ -24,6 +25,21 @@ easy_admin:
                     - enabled
                     - locked
                     - expired
+            show:
+                  actions: ['edit', '-delete', '-list']
+                  fields:
+                    - id
+                    - username
+                    - firstname
+                    - lastname
+                    - email
+                    - roles
+                    - enabled
+                    - locked
+                    - expired
+                    - { property: 'last_login', type: 'datetime' }
+                    - modified
+                    - created
             list:
                 title: 'User Listing'
                 fields:
@@ -32,9 +48,8 @@ easy_admin:
                   - email
                   - firstname
                   - lastname
-                  - last_login
                   - enabled
                   - locked
                   - expired
                   - roles
-                  - { property: 'last_login', type: 'datetime', format: 'j/n/Y' }
+                  - { property: 'last_login', type: 'datetime' }

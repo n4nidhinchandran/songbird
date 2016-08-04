@@ -2,6 +2,7 @@
 
 namespace AppBundle\EventListener;
 
+use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -12,17 +13,24 @@ class AppSubscriber implements EventSubscriberInterface
 {
     protected $container;
 
+    /**
+     * AppSubscriber constructor.
+     * @param ContainerInterface $container
+     */
     public function __construct(ContainerInterface $container) // this is @service_container
     {
         $this->container = $container;
     }
 
+    /**
+     * @return array
+     */
     public static function getSubscribedEvents()
     {
         // return the subscribed events, their methods and priorities
         return array(
             EasyAdminEvents::PRE_LIST => 'checkUserRights',
-            EasyAdminEvents::PRE_EDIT => 'checkUserRights'
+            EasyAdminEvents::PRE_EDIT => 'checkUserRights',
         );
     }
 
