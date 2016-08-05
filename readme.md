@@ -306,6 +306,7 @@ easy_admin:
                     - created
             list:
                 title: 'User Listing'
+                actions: ['show']
                 fields:
                   - id
                   - username
