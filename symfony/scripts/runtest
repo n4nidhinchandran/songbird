@@ -1,3 +1,3 @@
 #!/bin/bash
 scripts/resetapp
-bin/codecept run acceptance $@
+bin/codecept run acceptance $@ -c src/AppBundle

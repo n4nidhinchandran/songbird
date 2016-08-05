@@ -128,7 +128,7 @@ Since we have already deleted the test directory, let us create a new test dir.
 and update the acceptance file again
 
 ```
-# src/AppBundle/tests/acceptance.suite.yml
+# src/AppBundle/Tests/acceptance.suite.yml
 class_name: AcceptanceTester
 modules:
     enabled:
@@ -184,13 +184,13 @@ class Common
 Let us try creating story 10.6
 
 ```
-# src/AppBundle/Tests/acceptance/As_An_Admin/IWantToManageUsersCest.php
+# src/AppBundle/Tests/acceptance/As_An_Admin/IWantToManageAllUsersCest.php
 
 namespace As_An_Admin;
 use \AcceptanceTester;
 use \Common;
 
-class IWantToManageUsersCest
+class IWantToManageAllUsersCest
 {
     public function _before(AcceptanceTester $I)
     {
@@ -205,23 +205,23 @@ class IWantToManageUsersCest
         Common::login($I, ADMIN_USERNAME, ADMIN_PASSWORD);
     }
 
-   /**
-     * Scenario 1.61
+    /**
+     * Scenario 10.6.1
      * @before login
      */
     public function listAllProfiles(AcceptanceTester $I)
     {
-        $I->amOnPage('/admin/songbird/user/user/list');
-        $I->canSeeNumberOfElements('//table[@class="table table-bordered table-striped sonata-ba-list"]/tbody/tr',4);
+        $I->amOnPage('/admin/?action=list&entity=User');
+        $I->canSeeNumberOfElements('//table/tbody/tr',4);
     }
-    ...
+}
 ```
 
-Noticed that the login class is protected rather than public. Protected class won't be executed when we run the "runtest" command but we can use it as a pre-requisite when testing listAppProfiles scenario for example, ie the @login annotation.
+Noticed that the login class is protected rather than public. Protected class won't be executed when we run the "runtest" command but we can use it as a pre-requisite when testing listAppProfiles scenario for example, ie the @before login annotation.
 
 listAllProfiles function goes to the user listing page and check for 4 rows in the table with the "table table-bordered table-striped" classes. The way it is selected is by using [xpath](https://msdn.microsoft.com/en-us/library/ms256086(v=vs.110).aspx). How do I know about the amOnPage and canSeeNumberOfElements functions? Remembered you ran the command "/bin/codecept build" before? This command generates the AcceptanceTester class to be used in the Cest class. All the functions of the AcceptanceTester class can be found in the "src/AppBundle/Tests/_support/_generated/AcceptanceTesterActions.php" class.
 
-You might also notice that I was going to the user listing url directly rather than clicking on the user listing link. *Simulating user clicks should be the way to go because you are simulating user behaviour with acceptance testing**. We do not have the links at the moment. We will change the test once we have the UI updated.
+You might also notice that I was going to the user listing url directly rather than clicking on the "User Management" link. *Simulating user clicks should be the way to go because you are simulating user behaviour**. We do not have the links at the moment. We will change the test once we have the UI updated.
 
 Let us update the runtest script
 
@@ -231,7 +231,6 @@ Let us update the runtest script
 #!/bin/bash
 
 scripts/resetapp
-# start selenium server first using the default firefox profile. Feel free to create a new profile.
 bin/codecept run acceptance $@ -c src/AppBundle
 ```
 
@@ -240,18 +239,21 @@ and update the gitignore path
 ```
 # .gitignore
 ...
-src/AppBundle/tests/_output/*
+src/AppBundle/Tests/_output/*
 ```
 
 Then, run the test only for scenario 10.6.1
 
 ```
+# remember to start selenium server in a separate terminal
+-> scripts/start_selenium
+# switch to a new terminal and run the test
 -> scripts/runtest As_An_Admin/IWantToManageAllUsersCest.php:listAllProfiles
 ...
 OK (1 test, 1 assertion)
 ```
 
-Looking good, what if the test fails and you want to look at the logs? The log files are all in the "tests/_output/" directory.
+Looking good, what if the test fails and you want to look at the logs? The log files are all in the "Tests/_output/" directory.
 
 Let us write another test for scenario 10.6.2. We will simulate clicking on test3 show button and check the page is loading fine.
 
@@ -259,7 +261,7 @@ Let us write another test for scenario 10.6.2. We will simulate clicking on test
 # src/AppBundle/Tests/acceptance/As_An_Admin/IWantToManageAllUsersCest.php
 ...
    /**
-     * Scenario 10.62
+     * Scenario 10.6.2
      * @before login
      */
     public function showTest3User(AcceptanceTester $I)
@@ -283,7 +285,6 @@ Noticed the long xpath selector?
 
 This is the xpath for the show button. How do we know where it is located? We can inspect the elements with the developer tool (available in many browser) - see screenshot below:
 
-![developers tools](images/developer_tools.png)
 
 run the test now
 

@@ -11,4 +11,4 @@
 /bin/
 /composer.phar
 
-tests/_output/*
+src/AppBundle/Tests/_output/*
