@@ -530,7 +530,7 @@ Under the "show" action, I should not see the created field. User should also be
 
         $editForm->handleRequest($this->request);
         if ($editForm->isValid()) {
-
+            $this->preUpdateUserEntity($entity);
             $this->em->flush();
 
             $refererUrl = $this->request->query->get('referer', '');
