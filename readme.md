@@ -82,7 +82,7 @@ We will break the individual story down with user scenarios.
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.3.1</td><td>Account disabled</td><td>I login with the right credentials and access test3 profile page</td><td>I should see an "account disabled" message</td></tr>
+<tr><td>10.3.1</td><td>Account disabled</td><td>I login with the right credentials</td><td>I should see an "account disabled" message</td></tr>
 </table>
 
 <strong>Story ID 10.4: As a test1 user, I want to manage my profile, so that I can update it any time.</strong>

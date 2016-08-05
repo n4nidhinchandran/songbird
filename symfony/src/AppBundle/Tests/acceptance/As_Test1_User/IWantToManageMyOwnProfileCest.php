@@ -79,8 +79,8 @@ class IWantToManageMyOwnProfileCest
         // // I should be able to login with the new password
         $I->amOnPage('/logout');
         Common::login($I, TEST1_USERNAME, '123');
-        // at dashboard now
-        $I->canSee('Invalid credentials.');
+        // i can login and at dashboard now
+        $I->canSee('Access denied.');
 
         // reset everything back
         $I->amOnPage('/admin/?action=edit&entity=User&id=2');
