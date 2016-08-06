@@ -54,6 +54,7 @@ The idea is to do **actual coding in your host** (main operating system) and let
 
 # when prompted, leave default settings except for the followings:
 # database_host: 192.168.56.111
+# database_port: 3306
 # database_name: songbird
 # database_user: homestead
 # database_password: secret
