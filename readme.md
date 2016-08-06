@@ -111,7 +111,7 @@ and run the test again,
 -> app/console cache:clear --env=prod
 
 # remember to start selenium server
--> bin/codecept run acceptance
+-> vendor/bin/codecept run acceptance
 ...
 Time: 10.47 seconds, Memory: 11.50MB
 
@@ -135,7 +135,7 @@ In the runtest script,
 #!/bin/bash
 
 app/console cache:clear --no-warmup
-bin/codecept run acceptance
+vendor/bin/codecept run acceptance
 ```
 
 We have to also remember to start selenium server before we run the test. To make our live easy, let us create a script to automate starting selenium
