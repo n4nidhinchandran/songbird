@@ -121,8 +121,8 @@ Since we have already deleted the test directory, let us create a new test dir.
 
 ```
 -> cd src/AppBundle
--> ../../bin/codecept bootstrap
--> ../../bin/codecept build
+-> ../../vendor/bin/codecept bootstrap
+-> ../../vendor/bin/codecept build
 ```
 
 and update the acceptance file again
@@ -145,12 +145,12 @@ modules:
 Codeception is really flexible in the way we create the test scenarios. Take User Story 1 for example, we will break the user story down into directories and the scenario into cest class:
 
 ```
--> bin/codecept generate:cest acceptance As_Test1_User/IWantToLogin -c src/AppBundle
--> bin/codecept generate:cest acceptance As_An_Admin/IWantToLogin -c src/AppBundle
--> bin/codecept generate:cest acceptance As_Test3_User/IDontWantTologin -c src/AppBundle
--> bin/codecept generate:cest acceptance As_Test1_User/IWantToManageMyOwnProfile -c src/AppBundle
--> bin/codecept generate:cest acceptance As_Test1_User/IDontWantToManageOtherProfiles -c src/AppBundle
--> bin/codecept generate:cest acceptance As_An_Admin/IWantToManageAllUsers -c src/AppBundle
+-> vendor/bin/codecept generate:cest acceptance As_Test1_User/IWantToLogin -c src/AppBundle
+-> vendor/bin/codecept generate:cest acceptance As_An_Admin/IWantToLogin -c src/AppBundle
+-> vendor/bin/codecept generate:cest acceptance As_Test3_User/IDontWantTologin -c src/AppBundle
+-> vendor/bin/codecept generate:cest acceptance As_Test1_User/IWantToManageMyOwnProfile -c src/AppBundle
+-> vendor/bin/codecept generate:cest acceptance As_Test1_User/IDontWantToManageOtherProfiles -c src/AppBundle
+-> vendor/bin/codecept generate:cest acceptance As_An_Admin/IWantToManageAllUsers -c src/AppBundle
 ```
 
 We will create a common class in the bootstrap and define all the constants we need for the test.
@@ -238,7 +238,7 @@ Let us update the runtest script
 #!/bin/bash
 
 scripts/resetapp
-bin/codecept run acceptance $@ -c src/AppBundle
+vendor/bin/codecept run acceptance $@ -c src/AppBundle
 ```
 
 and update the gitignore path
