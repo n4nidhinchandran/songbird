@@ -254,7 +254,7 @@ The runtest script can now call the scripts/resetapp script to have a cleaner st
 
 #!/bin/bash
 scripts/resetapp
-bin/codecept run acceptance $@
+vendor/bin/codecept run acceptance $@
 ```
 
 What is "$@"? In bash, it means putting in the command line options that was passed into the runtest script. We can now execute only the RemovalTest like so:
