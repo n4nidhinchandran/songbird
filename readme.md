@@ -33,7 +33,7 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>11.1.1</td><td>Reset Password Successfully</td><td>I click on forget password in the login page and go through the whole resetting process</td><td>I should be redirected to the dashboard with a success message.</td></tr>
+<tr><td>11.1.1</td><td>Reset Password Successfully</td><td>I click on forget password in the login page and go through the whole resetting process</td><td>I should be redirected to the dashboard.</td></tr>
 </table>
 
 ## Customise the Login Page
@@ -473,85 +473,61 @@ Let's say we want to change the redirection to user's dashboard after successful
 
 We noted that the system dispatches a FOSUserEvents::RESETTING_RESET_SUCCESS event after the form submission is successful. This give us the opportunity to change the response so that the whole redirection logic could be skipped.
 
-Let us add a new service to listen to the fos_user.resetting.reset.success event.
-
+Let us update the subscriber class to do our own redirection.
 ```
-# src/Songbird/UserBundle/Resources/config/services.yml
+# src/AppBundle/EventListener/AppSubscriber.php
 
 ...
-    songbird.admin.user.show.filter:
-        class: AppBundle\EventListener\UserCustomAction
-        arguments: ['@service_container']
-        tags:
-            - { name: kernel.event_listener, event: sonata.admin.event.configure.show, method: sonataAdminCheckUserRights }
-
-    songbird.admin.user.form.filter:
-        class: AppBundle\EventListener\UserCustomAction
-        arguments: ['@service_container']
-        tags:
-            - { name: kernel.event_listener, event: sonata.admin.event.configure.form, method: sonataAdminCheckUserRights }
-
-    songbird.password.reset.success:
-        class: AppBundle\EventListener\UserCustomAction
-        arguments: ['@service_container']
-        tags:
-            - { name: kernel.event_listener, event: fos_user.resetting.reset.success, method: redirectUserAfterPasswordReset }
-...
-```
-
-Noticed that we have made a few changes in addition to adding a new songbird.password.reset.success container. We have passed the container to songbird.admin.user.form.filter and songbird.admin.user.show.filter as well. We will explain this later.
-
-The UserCustomAction class code is now updated as follows:
-
-```
-# src/AppBundle/EventListener/UserCustomAction.php
-
-namespace AppBundle\EventListener;
-
-use Sonata\AdminBundle\Event\ConfigureEvent;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use FOS\UserBundle\FOSUserEvents;
 use FOS\UserBundle\Event\FormEvent;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\DependencyInjection\Container;
-
-class UserCustomAction
-{
+...
 
     /**
-     * @var Container
+     * @return array
      */
-    private $container;
-
-    /**
-     * Constructor
-     *
-     * @param Container $container
-     */
-    public function __construct(Container $container)
+    public static function getSubscribedEvents()
     {
-        $this->container = $container;
+        // return the subscribed events, their methods and priorities
+        return array(
+            EasyAdminEvents::PRE_LIST => 'checkUserRights',
+            EasyAdminEvents::PRE_EDIT => 'checkUserRights',
+            EasyAdminEvents::PRE_SHOW => 'checkUserRights',
+            FOSUserEvents::RESETTING_RESET_SUCCESS => 'redirectUserAfterPasswordReset'
+        );
     }
 
     /**
-     * show an error if user is not superadmin and tries to manage other user details
+     * show an error if user is not superadmin and tries to manage restricted stuff
      *
-     * @param  ConfigureEvent $event sonata admin event
+     * @param GenericEvent $event event
      * @return null
+     * @throws AccessDeniedException
      */
-    public function sonataAdminCheckUserRights(ConfigureEvent $event)
+    public function checkUserRights(GenericEvent $event)
     {
-        // ignore this if user is admin
-        if ($event->getAdmin()->isGranted('ROLE_SUPER_ADMIN')) {
+
+        // if super admin, allow all
+        if ($this->container->get('security.authorization_checker')->isGranted('ROLE_SUPER_ADMIN')) {
             return;
         }
 
-        $user_id = $this->container->get('request_stack')->getCurrentRequest()->get('id');
+        $entity = $this->container->get('request_stack')->getCurrentRequest()->query->get('entity');
+        $action = $this->container->get('request_stack')->getCurrentRequest()->query->get('action');
+        $user_id = $this->container->get('request_stack')->getCurrentRequest()->query->get('id');
 
-        // we can get container from ->getAdmin()->getConfigurationPool()->getContainer()
-        $session_id = $this->container->get('security.token_storage')->getToken()->getUser()->getId();
-        if ($user_id != $session_id) {
-            throw new AccessDeniedException();
+        // if user management
+        if ($entity == 'User') {
+            // if edit and show
+            if ($action == 'edit' || $action == 'show') {
+                // check user is himself
+                if ($user_id == $this->container->get('security.token_storage')->getToken()->getUser()->getId()) {
+                    return;
+                }
+            }
         }
+        // throw exception in all cases
+        throw new AccessDeniedException();
     }
 
     /**
@@ -562,22 +538,23 @@ class UserCustomAction
      */
     public function redirectUserAfterPasswordReset(FormEvent $event)
     {
-        $url = $this->container->get('router')->generate('sonata_admin_dashboard');
+        $url = $this->container->get('router')->generate('admin');
         $event->setResponse(new RedirectResponse($url));
     }
-}
+    ...
+
 ```
 
-In UserCustomAction class, we have added a constructor to have access to the container. Once we have access to the container, we have access to everything. The sonataAdminCheckUserRights function has also been refactored to use the $this->container to access other services instead.
+Now try to go through the full password reset functionality and see if it works for you.
 
-Now try to go through the full password reset functionality and see if it works for you. If everything goes well, you should see a "The password has been reset successfully" after changing the password.
+If everything goes well, you should be redirected to the admin dashboard after the password is reset successfully.
 
 ## Update BDD (Optional)
 
 Based on the user story, let us create a new cest file
 
 ```
--> bin/codecept generate:cest acceptance As_Test1_User/IWantToResetPasswordWithoutLoggingIn -c src/AppBundle/
+-> vendor/bin/codecept generate:cest acceptance As_Test1_User/IWantToResetPasswordWithoutLoggingIn -c src/AppBundle/
 ```
 
 To automate the checking of emails, we need the mailcatcher module for codeception. Let us update composer
@@ -586,9 +563,7 @@ To automate the checking of emails, we need the mailcatcher module for codecepti
 # composer.json
 ...
 "require-dev": {
-    "sensio/generator-bundle": "2.5.3",
-    "codeception/codeception": "2.1.1",
-    "doctrine/doctrine-fixtures-bundle": "2.2.0"
+    ...
     "captbaritone/mailcatcher-codeception-module": "1.*"
 },
 ...
@@ -622,7 +597,7 @@ modules:
 we can now rebuild the libraries
 ```
 # this command will create the mail functions for us to use
--> bin/codecept build -c src/AppBundle
+-> vendor/bin/codecept build -c src/AppBundle
 ```
 
 Do a git diff to see all the mail functions added:
@@ -670,7 +645,7 @@ class IWantToResetPasswordWithoutLoggingInCest
         $I->click('_submit');
         $I->canSee('It contains a link');
 
-       // Clear old emails from MailCatcher
+        // Clear old emails from MailCatcher
         $I->seeInLastEmail("Hello test1");
         $link = $I->grabFromLastEmail('@http://(.*)@');
         $I->amOnUrl($link);
@@ -679,22 +654,26 @@ class IWantToResetPasswordWithoutLoggingInCest
         $I->fillField('//input[@id="fos_user_resetting_form_plainPassword_first"]', '1111');
         $I->fillField('//input[@id="fos_user_resetting_form_plainPassword_second"]', '1111');
         $I->click('_submit');
+        // at dashbpard
+        $I->canSee('Access denied');
+        // now at show page
+        $I->amOnPage('/admin/?action=show&entity=User&id=2');
         $I->canSee('The password has been reset successfully');
-        $I->canSeeInCurrentUrl('/admin/dashboard');
 
         // now login with the new password
         $this->login($I, TEST1_USERNAME, '1111');
 
         // db has been changed. update it back
-        $I->amOnPage('/admin/app/user/2/edit');
+        $I->amOnPage('/admin/?action=edit&entity=User&id=2');
         $I->fillField('//input[contains(@id, "_plainPassword_first")]', TEST1_USERNAME);
         $I->fillField('//input[contains(@id, "_plainPassword_second")]', TEST1_PASSWORD);
-        $I->click('btn_update_and_edit');
-        $I->canSee('has been successfully updated');
+        $I->click('//button[@type="submit"]');
+        // i am on the show page
+        $I->canSeeInCurrentUrl('/admin/?action=show&entity=User&id=2');
 
-        // As a test, i should be able to login with the old password
+        // i should be able to login with the old password
         $this->login($I);
-        $I->canSeeInCurrentUrl('/admin/dashboard');
+        $I->canSee('Access denied.');
     }
 }
 ```
@@ -707,7 +686,7 @@ ready for testing?
 
 ## Summary
 
-We have updated the aesthetics of the Login and request password change page. By listening to the reset password event, we redirect user to the dashboard rather than the show profile page. Finally, we wrote BDD tests to make sure this functionality is repeatable in the future.
+We have updated the aesthetics of the Login and request password change page. By listening to the reset password event, we redirect user to the dashboard when the event is triggered. Finally, we wrote BDD tests to make sure this functionality is repeatable in the future.
 
 Next Chapter: [Chapter 12: The Admin Panel Part 2](https://github.com/bernardpeh/songbird/tree/chapter_12)
 
@@ -727,8 +706,6 @@ Previous Chapter: [Chapter 10: BDD With Codeception (Optional)](https://github.c
 * (Optional) Write BDD test for this chapter.
 
 ## References
-
-* [Sonata Admin Templating](https://sonata-project.org/bundles/admin/master/doc/reference/templates.html)
 
 * [Twig Templating](http://twig.sensiolabs.org/doc/templates.html)
 
