@@ -780,12 +780,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/FriendsOfSymfony/FOSUserBundle.git",
-                "reference": "edbf8401e81faaf570e54dcd3b35cfda953f1338"
+                "reference": "07ec96d93f03650e7480e0637fcd51eee6575c12"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/edbf8401e81faaf570e54dcd3b35cfda953f1338",
-                "reference": "edbf8401e81faaf570e54dcd3b35cfda953f1338",
+                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSUserBundle/zipball/07ec96d93f03650e7480e0637fcd51eee6575c12",
+                "reference": "07ec96d93f03650e7480e0637fcd51eee6575c12",
                 "shasum": ""
             },
             "require": {
@@ -844,7 +844,7 @@
             "keywords": [
                 "User management"
             ],
-            "time": "2016-07-31 15:14:05"
+            "time": "2016-08-04 10:13:39"
         },
         {
             "name": "incenteev/composer-parameter-handler",
@@ -899,16 +899,16 @@
         },
         {
             "name": "javiereguiluz/easyadmin-bundle",
-            "version": "v1.15.0",
+            "version": "v1.15.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/javiereguiluz/EasyAdminBundle.git",
-                "reference": "e67dd3ca92346b97e554bf2118660ff958147326"
+                "reference": "044e569a12011474dcbdcedc4f298d5f30cf4dff"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/javiereguiluz/EasyAdminBundle/zipball/e67dd3ca92346b97e554bf2118660ff958147326",
-                "reference": "e67dd3ca92346b97e554bf2118660ff958147326",
+                "url": "https://api.github.com/repos/javiereguiluz/EasyAdminBundle/zipball/044e569a12011474dcbdcedc4f298d5f30cf4dff",
+                "reference": "044e569a12011474dcbdcedc4f298d5f30cf4dff",
                 "shasum": ""
             },
             "require": {
@@ -978,7 +978,7 @@
                 "backend",
                 "generator"
             ],
-            "time": "2016-07-10 19:24:38"
+            "time": "2016-08-04 15:40:39"
         },
         {
             "name": "jdorn/sql-formatter",

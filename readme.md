@@ -1,32 +1,14 @@
-# Chapter 10: BDD With Codeception (Optional)
+# Chapter 11: Customising the Login Process
 
-This chapter is optional, feel free to skip it if you already have your own testing framework in place.
-
-Behavioural-Driven-Development (BDD) is best used as [integration testing](https://en.wikipedia.org/wiki/Integration_testing). It is the concept of writing tests based on user's behaviour. The way users interact with the software defines the requirements for the software. Once we know the requirements, we are able to write tests and simulate user's interaction with the software.
-
-In BDD, each user's requirement (user story) can be created using the following template:
-
-```
-As a ...
-I (don't) want to ...
-So that ...
-```
-
-We can then further breakdown the story into scenarios. For each scenario, we define the "When" (user's action) and the "Then" (acceptance criteria).
-
-```
-Given scenario
-When ...
-Then ...
-```
-
-It is a good idea to create a matrix for user stories and test scenarios to fully capture user's requirement as part of the functional specifications.
+In the previous chapters, we have created the admin area and wrote tests for managing users in the admin area. The login page and admin area is still looking plain at the moment. There are still lots to do but let us take a break from the backend logic and look at frontend templating. Symfony is using twig as the default templating engine. If you new to twig, have a look at [twig](http://http://twig.sensiolabs.org/doc/templates.html) website. In this chapter, we will touch up the login interface.
 
 ## Objectives
 
-> * User Stories
-> * User Scenarios
-> * Creating the Cest Class
+> * Define User Stories and Scenarios
+> * Customise the Login Page
+> * Customise the Request Password Page
+> * Customise the Reset Password Process
+> * Update BDD (Optional)
 
 ## Pre-setup
 
@@ -36,96 +18,588 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 # check your branch
 -> git status
 # start branching now
--> git checkout -b my_chapter10
+-> git checkout -b my_chapter11
 ```
-## User Stories
+## Defining User Stories and Scenarios
 
-Let us define the user stories for this chapter. We will define the user stories before each chapter from now on.
-
-**User Story 10: User Management**
+**11. Reset Password**
 
 <table>
 <tr><td><strong>Story Id</strong></td><td><strong>As a</strong></td><td><strong>I</strong></td><td><strong>So that I</strong></td></tr>
-<tr><td>10.1</td><td>test1 user</td><td>want to login</td><td>can access admin functions</td></tr>
-<tr><td>10.2</td><td>admin user</td><td>want to login</td><td>can access admin functions</td></tr>
-<tr><td>10.3</td><td>test3 user</td><td>don't want to login</td><td>can prove that this account is disabled</td></tr>
-<tr><td>10.4</td><td>test1 user</td><td>want to manage my own profile</td><td>can update it any time</td></tr>
-<tr><td>10.5</td><td>test1 user</td><td>dont't want to manage other profiles</td><td>don't breach security</td></tr>
-<tr><td>10.6</td><td>admin user</td><td>want to manage all users</td><td>can control user access of the system</td></tr>
+<tr><td>11.1</td><td>test1 user</td><td>want to reset my password without logging in</td><td>have a way to access my account in case I forget or loses my password.</td></tr>
 </table>
 
-## User Scenarios
-
-We will break the individual story down with user scenarios.
-
-<strong>Story ID 10.1: As a test1 user, I want to login, so that I can access admin functions.</strong>
+<strong>Story ID 11.1: As a test1 user, I want to be able to reset my password without logging in, so that I have a way to access my account in case I forget or loses my password.</strong>
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.1.1</td><td>Wrong login credentials</td><td>I login with the wrong credentials</td><td>I should see an error message</td></tr>
-<tr><td>10.1.2</td><td>See my dashboard content</td><td>I login correctly</td><td>I should see Access Denied</td></tr>
-<tr><td>10.1.3</td><td>Logout successfully</td><td>I go to the logout url</td><td>I should be redirected to the home page</td></tr>
-<tr><td>10.1.4</td><td>Acess admin url without logging in</td><td>go to admin url without logging in</td><td>I should be redirected to the login page</td></tr>
+<tr><td>11.1.1</td><td>Reset Password Successfully</td><td>I click on forget password in the login page and go through the whole resetting process</td><td>I should be redirected to the dashboard with a success message.</td></tr>
 </table>
 
-<strong>Story ID 10.2: As a admin user, I want to login, so that I can access admin functions.</strong>
+## Customise the Login Page
 
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.2.1</td><td>Wrong login credentials</td><td>I login with the wrong credentials</td><td>I should see an error message</td></tr>
-<tr><td>10.2.2</td><td>See my dashboard content</td><td>I login correctly</td><td>I should see the text User Management</td></tr>
-<tr><td>10.2.3</td><td>Logout successfully</td><td>I go to the logout url</td><td>I should be redirected to the home page</td></tr>
-<tr><td>10.2.4</td><td>Acess admin url without logging in</td><td>go to admin url without logging in</td><td>I should be redirected to the login page</td></tr>
-</table>
-
-<strong>Story ID 10.3: As a test3 user, I don't want to login successfully, so that I can prove that this account is disabled.</strong>
-
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.3.1</td><td>Account disabled</td><td>I login with the right credentials</td><td>I should see an "account disabled" message</td></tr>
-</table>
-
-<strong>Story ID 10.4: As a test1 user, I want to manage my profile, so that I can update it any time.</strong>
-
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.4.1</td><td>Show my profile</td><td>I go to "/admin/?action=show&entity=User&id=2"</td><td>I should see test1@songbird.app</td></tr>
-<tr><td>10.4.2</td><td>Hid uneditable fields</td><td>I go to "/admin/?action=edit&entity=User&id=2"</td><td>I should not see enabled, locked and roles fields</td></tr>
-<tr><td>10.4.3</td><td>Update Firstname Only</td><td>I go to "/admin/?action=edit&entity=User&id=2" And update firstname only And Submit</td><td>I should see content updated</td></tr>
-<tr><td>10.4.4</td><td>Update Password Only</td><td>I go to "/admin/?action=edit&entity=User&id=2" And update password And Submit And Logout And Login Again</td><td>I should see content updated And be able to login with the new password</td></tr>
-</table>
-
-<strong>Story ID 10.5: As a test1 user, I don't want to manage other profiles, so that I don't breach security.</strong>
-
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.5.1</td><td>List all profiles</td><td>I go to "/admin/?action=list&entity=User" url</td><td>I should get an "access denied" error.</td></tr>
-<tr><td>10.5.2</td><td>Show test2 profile</td><td>I go to "/admin/?action=show&entity=User&id=3"</td><td>I should get an "access denied" error.</td></tr>
-<tr><td>10.5.3</td><td>Edit test2 user profile</td><td>I go to "/admin/?action=edit&entity=User&id=3"</td><td>I should get an "access denied" error</td></tr>
-<tr><td>10.5.4</td><td>See admin dashboard content</td><td>I login correctly</td><td>I should not see User Management Text</td></tr>
-</table>
-
-<strong>Story ID 10.6: As an admin user, I want to manage all users, so that I can control user access of the system.</strong>
-
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.6.1</td><td>List all profiles</td><td>I go to "/admin/?action=list&entity=User" url</td><td>I should see a list of all users in a table</td></tr>
-<tr><td>10.6.2</td><td>Show test3 user</td><td>I go to "/admin/?action=show&entity=User&id=4" url</td><td>I should see test3 user details</td></tr>
-<tr><td>10.6.3</td><td>Edit test3 user</td><td>I go to "/admin/?action=edit&entity=User&id=4" url And update lastname</td><td>I should see test3 lastname updated on the "List all users" page</td></tr>
-<tr><td>10.6.4</td><td>Create and Delete new user</td><td>I got to "/admin/?action=new&entity=User" And fill in the required fields And Submit And Delete the new user</td><td>I should see the new user created and deleted again in the listing page.</td></tr>
-</table>
-
-## Creating the Cest Class
-
-Since we have already deleted the test directory, let us create a new test dir.
+I have installed [twitter bootstrap](http://getbootstrap.com/) in the public dir and created a simple logo for Songbird. You can get all the files by checking out from chapter_11 repo. My Resources dir looks like this:
 
 ```
--> cd src/AppBundle
--> ../../bin/codecept bootstrap
--> ../../bin/codecept build
+# src/AppBundle/Resource
+
+public/
+├── css
+│   ├── bootstrap-theme.css
+│   ├── bootstrap-theme.css.map
+│   ├── bootstrap-theme.min.css
+│   ├── bootstrap-theme.min.css.map
+│   ├── bootstrap.css
+│   ├── bootstrap.css.map
+│   ├── bootstrap.min.css
+│   ├── bootstrap.min.css.map
+│   └── signin.css
+├── fonts
+│   ├── glyphicons-halflings-regular.eot
+│   ├── glyphicons-halflings-regular.svg
+│   ├── glyphicons-halflings-regular.ttf
+│   ├── glyphicons-halflings-regular.woff
+│   └── glyphicons-halflings-regular.woff2
+├── images
+│   └── logo.png
+└── js
+    ├── bootstrap.js
+    ├── bootstrap.min.js
+    ├── jquery.min.js
+    └── npm.js
+
 ```
 
-and update the acceptance file again
+Let us create our own base layout. The idea is to extend this layout for all twig files that we create in the future.
+
+```
+# src/AppBundle/Resources/views/base.html.twig
+
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{% block title %}{% endblock %}</title>
+	{% block stylesheets %}
+	   <link href="{{ asset('bundles/app/css/bootstrap.min.css') }}" rel="stylesheet" />
+    {% endblock %}
+</head>
+<body>
+{% block body %}
+
+    {% block content %}{% endblock %}
+
+{% endblock %}
+
+{% block script %}
+    <script src="{{ asset('bundles/app/js/jquery.min.js') }}"></script>
+    <script src="{{ asset('bundles/app/js/bootstrap.min.js') }}"></script>
+{% endblock %}
+
+</body>
+</html>
+```
+
+To override FOSUserBundle template, have a look at the vendors/friendsofsymfony/Resources/views. Thanks to inheritance, we can override login.html.twig based on the layout that we have created.
+
+Let us create the login file
+```
+-> cd src/AppBundle/Resources/views
+-> mkdir Security
+-> touch Security/login.html.twig
+```
+
+Now the actual login file:
+
+```
+# src/AppBundle/Resources/views/Security/login.html.twig
+
+{% extends "AppBundle::base.html.twig" %}
+
+{% block title %}
+    {{ 'layout.login'|trans({}, 'FOSUserBundle') }}
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('bundles/app/css/signin.css') }}" rel="stylesheet" />
+{% endblock %}
+
+{% trans_default_domain 'FOSUserBundle' %}
+
+{% block content %}
+
+<img src="{{ asset('bundles/app/images/logo.png') }}" class="center-block img-responsive" alt="Songbird" />
+
+<div class="container">
+    <div class="text-center">
+        {% if is_granted("IS_AUTHENTICATED_REMEMBERED") %}
+            {{ 'layout.logged_in_as'|trans({'%username%': app.user.username}, 'FOSUserBundle') }} |
+            <a href="{{ path('fos_user_security_logout') }}">
+                {{ 'layout.logout'|trans({}, 'FOSUserBundle') }}
+            </a>
+        {% endif %}
+        <form class="form-signin" action="{{ path("fos_user_security_check") }}" method="post">
+            {% if error %}
+                <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+            {% endif %}
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}" />
+
+            <input type="text" id="username" name="_username" class="form-control" value="{{ last_username }}" required="required" placeholder="{{ 'security.login.username'|trans }}" />
+
+            <input type="password" id="password" name="_password" class="form-control" required="required" placeholder="{{ 'security.login.password'|trans }}" />
+
+            <div class="checkbox">
+              <label>
+                    <input type="checkbox" id="remember_me" name="_remember_me" value="on" />{{ 'security.login.remember_me'|trans }}
+              </label>
+            </div>
+
+            <input class="btn btn-lg btn-primary btn-block" type="submit" id="_submit" name="_submit" value="{{ 'security.login.submit'|trans }}" />
+        </form>
+    </div>
+</div>
+{% endblock %}
+```
+
+Once we are done, we can get the assets over to the web dir.
+
+```
+-> app/console assets:install
+```
+
+This command basically copies everything under the public dir of all bundles over to the document root dir (/web).
+
+What if we are constantly updating our css and want to see updates in the browser? We can use symlink like so.
+
+```
+-> app/console assets:install --symlink
+```
+
+unfortunately, running this command in the host will use the host dir structure which we don't want. We need the dir structure of the vm. Therefore, let us create an assetinstall script to shell into the vm and do the symlink.
+
+```
+# scripts/assetsinstall
+
+#!/bin/bash
+vagrant ssh -c "cd /home/vagrant/symfony;app/console assets:install --symlink"
+```
+
+make the script executable and lets run it.
+
+```
+-> chmod u+x scripts/assetsinstall
+-> ./scripts/assetsinstall
+ Trying to install assets as absolute symbolic links.
+
+ --- ------------------- ------------------
+      Bundle              Method / Error
+ --- ------------------- ------------------
+  ✔   FrameworkBundle     absolute symlink
+  ✔   SonataCoreBundle    absolute symlink
+  ✔   SonataAdminBundle   absolute symlink
+  ✔   AppBundle           absolute symlink
+  ✔   User                absolute symlink
+ --- ------------------- ------------------
+
+
+ [OK] All assets were successfully installed.
+
+Connection to 127.0.0.1 closed.
+```
+
+Looking good, let us go to http://songbird.app/app_dev.php/login and look at our login page now
+
+![login screen](images/login_screen.png)
+
+## Customise the Request Password Page
+
+A full login process should also include the password reset functionality in case the user forgets his password. Fortunately again, FOSUSerBundle has all these features built-in already. We just need to make minor tweaks to the process and customise the templates.
+
+The password reset process is as follows:
+
+1. User goes to the forget password page.
+2. User enters the username or email.
+3. User gets an email a reset link.
+4. User clicks on the email and goes to a password reset page.
+5. User enters the new password and click submit.
+6. User automatically gets redirected to the dashboard.
+
+We will put a link on the login page to the request password page. We can find all the links from the debug:router command (a command you should be familiar by now)
+
+```
+-> app/console debug:router | grep fos
+ fos_user_security_login                  GET|POST ANY    ANY  /login
+ fos_user_security_check                  POST     ANY    ANY  /login_check
+ fos_user_security_logout                 GET      ANY    ANY  /logout
+ fos_user_resetting_request               GET      ANY    ANY  /resetting/request
+ fos_user_resetting_send_email            POST     ANY    ANY  /resetting/send-email
+ fos_user_resetting_check_email           GET      ANY    ANY  /resetting/check-email
+ fos_user_resetting_reset                 GET|POST ANY    ANY  /resetting/reset/{token}
+```
+
+Let us add the new request password link
+
+```
+# src/AppBundle/Resources/views/Security/login.html.twig
+...
+  <input class="btn btn-lg btn-primary btn-block" type="submit" id="_submit" name="_submit" value="{{ 'security.login.submit'|trans }}" />
+
+  <div class="checkbox">
+    <a href="{{ path('fos_user_resetting_request') }}">forget password</a>
+  </div>
+...
+```
+
+![login with forget passwd](images/login_with_forget_password.png)
+
+By looking at vendors/friendsofsymfony/Resources/views, we can create all the required twig files to override.
+
+```
+-> cd src/AppBundle/Resources/views/
+-> mkdir Resetting
+-> touch Resetting/checkEmail.html.twig
+-> touch Resetting/passwordAlreadyRequested.html.twig
+-> touch Resetting/request.html.twig
+-> touch Resetting/reset.html.twig
+```
+
+Let us create the request password page based on the base.twig.html that we have created earlier.
+
+```
+# src/AppBundle/Resources/views/Resetting/request.html.twig
+
+{% extends "AppBundle::base.html.twig" %}
+
+{% trans_default_domain 'FOSUserBundle' %}
+
+{% block title %}
+    {{ 'resetting.request.submit'|trans }}
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('bundles/app/css/signin.css') }}" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+
+<img src="{{ asset('bundles/app/images/logo.png') }}" class="center-block img-responsive" alt="Songbird" />
+
+<div class="container">
+    <div class="text-center">
+        <h3>Enter Your Username or Password</h3>
+        <form class="form-signin" action="{{ path('fos_user_resetting_send_email') }}" method="post">
+            {% if invalid_username is defined %}
+                <div class="alert alert-danger">{{ 'resetting.request.invalid_username'|trans({'%username%': app.request.get('username')}) }}</div>
+            {% endif %}
+            <input type="text" id="username" name="username" class="form-control" required="required" value="{{ app.request.get('username') }}" placeholder="{{ 'resetting.request.username'|trans }}" />
+
+            <input class="btn btn-lg btn-primary btn-block" type="submit" id="_submit" name="_submit" value="{{ 'resetting.request.submit'|trans }}" />
+        </form>
+    </div>
+</div>
+{% endblock %}
+```
+
+From the login page, click on the forget password link and you should go to the request password page
+
+![request passwd](images/request_password.png)
+
+Likewise we are going to customise the password request success message.
+
+```
+# src/AppBundle/Resources/views/Resetting/checkEmail.html.twig
+
+{% extends "AppBundle::base.html.twig" %}
+
+{% trans_default_domain 'FOSUserBundle' %}
+
+{% block title %}
+    {{ 'resetting.request.submit'|trans }}
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('bundles/app/css/signin.css') }}" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+
+<img src="{{ asset('bundles/app/images/logo.png') }}" class="center-block img-responsive" alt="Songbird" />
+
+<div class="container">
+	<h3> </h3>
+	<div class="text-center">
+  	{{ 'resetting.check_email'|trans({'%email%': email}) }}
+  </div>
+</div>
+{% endblock %}
+```
+
+A successful password request looks like this:
+
+![passwd request success](images/password_request_success.png)
+
+What if you request password reset more than once in a day? FOSUserBundle actually doesn't allow you to do that. Let us create a custom template for it.
+
+```
+# src/AppBundle/Resources/views/Resetting/passwordAlreadyRequested.html.twig
+
+{% extends "AppBundle::base.html.twig" %}
+
+{% trans_default_domain 'FOSUserBundle' %}
+
+{% block title %}
+    {{ 'resetting.request.submit'|trans }}
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('bundles/app/css/signin.css') }}" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+
+<img src="{{ asset('bundles/app/images/logo.png') }}" class="center-block img-responsive" alt="Songbird" />
+
+<div class="container">
+        <h3>&nbsp;</h3>
+        <div class="text-center">
+                {{ 'resetting.password_already_requested'|trans }}
+  </div>
+</div>
+{% endblock %}
+```
+
+A screenshot of the password already requested error:
+
+![request already send](images/request_already_send.png)
+
+When the password request email is send successfully, the user should request a link to reset the password. Our vm has a mailcatcher configured to check all emails fired.
+
+Let us go to
+
+```
+http://songbird.app:1080
+```
+
+![request email](images/request_email.png)
+
+If you click on the link, you will go to the actual reset page to enter the new password.
+
+![reset passwd](images/reset_password.png)
+
+Try entering a new password and see what happens. Nothing? Because we haven't add the reset.html.twig. Let us do it now.
+
+```
+# src/AppBundle/Resources/views/Resetting/reset.html.twig
+
+{% extends "AppBundle::base.html.twig" %}
+
+{% trans_default_domain 'FOSUserBundle' %}
+
+{% block title %}
+    {{ 'resetting.request.submit'|trans }}
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('bundles/app/css/signin.css') }}" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+
+<img src="{{ asset('bundles/app/images/logo.png') }}" class="center-block img-responsive" alt="Songbird" />
+
+<div class="container">
+    <div class="text-center">
+        <h3>Enter Your New Password</h3>
+        <form class="form-signin" action="{{ path('fos_user_resetting_reset', {'token': token}) }}" method="post">
+
+          {% if (app.request.get('fos_user_resetting_form')['plainPassword']['first']) is defined and (app.request.get('fos_user_resetting_form')['plainPassword']['first'] != app.request.get('fos_user_resetting_form')['plainPassword']['second']) %}
+            <div class="alert alert-danger">
+              {{ 'fos_user.password.mismatch' | trans({}, 'validators') }}
+            </div>
+          {% endif %}
+
+          {{ form_widget(form._token) }}
+                <input type="password" id="fos_user_resetting_form_plainPassword_first" name="fos_user_resetting_form[plainPassword][first]" class="form-control" required="required" placeholder="{{ 'form.new_password'|trans }}" />
+
+                <input type="password" id="fos_user_resetting_form_plainPassword_second" name="fos_user_resetting_form[plainPassword][second]" class="form-control" required="required" placeholder="{{ 'form.new_password_confirmation'|trans }}" />
+
+          <input class="btn btn-lg btn-primary btn-block" type="submit" id="_submit" name="_submit" value="{{ 'resetting.reset.submit'|trans }}" />
+        </form>
+
+    </div>
+
+</div>
+{% endblock %}
+```
+
+After you entering the new password and clicking submit, FOSUserBundle will try to redirect you to the fos_user_profile_show route (the profile page which we deleted earlier in route.yml). Since the route no longer exists, you will get an error saying the route no longer exists.
+
+To see what is going on, have a look at  vendors/friendsofsymfony/user-bundle/Controller/ResettingController.php::resetAction function. The redirection magic happens after successful form submission.
+
+```
+# vendors/friendsofsymfony/user-bundle/Controller/ResettingController.php
+
+namespace FOS\UserBundle\Controller;
+...
+if ($form->isValid()) {
+    $event = new FormEvent($form, $request);
+    $dispatcher->dispatch(FOSUserEvents::RESETTING_RESET_SUCCESS, $event);
+
+    $userManager->updateUser($user);
+
+    if (null === $response = $event->getResponse()) {
+        $url = $this->generateUrl('fos_user_profile_show');
+        $response = new RedirectResponse($url);
+    }
+
+    $dispatcher->dispatch(FOSUserEvents::RESETTING_RESET_COMPLETED, new FilterUserResponseEvent($user, $request, $response));
+
+    return $response;
+}
+...
+```
+
+Let's say we want to change the redirection to user's dashboard after successful form submission. What can we do?
+
+## Customise the Reset Password Process
+
+We noted that the system dispatches a FOSUserEvents::RESETTING_RESET_SUCCESS event after the form submission is successful. This give us the opportunity to change the response so that the whole redirection logic could be skipped.
+
+Let us add a new service to listen to the fos_user.resetting.reset.success event.
+
+```
+# src/Songbird/UserBundle/Resources/config/services.yml
+
+...
+    songbird.admin.user.show.filter:
+        class: AppBundle\EventListener\UserCustomAction
+        arguments: ['@service_container']
+        tags:
+            - { name: kernel.event_listener, event: sonata.admin.event.configure.show, method: sonataAdminCheckUserRights }
+
+    songbird.admin.user.form.filter:
+        class: AppBundle\EventListener\UserCustomAction
+        arguments: ['@service_container']
+        tags:
+            - { name: kernel.event_listener, event: sonata.admin.event.configure.form, method: sonataAdminCheckUserRights }
+
+    songbird.password.reset.success:
+        class: AppBundle\EventListener\UserCustomAction
+        arguments: ['@service_container']
+        tags:
+            - { name: kernel.event_listener, event: fos_user.resetting.reset.success, method: redirectUserAfterPasswordReset }
+...
+```
+
+Noticed that we have made a few changes in addition to adding a new songbird.password.reset.success container. We have passed the container to songbird.admin.user.form.filter and songbird.admin.user.show.filter as well. We will explain this later.
+
+The UserCustomAction class code is now updated as follows:
+
+```
+# src/AppBundle/EventListener/UserCustomAction.php
+
+namespace AppBundle\EventListener;
+
+use Sonata\AdminBundle\Event\ConfigureEvent;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use FOS\UserBundle\Event\FormEvent;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\DependencyInjection\Container;
+
+class UserCustomAction
+{
+
+    /**
+     * @var Container
+     */
+    private $container;
+
+    /**
+     * Constructor
+     *
+     * @param Container $container
+     */
+    public function __construct(Container $container)
+    {
+        $this->container = $container;
+    }
+
+    /**
+     * show an error if user is not superadmin and tries to manage other user details
+     *
+     * @param  ConfigureEvent $event sonata admin event
+     * @return null
+     */
+    public function sonataAdminCheckUserRights(ConfigureEvent $event)
+    {
+        // ignore this if user is admin
+        if ($event->getAdmin()->isGranted('ROLE_SUPER_ADMIN')) {
+            return;
+        }
+
+        $user_id = $this->container->get('request_stack')->getCurrentRequest()->get('id');
+
+        // we can get container from ->getAdmin()->getConfigurationPool()->getContainer()
+        $session_id = $this->container->get('security.token_storage')->getToken()->getUser()->getId();
+        if ($user_id != $session_id) {
+            throw new AccessDeniedException();
+        }
+    }
+
+    /**
+     * Redirect user to another page after password reset is success
+     *
+     * @param  Configure $event GetResponseUserEvent
+     * @return null
+     */
+    public function redirectUserAfterPasswordReset(FormEvent $event)
+    {
+        $url = $this->container->get('router')->generate('sonata_admin_dashboard');
+        $event->setResponse(new RedirectResponse($url));
+    }
+}
+```
+
+In UserCustomAction class, we have added a constructor to have access to the container. Once we have access to the container, we have access to everything. The sonataAdminCheckUserRights function has also been refactored to use the $this->container to access other services instead.
+
+Now try to go through the full password reset functionality and see if it works for you. If everything goes well, you should see a "The password has been reset successfully" after changing the password.
+
+## Update BDD (Optional)
+
+Based on the user story, let us create a new cest file
+
+```
+-> bin/codecept generate:cest acceptance As_Test1_User/IWantToResetPasswordWithoutLoggingIn -c src/AppBundle/
+```
+
+To automate the checking of emails, we need the mailcatcher module for codeception. Let us update composer
+
+```
+# composer.json
+...
+"require-dev": {
+    "sensio/generator-bundle": "2.5.3",
+    "codeception/codeception": "2.1.1",
+    "doctrine/doctrine-fixtures-bundle": "2.2.0"
+    "captbaritone/mailcatcher-codeception-module": "1.*"
+},
+...
+```
+
+update composer
+```
+-> composer update
+```
+
+Let us now update the acceptance.suite.yml to use the new mailcatcher library
 
 ```
 # src/AppBundle/Tests/acceptance.suite.yml
@@ -139,58 +613,36 @@ modules:
             capabilities:
                 unexpectedAlertBehaviour: 'accept'
                 webStorageEnabled: true
+        - MailCatcher:
+            url: 'http://songbird.app'
+            port: '1080'
         - \Helper\Acceptance
 ```
 
-Codeception is really flexible in the way we create the test scenarios. Take User Story 1 for example, we will break the user story down into directories and the scenario into cest class:
-
+we can now rebuild the libraries
 ```
--> bin/codecept generate:cest acceptance As_Test1_User/IWantToLogin -c src/AppBundle
--> bin/codecept generate:cest acceptance As_An_Admin/IWantToLogin -c src/AppBundle
--> bin/codecept generate:cest acceptance As_Test3_User/IDontWantTologin -c src/AppBundle
--> bin/codecept generate:cest acceptance As_Test1_User/IWantToManageMyOwnProfile -c src/AppBundle
--> bin/codecept generate:cest acceptance As_Test1_User/IDontWantToManageOtherProfiles -c src/AppBundle
--> bin/codecept generate:cest acceptance As_An_Admin/IWantToManageAllUsers -c src/AppBundle
+# this command will create the mail functions for us to use
+-> bin/codecept build -c src/AppBundle
 ```
 
-We will create a common class in the bootstrap and define all the constants we need for the test.
+Do a git diff to see all the mail functions added:
 
 ```
-# src/AppBundle/Tests/acceptance/_bootstrap.php
-
-define('ADMIN_USERNAME', 'admin');
-define('ADMIN_PASSWORD', 'admin');
-define('TEST1_USERNAME', 'test1');
-define('TEST1_PASSWORD', 'test1');
-define('TEST2_USERNAME', 'test2');
-define('TEST2_PASSWORD', 'test2');
-// test3 Account is disabled? See data fixtures to confirm.
-define('TEST3_USERNAME', 'test3');
-define('TEST3_PASSWORD', 'test3');
-
-
-class Common
-{
-	public static function login(AcceptanceTester $I, $user, $pass)
-    {
-        $I->amOnPage('/login');
-        $I->fillField('_username', $user);
-        $I->fillField('_password', $pass);
-        $I->click('_submit');
-    }
-}
+-> git diff src/AppBundle/Tests/_support/_generated/AcceptanceTesterActions.php
 ```
 
-Let us try creating story 10.6
+See the [mailcatcher module](https://github.com/captbaritone/codeception-mailcatcher-module) for more information.
+
+Let us write the Cest file:
 
 ```
-# src/AppBundle/Tests/acceptance/As_An_Admin/IWantToManageAllUsersCest.php
+#src/AppBundle/Tests/acceptance/As_Test1_User/IWantToResetPasswordWithoutLoggingInCest.php
 
-namespace As_An_Admin;
+namespace As_Test1_User;
 use \AcceptanceTester;
 use \Common;
 
-class IWantToManageAllUsersCest
+class IWantToResetPasswordWithoutLoggingInCest
 {
     public function _before(AcceptanceTester $I)
     {
@@ -200,274 +652,84 @@ class IWantToManageAllUsersCest
     {
     }
 
-    protected function login(AcceptanceTester $I)
+    protected function login(AcceptanceTester $I, $username=TEST1_USERNAME, $password=TEST1_PASSWORD)
     {
-        Common::login($I, ADMIN_USERNAME, ADMIN_PASSWORD);
+        Common::login($I, $username, $password);
     }
 
     /**
-     * Scenario 10.6.1
-     * @before login
+     * Scenario 11.1.1
      */
-    public function listAllProfiles(AcceptanceTester $I)
+    public function resetPasswordSuccessfully(AcceptanceTester $I)
     {
-        $I->amOnPage('/admin/?action=list&entity=User');
-        $I->canSeeNumberOfElements('//table/tbody/tr',4);
+        // reset emails
+        $I->resetEmails();
+        $I->amOnPage('/login');
+        $I->click('forget password');
+        $I->fillField('//input[@id="username"]', 'test1');
+        $I->click('_submit');
+        $I->canSee('It contains a link');
+
+       // Clear old emails from MailCatcher
+        $I->seeInLastEmail("Hello test1");
+        $link = $I->grabFromLastEmail('@http://(.*)@');
+        $I->amOnUrl($link);
+
+        // The password has been reset successfully
+        $I->fillField('//input[@id="fos_user_resetting_form_plainPassword_first"]', '1111');
+        $I->fillField('//input[@id="fos_user_resetting_form_plainPassword_second"]', '1111');
+        $I->click('_submit');
+        $I->canSee('The password has been reset successfully');
+        $I->canSeeInCurrentUrl('/admin/dashboard');
+
+        // now login with the new password
+        $this->login($I, TEST1_USERNAME, '1111');
+
+        // db has been changed. update it back
+        $I->amOnPage('/admin/app/user/2/edit');
+        $I->fillField('//input[contains(@id, "_plainPassword_first")]', TEST1_USERNAME);
+        $I->fillField('//input[contains(@id, "_plainPassword_second")]', TEST1_PASSWORD);
+        $I->click('btn_update_and_edit');
+        $I->canSee('has been successfully updated');
+
+        // As a test, i should be able to login with the old password
+        $this->login($I);
+        $I->canSeeInCurrentUrl('/admin/dashboard');
     }
 }
 ```
-Noticed the [xpath](https://msdn.microsoft.com/en-us/library/ms256086(v=vs.110).aspx) selector?
+
+ready for testing?
 
 ```
-//table/tbody/tr
+./scripts/runtest As_Test1_User/IWantToResetPasswordWithoutLoggingInCest.php
 ```
-
-This is the xpath for the show button. How do we know where it is located? We can inspect the elements with the developer tool (available in many browser).
-
-You also noticed that the login class is protected rather than public. Protected class won't be executed when we run the "runtest" command but we can use it as a pre-requisite when testing listAppProfiles scenario for example, ie the @before login annotation.
-
-listAllProfiles function goes to the user listing page and checks for 4 rows in the table. How do I know about the amOnPage and canSeeNumberOfElements functions? Remembered you ran the command "/bin/codecept build" before? This command generates the AcceptanceTester class to be used in the Cest class. All the functions of the AcceptanceTester class can be found in the "src/AppBundle/Tests/_support/_generated/AcceptanceTesterActions.php" class.
-
-In the test, I used the user listing url directly rather than clicking on the "User Management" link. *Simulating user clicks should be the way to go because you are simulating user behaviour*. We will update the test again once we work on the UI updated.
-
-Let us update the runtest script
-
-```
-# scripts/runtest
-
-#!/bin/bash
-
-scripts/resetapp
-bin/codecept run acceptance $@ -c src/AppBundle
-```
-
-and update the gitignore path
-
-```
-# .gitignore
-...
-src/AppBundle/Tests/_output/*
-```
-
-Then, run the test only for scenario 10.6.1
-
-```
-# remember to start selenium server in a separate terminal
--> scripts/start_selenium
-# switch to a new terminal and run the test
--> scripts/runtest As_An_Admin/IWantToManageAllUsersCest.php:listAllProfiles
-...
-OK (1 test, 1 assertion)
-```
-
-Looking good, what if the test fails and you want to look at the logs? The log files are all in the "Tests/_output/" directory.
-
-Let us write another test for scenario 10.6.2. We will simulate clicking on test3 show button and check the page is loading fine.
-
-```
-# src/AppBundle/Tests/acceptance/As_An_Admin/IWantToManageAllUsersCest.php
-...
-   /**
-    * Scenario 10.6.2
-    * @before login
-    */
-   public function showTest3User(AcceptanceTester $I)
-   {
-       // go to user listing page
-       $I->amOnPage('/admin/?action=list&entity=User');
-       // click on show button
-       $I->click('Show');
-       $I->waitForText('test3@songbird.app');
-       $I->canSee('test3@songbird.app');
-   }
-...
-```
-
-run the test now
-
-```
--> scripts/runtest As_An_Admin/IWantToManageAllUsersCest.php:showTest3User
-```
-
-and you should get a success message.
-
-We will now write the test for scenario 10.6.3
-
-```
-# src/AppBundle/tests/acceptance/As_An_Admin/IWantToManageAllUsersCest.php
-...
-    /**
-     * Scenario 10.6.3
-     * @before login
-     */
-    public function editTest3User(AcceptanceTester $I)
-    {
-        // go to user listing page
-        $I->amOnPage('/admin/?action=list&entity=User');
-        // click on edit button
-        $I->click('Edit');
-        // check we are on the right url
-        $I->canSeeInCurrentUrl('/admin/?action=edit&entity=User');
-        $I->fillField('//input[@value="test3 Lastname"]', 'lastname3 updated');
-        // update
-        $I->click('//button[@type="submit"]');
-        // go back to listing page
-        $I->amOnPage('/admin/?action=list&entity=User');
-        $I->canSee('lastname3 updated');
-        // now revert username
-        $I->amOnPage('/admin/?action=edit&entity=User&id=4');
-        $I->fillField('//input[@value="lastname3 updated"]', 'test3 Lastname');
-        $I->click('//button[@type="submit"]');
-        $I->amOnPage('/admin/?action=list&entity=User');
-        $I->canSee('test3 Lastname');
-    }
-...
-```
-
-Run the test now to make sure everything is ok before moving on.
-
-```
--> scripts/runtest As_An_Admin/IWantToManageAllUsersCest.php:editTest3User
-```
-
-and scenario 10.6.4
-
-```
-# src/AppBundle/tests/acceptance/As_An_Admin/IWantToManageAllUsersCest.php
-...
-   /**
-    * Scenario 10.6.4
-    * @before login
-    */
-   public function createAndDeleteNewUser(AcceptanceTester $I)
-   {
-       // go to create page and fill in form
-       $I->amOnPage('/admin/?action=new&entity=User');
-       $I->fillField('//input[contains(@id, "_username")]', 'test4');
-       $I->fillField('//input[contains(@id, "_email")]', 'test4@songbird.app');
-       $I->fillField('//input[contains(@id, "_plainPassword_first")]', 'test4');
-       $I->fillField('//input[contains(@id, "_plainPassword_second")]', 'test4');
-       // submit form
-       $I->click('//button[@type="submit"]');
-       // go back to user list
-       $I->amOnPage('/admin/?entity=User&action=list');
-       // i should see new test4 user created
-       $I->canSee('test4@songbird.app');
-
-       // now delete user
-       // click on edit button
-       $I->click('Delete');
-       // wait for model box and then click on delete button
-       $I->waitForElementVisible('//button[@id="modal-delete-button"]');
-       $I->click('//button[@id="modal-delete-button"]');
-       // I can no longer see test4 user
-       $I->cantSee('test4@songbird.app');
-   }
-...
-```
-
-createNewUser test is a bit longer. I hope the comments are self explainatory.
-
-Let's run the test just for this scenario
-
-```
--> scripts/runtest As_An_Admin/IWantToManageAllUsersCest.php:createAndDeleteNewUser
-```
-
-Feeling confident? We can run all the test together now
-
-```
--> scripts/runtest
-
-Dropped database for connection named `songbird`
-Created database `songbird` for connection named default
-ATTENTION: This operation should not be executed in a production environment.
-
-Creating database schema...
-Database schema created successfully!
-  > purging database
-  > loading [1] AppBundle\DataFixtures\ORM\LoadUserData
-Codeception PHP Testing Framework v2.1.1
-Powered by PHPUnit 4.7.7 by Sebastian Bergmann and contributors.
-
-Acceptance Tests (9) -----------------------------------------------------
-Testing acceptance
-✔ IWantToLoginCest: Try to test (0.00s)
-✔ IWantToManageAllUsersCest: List all profiles (5.89s)
-✔ IWantToManageAllUsersCest: Show test3 user (2.35s)
-✔ IWantToManageAllUsersCest: Edit test3 user (6.33s)
-✔ IWantToManageAllUsersCest: Create and delete new user (6.29s)
-✔ IDontWantToManageOtherProfilesCest: Try to test (0.00s)
-✔ IWantToLoginCest: Try to test (0.00s)
-✔ IWantToManageMyOwnProfileCest: Try to test (0.00s)
-✔ IDontWantTologinCest: Try to test (0.00s)
---------------------------------------------------------------------------
-```
-
-Want more detail output? Try this
-
-```
--> ./scripts/runtest --steps
-```
-
-How about with debug mode
-
-```
--> ./scripts/runtest -d
-```
-
-Tip: If you are using mac and got "too many open files" error, you need to change the ulimit to something bigger
-
-```
--> ulimit -n 2048
-```
-
-Add this to your ~/.bash_profile if you want to change the limit everytime you open up a shell.
-
-If your machine is slow, sometimes it might take too long before certain text or element is being detected. In that case, use the "waitForxxx" function before the assert statement, like so
-
-```
-# wait for element to be loaded first
-# you can see all the available functions in src/AppBundle/Tests/_support/_generated/AcceptanceTesterActions.php
-$I->waitForElement('//div[contains(@class, "alert-success")]');
-# now we can do the assert statement
-$I->canSeeElement('//div[contains(@class, "alert-success")]');
-```
-
-We have only written the BDD tests for user story 10.6. Are you ready to write acceptance test for the other user stories?
-
-Writing test can be a boring process but essential if you want your software to be robust. A tip to note is that every scenario must have a closure so that it is self-contained. The idea is that you can run a test scenario by itself without affecting the rest of the scenarios. For example, if you change a password in a scenario, you have to remember to change it back so that you can run the next test without worrying that the password has been changed. There are several ways you can achieve this. How can you do it such that it doesn't affect performance?
-
-The workflow in this book is just one of many ways to write BDD tests. At the time of writing, many people uses [behat](http://docs.behat.org/en/v3.0/).
 
 ## Summary
 
-In this chapter, we wrote our own CEST classes based on different user stories and scenarios. We are now more confident that we have a way to test Songbird's user management functionality as we add more functionalities in the future.
+We have updated the aesthetics of the Login and request password change page. By listening to the reset password event, we redirect user to the dashboard rather than the show profile page. Finally, we wrote BDD tests to make sure this functionality is repeatable in the future.
 
-Remember to commit your changes before moving on the next chapter.
+Next Chapter: [Chapter 12: The Admin Panel Part 2](https://github.com/bernardpeh/songbird/tree/chapter_12)
 
+Previous Chapter: [Chapter 10: BDD With Codeception (Optional)](https://github.com/bernardpeh/songbird/tree/chapter_10)
 
-Next Chapter: [Chapter 11: Customising the Login Process](https://github.com/bernardpeh/songbird/tree/chapter_11)
-
-Previous Chapter: [Chapter 9: The Admin Panel Part 1](https://github.com/bernardpeh/songbird/tree/chapter_9)
-
-## Stuck? Checkout my code
+## Stuck? Checkout my code##
 
 ```
--> git checkout -b chapter_10 origin/chapter_10
+-> git checkout -b chapter_11 origin/chapter_11
 -> git clean -fd
 ```
 
 ## Exercises
 
-* Write acceptance test for User Stories 10.1, 10.2, 10.3, 10.4 and 10.5.
+* (Optional) Try to be fancy with the login layout and css.
 
-* (Optional) Can you think of other business rules for user management? Try adding your own CEST.
+* (Optional) Write BDD test for this chapter.
 
 ## References
 
-* [More BDD Readings](https://en.wikipedia.org/wiki/Behavior-driven_development)
+* [Sonata Admin Templating](https://sonata-project.org/bundles/admin/master/doc/reference/templates.html)
 
-* [User Story](https://en.wikipedia.org/wiki/User_story)
+* [Twig Templating](http://twig.sensiolabs.org/doc/templates.html)
 
-* [integration testing](https://en.wikipedia.org/wiki/Integration_testing)
+* [Codeception Mailcatcher Module](https://github.com/captbaritone/codeception-mailcatcher-module)
