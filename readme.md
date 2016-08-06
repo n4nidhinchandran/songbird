@@ -49,7 +49,7 @@ Now we can run composer update and initialise codeception
 
 ```
 -> composer update
--> bin/codecept bootstrap
+-> vendor/bin/codecept bootstrap
 ```
 
 Let us configure codecept acceptance test to work in Symfony.
@@ -76,7 +76,7 @@ Here, we are using [selenium](http://seleniumhq.org) webdriver to simulate brows
 We can now generate the acceptance actions based on the updated acceptance suite:
 
 ```
--> bin/codecept build
+-> vendor/bin/codecept build
 ```
 
 ## The First Test
@@ -85,7 +85,7 @@ We know that the default Symfony comes with the AppBundle example. Let us now te
 
 
 ```
--> bin/codecept generate:cest acceptance AppBundle
+-> vendor/bin/codecept generate:cest acceptance AppBundle
 ```
 
 The auto generated Cest class should look like this:
@@ -125,7 +125,7 @@ public function InstallationTest(AcceptanceTester $I)
 Now run the test:
 
 ```
--> bin/codecept run acceptance AppBundleCest
+-> vendor/bin/codecept run acceptance AppBundleCest
 ```
 
 and you should get an error complaining that there is no selenium server running...
@@ -151,7 +151,7 @@ Install latest version of [Java JDK](http://www.oracle.com/technetwork/java/java
 On the previous terminal, run the acceptance test again. You should see selenium firing up a new chrome browser and running the test.
 
 ```
--> bin/codecept run acceptance AppBundleCest
+-> vendor/bin/codecept run acceptance AppBundleCest
 ...
 # OK (1 test, 1 assertion)
 ```
