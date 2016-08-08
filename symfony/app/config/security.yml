@@ -25,7 +25,7 @@ security:
           form_login:
               provider: fos_userbundle
               csrf_token_generator: security.csrf.token_manager
-              default_target_path: /admin
+              default_target_path: /%admin_path%/dashboard
           logout:       true
           anonymous:    true
 
@@ -34,4 +34,4 @@ security:
       # We do not allow user registration
       # - { path: ^/register, role: IS_AUTHENTICATED_ANONYMOUSLY }
       - { path: ^/resetting, role: IS_AUTHENTICATED_ANONYMOUSLY }
-      - { path: ^/admin/, role: ROLE_USER }
+      - { path: ^/%admin_path%/, role: ROLE_USER }

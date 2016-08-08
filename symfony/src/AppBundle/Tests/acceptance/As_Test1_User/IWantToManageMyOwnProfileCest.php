@@ -25,7 +25,7 @@ class IWantToManageMyOwnProfileCest
      */
     public function showMyProfile(AcceptanceTester $I)
     {
-        $I->amOnPage('/admin/?action=show&entity=User&id=2');
+        $I->click('test1');
         $I->canSee('test1@songbird.app');
         $I->canSee('Email');
     }
@@ -36,7 +36,8 @@ class IWantToManageMyOwnProfileCest
      */
     public function hidUneditableFields(AcceptanceTester $I)
     {
-        $I->amOnPage('/admin/?action=edit&entity=User&id=2');
+        $I->click('test1');
+        $I->click('Edit');
         $I->cantSee('Enabled');
         $I->cantSee('Locked');
         $I->cantSee('Roles');
@@ -48,7 +49,8 @@ class IWantToManageMyOwnProfileCest
      */
     public function updateFirstnameOnly(AcceptanceTester $I)
     {
-        $I->amOnPage('/admin/?action=edit&entity=User&id=2');
+        $I->click('test1');
+        $I->click('Edit');
         $I->fillField('//input[@value="test1 Lastname"]', 'lastname1 updated');
         // submit form
         $I->click('//button[@type="submit"]');
@@ -56,7 +58,8 @@ class IWantToManageMyOwnProfileCest
         $I->canSeeInCurrentUrl('/admin/?action=show&entity=User&id=2');
         $I->canSee('lastname1 updated');
         // now revert changes
-        $I->amOnPage('/admin/?action=edit&entity=User&id=2');
+        $I->click('test1');
+        $I->click('Edit');
         $I->fillField('//input[@value="lastname1 updated"]', 'test1 Lastname');
         // update
         $I->click('//button[@type="submit"]');
@@ -69,7 +72,8 @@ class IWantToManageMyOwnProfileCest
     public function updatePasswordOnly(AcceptanceTester $I)
     {
 
-        $I->amOnPage('/admin/?action=edit&entity=User&id=2');
+        $I->click('test1');
+        $I->click('Edit');
         $I->fillField('//input[contains(@id, "_plainPassword_first")]', '123');
         $I->fillField('//input[contains(@id, "_plainPassword_second")]', '123');
 
@@ -80,7 +84,7 @@ class IWantToManageMyOwnProfileCest
         $I->amOnPage('/logout');
         Common::login($I, TEST1_USERNAME, '123');
         // i can login and at dashboard now
-        $I->canSee('Access denied.');
+        $I->canSee('Dear test1');
 
         // reset everything back
         $I->amOnPage('/admin/?action=edit&entity=User&id=2');
@@ -91,6 +95,6 @@ class IWantToManageMyOwnProfileCest
         $I->canSeeInCurrentUrl('/admin/?action=show&entity=User&id=2');
         // i should be able to login with the old password
         $this->login($I);
-        $I->canSee('Access denied.');
+        $I->canSee('Dear test1');
     }
 }

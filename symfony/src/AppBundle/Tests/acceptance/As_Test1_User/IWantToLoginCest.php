@@ -31,7 +31,7 @@ class IWantToLoginCest
      * @before login
      */
     public function seeMyDashboardContent(AcceptanceTester $I) {
-        $I->canSee('Access Denied');
+        $I->canSee('Dear test1');
     }
 
     /**
@@ -48,7 +48,7 @@ class IWantToLoginCest
      * Scenario 10.1.4
      */
     public function AccessAdminWithoutLoggingIn(AcceptanceTester $I) {
-        $I->amOnPage('/admin/?action=list&entity=User');
+        $I->amOnPage('/admin/dashboard');
         // now user should be redirected to login page
         $I->canSeeInCurrentUrl('/login');
     }

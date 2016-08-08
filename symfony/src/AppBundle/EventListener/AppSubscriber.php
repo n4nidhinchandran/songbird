@@ -80,7 +80,7 @@ class AppSubscriber implements EventSubscriberInterface
      */
     public function redirectUserAfterPasswordReset(FormEvent $event)
     {
-        $url = $this->container->get('router')->generate('admin');
+        $url = $this->container->get('router')->generate('dashboard');
         $event->setResponse(new RedirectResponse($url));
     }
 

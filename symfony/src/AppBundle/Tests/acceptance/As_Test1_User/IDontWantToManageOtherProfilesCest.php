@@ -53,6 +53,6 @@ class IShouldNotBeAbleToManageOtherProfilesCest
      * @before login
      */
     public function seeAdminDashboardContent(AcceptanceTester $I) {
-        $I->canSee('Access Denied');
+        $I->cantSee('User Management');
     }
 }

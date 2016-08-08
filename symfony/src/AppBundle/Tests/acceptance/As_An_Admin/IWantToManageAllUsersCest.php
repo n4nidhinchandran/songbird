@@ -24,7 +24,7 @@ class IWantToManageAllUsersCest
      */
     public function listAllProfiles(AcceptanceTester $I)
     {
-        $I->amOnPage('/admin/?action=list&entity=User');
+        $I->click('User Management');
         $I->canSeeNumberOfElements('//table/tbody/tr',4);
     }
 
@@ -35,7 +35,7 @@ class IWantToManageAllUsersCest
     public function showTest3User(AcceptanceTester $I)
     {
         // go to user listing page
-        $I->amOnPage('/admin/?action=list&entity=User');
+        $I->click('User Management');
         // click on show button
         $I->click('Show');
         $I->waitForText('test3@songbird.app');
@@ -49,7 +49,7 @@ class IWantToManageAllUsersCest
     public function editTest3User(AcceptanceTester $I)
     {
         // go to user listing page
-        $I->amOnPage('/admin/?action=list&entity=User');
+        $I->click('User Management');
         // click on edit button
         $I->click('Edit');
         // check we are on the right url
@@ -75,7 +75,8 @@ class IWantToManageAllUsersCest
     public function createAndDeleteNewUser(AcceptanceTester $I)
     {
         // go to create page and fill in form
-        $I->amOnPage('/admin/?action=new&entity=User');
+        $I->click('User Management');
+        $I->click('Add User');
         $I->fillField('//input[contains(@id, "_username")]', 'test4');
         $I->fillField('//input[contains(@id, "_email")]', 'test4@songbird.app');
         $I->fillField('//input[contains(@id, "_plainPassword_first")]', 'test4');

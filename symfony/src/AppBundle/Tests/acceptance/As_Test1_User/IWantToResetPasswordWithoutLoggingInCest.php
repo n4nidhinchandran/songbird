@@ -40,17 +40,14 @@ class IWantToResetPasswordWithoutLoggingInCest
         $I->fillField('//input[@id="fos_user_resetting_form_plainPassword_first"]', '1111');
         $I->fillField('//input[@id="fos_user_resetting_form_plainPassword_second"]', '1111');
         $I->click('_submit');
-        // at dashbpard
-        $I->canSee('Access denied');
-        // now at show page
-        $I->amOnPage('/admin/?action=show&entity=User&id=2');
-        $I->canSee('The password has been reset successfully');
+        $I->waitForText('Dear test1');
 
         // now login with the new password
         $this->login($I, TEST1_USERNAME, '1111');
 
         // db has been changed. update it back
-        $I->amOnPage('/admin/?action=edit&entity=User&id=2');
+        $I->click('test1');
+        $I->click('Edit');
         $I->fillField('//input[contains(@id, "_plainPassword_first")]', TEST1_USERNAME);
         $I->fillField('//input[contains(@id, "_plainPassword_second")]', TEST1_PASSWORD);
         $I->click('//button[@type="submit"]');
@@ -59,6 +56,6 @@ class IWantToResetPasswordWithoutLoggingInCest
 
         // i should be able to login with the old password
         $this->login($I);
-        $I->canSee('Access denied.');
+        $I->canSee('Dear test1');
     }
 }
