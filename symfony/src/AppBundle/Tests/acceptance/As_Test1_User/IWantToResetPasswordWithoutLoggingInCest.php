@@ -26,7 +26,7 @@ class IWantToResetPasswordWithoutLoggingInCest
         // reset emails
         $I->resetEmails();
         $I->amOnPage('/login');
-        $I->click('forget password');
+        $I->click('Forget Password');
         $I->fillField('//input[@id="username"]', 'test1');
         $I->click('_submit');
         $I->canSee('It contains a link');

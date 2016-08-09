@@ -17,7 +17,7 @@
 
 <div class="container">
     <div class="text-center">
-        <h3>Enter Your New Password</h3>
+        <h3>{{ 'login.reset_password_header' | trans({}, 'app') }}</h3>
         <form class="form-signin" action="{{ path('fos_user_resetting_reset', {'token': token}) }}" method="post">
 
           {% if (app.request.get('fos_user_resetting_form')['plainPassword']['first']) is defined and (app.request.get('fos_user_resetting_form')['plainPassword']['first'] != app.request.get('fos_user_resetting_form')['plainPassword']['second']) %}

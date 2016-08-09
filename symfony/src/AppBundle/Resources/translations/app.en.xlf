@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="1">
+                <source>dashboard.welcome.title</source>
+                <target>Welcome to SongBird CMS</target>
+            </trans-unit>
+            <trans-unit id="2">
+                <source>dashboard.welcome.credit</source>
+                <target>The whole project can be forked from <![CDATA[
+                <a href="https://github.com/bernardpeh/songbird">github</a>
+                ]]></target>
+            </trans-unit>
+            <trans-unit id="3">
+                <source>dashboard.welcome.last_login</source>
+                <target>You last login at</target>
+            </trans-unit>
+            <trans-unit id="4">
+                <source>login.forget_password</source>
+                <target>Forget Password</target>
+            </trans-unit>
+            <trans-unit id="5">
+                <source>login.reset_header</source>
+                <target>Enter Your Username or Password</target>
+            </trans-unit>
+            <trans-unit id="6">
+                <source>login.reset_password_header</source>
+                <target>Enter Your New Password</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

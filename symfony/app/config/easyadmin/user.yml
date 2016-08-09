@@ -4,10 +4,11 @@ easy_admin:
         assets:
             css:
               - /bundles/app/css/style.css
+
     entities:
         User:
             class: AppBundle\Entity\User
-            label: 'User Management'
+            label: admin.link.user_management
             # for new user
             new:
                 fields:

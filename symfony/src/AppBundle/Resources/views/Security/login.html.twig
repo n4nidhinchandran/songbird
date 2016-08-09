@@ -43,7 +43,7 @@
                 <input class="btn btn-lg btn-primary btn-block" type="submit" id="_submit" name="_submit" value="{{ 'security.login.submit'|trans }}" />
 
                 <div class="checkbox">
-                    <a href="{{ path('fos_user_resetting_request') }}">forget password</a>
+                    <a href="{{ path('fos_user_resetting_request') }}">{{ 'login.forget_password' | trans({}, 'app') }}</a>
                 </div>
             </form>
         </div>

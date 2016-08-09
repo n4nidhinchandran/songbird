@@ -1,14 +1,16 @@
-# Chapter 12: The Admin Panel Part 2
+# Chapter 13: Internalisation
 
-Let us continue with tweaking EasyAdmin by changing the layout and try more adventurous stuff like creating our own dashboard.
+No CMS is complete with being being able to support multiple languages ([i18n](https://en.wikipedia.org/wiki/Internationalization_and_localization)). So far we have been typing english directly into the twig templates. This is quick and easy but its not the best practice. What if we are marketing our software to the french market? Wouldn't it be nice if the interface can be in french rather than english? Even though its time consuming to create translations for every term that we use, it is worth the effort if you want to make your software international.
+
+What about [Google Translate](http://translate.google.com.au)? Google translate is never accurate and should not be used for professional purposes. Internalisation is something you want to work on early in the software development phase rather than later.
 
 ## Objectives
 
-> * Tweaking the Admin Layout
-> * Your Dashboard
-> * Menu Tweaking
-> * Removing hardcoding of admin prefix
-> * Update BDD Test (Optional)
+> * Define User Story
+> * Translations for the AppBundle
+> * Update the Dashboard
+> * Sticky Locale
+> * Update BDD (Optional)
 
 ## Pre-setup
 
@@ -18,164 +20,231 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 # check your branch
 -> git status
 # start branching now
--> git checkout -b my_chapter12
+-> git checkout -b my_chapter13
 ```
 
-## Tweaking the Admin Layout
+## Define User Story
 
-Its easy to change the theme colour and add our own custom css
+**13. Internalisation**
 
-```
-# app/config/easyadmin/user.yml
+<table>
+<tr><td><strong>Story Id</strong></td><td><strong>As a</strong></td><td><strong>I</strong></td><td><strong>So that I</strong></td></tr>
+<tr><td>13.1</td><td>test1 user</td><td>want to be able to switch language</td><td>can choose my preferred language anytime.</td></tr>
+</table>
 
-easy_admin:
-    design:
-        brand_color: '#d9d9d9'
-        assets:
-            css:
-              - /bundles/app/css/style.css
-        ...
-```
+**Story ID 13.1: As a test1 user, I want to be able to switch language, so that I can choose my preferred language anytime.**
 
-and our css
+<table>
+<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
+<tr><td>13.1.1</td><td>Locale in french</td><td>I login and switch language to french</td><td>I should be able to see the dashboard in french till I switched back to english</td></tr>
+</table>
 
-```
-# src/AppBundle/Resources/public/css/style.css
+## Translations for the AppBundle
 
-.user-menu a{
-    color: rgba(255, 255, 255, 0.8);
-}
-```
-
-Next, We will overwrite admin layout and create our own logo
+let us create the translation files in the AppBundle. The naming convention for the file is domain.language_prefix.file_format, eg app.en.xlf.
 
 ```
-# app/Resources/views/easy_admin/layout.html.twig
+# src/AppBundle/Resources/translations/app.en.xlf
 
-{%  extends '@EasyAdmin/default/layout.html.twig' %}
-
-{% block header_logo %}
-<a class="logo" title="" href="{{ path('dashbboard') }}">
-    <img src="/bundles/app/images/logo.png" />
-</a>
-{% endblock header_logo %}
+<?xml version="1.0"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="1">
+                <source>dashboard.welcome.title</source>
+                <target>Welcome to SongBird CMS</target>
+            </trans-unit>
+            <trans-unit id="2">
+                <source>dashboard.welcome.credit</source>
+                <target>The whole project can be forked from <![CDATA[
+                <a href="https://github.com/bernardpeh/songbird">github</a>
+                ]]></target>
+            </trans-unit>
+            <trans-unit id="3">
+                <source>dashboard.welcome.last_login</source>
+                <target>You last login at</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
 ```
 
-You noticed that instead of creating a new twig layout file from scratch, we have extended the EasyAdmin layout and only change the parts that we were interested in.
-
-We also need a logout link.
+Likewise, we need to create the translation file for french.
 
 ```
-# app/Resources/views/easy_admin/layout.html.twig
+# src/AppBundle/Resources/translations/app.fr.xlf
+
+<?xml version="1.0"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="1">
+                <source>dashboard.welcome.title</source>
+                <target>Bienvenue à SongBird CMS</target>
+            </trans-unit>
+            <trans-unit id="2">
+                <source>dashboard.welcome.credit</source>
+                <target>L'ensemble du projet peut être fourchue de <![CDATA[
+                <a href="https://github.com/bernardpeh/songbird">github</a>
+                ]]></target>
+            </trans-unit>
+            <trans-unit id="3">
+                <source>dashboard.welcome.last_login</source>
+                <target>Vous dernière connexion au</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
+```
+
+## Update the Dashboard
+
+How do we get the twig files to do the translation? You would have seen glimpse of it while working with the login files.
+
+Let us update the dashboard template.
+
+```
+# app/Resources/easy_admin/dashboard.html.twig
+
 ...
-{% block user_menu %}
-    <span class="sr-only">{{ 'user.logged_in_as'|trans(domain = 'EasyAdminBundle') }}</span>
-    <i class="hidden-xs fa fa-user">
-    {% if app.user %}
-        <a href=""">{{ app.user.username|default('user.unnamed'|trans(domain = 'EasyAdminBundle')) }}</a>
-    {% else %}
-        {{ 'user.anonymous'|trans(domain = 'EasyAdminBundle') }}
-    {% endif %}
-        </i>
-    <i class="hidden-xs fa fa-sign-out"><a href="{{ path('fos_user_security_logout') }}">Logout</a></i>
-{% endblock user_menu %}
-
-```
-
-## Your Dashboard
-
-Let us now create a new dashboard page. We need a new route
-
-```
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Symfony\Component\HttpFoundation\Request;
-...
-
-# src/AppBundle/Controller/AdminController.php
-
-    /**
-     * @Route("/dashboard", name="dashboard")
-     *
-     * @param Request $request
-     * @return \Symfony\Component\HttpFoundation\Response
-     *
-     */
-    public function dashboardAction(Request $request)
-    {
-        return $this->render('easy_admin/dashboard.html.twig');
-    }
-    ...
-```
-
-and a new template
-
-```
-# app/Resources/views/easy_admin/dashboard.html.twig
-
-{%  extends 'easy_admin/layout.html.twig' %}
-
 {% block main %}
 <p>
     Dear {{ app.user.firstname }} {{ app.user.lastname }},
 </p>
 <p>
-    You are last logged in at {{ app.user.lastLogin | date('Y-m-d H:i:s') }}
+    {{ 'dashboard.welcome.last_login' | trans({}, 'app') }} {{ app.user.lastLogin | date('Y-m-d H:i:s') }}
 </p>
 
 <p>
-    The whole project can be forked from <a href="https://github.com/bernardpeh/songbird">github</a>
+    {{ 'dashboard.welcome.credit' | trans({}, 'app') | raw }}
 </p>
 
 {% endblock %}
-```
-
-now copy the assets to the web dir from command line.
 
 ```
--> ./scripts/assetsinstall
-```
 
-then refresh the browser.
-
-![admin styled](images/admin_styled2.png)
-
-## Menu Tweaking
-
-Normal users should not see the left entities menus. Let us extend the menu.html.twig and put a filter.
+refresh your browser and have a look. If things are not working, remember to clear the cache.
 
 ```
-# app/Resources/easy_admin/menu.html.twig
-
-{%  extends '@EasyAdmin/default/menu.html.twig' %}
-
-{% block main_menu %}
-    {% if is_granted('ROLE_SUPER_ADMIN') %}
-        {% for item in easyadmin_config('design.menu') %}
-            <li class="{{ item.type == 'divider' ? 'header' }} {{ item.children is not empty ? 'treeview' }} {{ app.request.query.get('menuIndex')|default(-1) == loop.index0 ? 'active' }} {{ app.request.query.get('submenuIndex')|default(-1) != -1 ? 'submenu-active' }}">
-                {{ helper.render_menu_item(item) }}
-
-                {% if item.children|default([]) is not empty %}
-                    <ul class="treeview-menu">
-                        {% for subitem in item.children %}
-                            <li class="{{ subitem.type == 'divider' ? 'header' }} {{ app.request.query.get('menuIndex')|default(-1) == loop.parent.loop.index0 and app.request.query.get('submenuIndex')|default(-1) == loop.index0 ? 'active' }}">
-                                {{ helper.render_menu_item(subitem) }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </li>
-        {% endfor %}
-    {% endif %}
-{% endblock main_menu %}
+-> ./scripts/resetapp
 ```
 
-Let us also create a profile link for the user link on the top right
+By default, we are using english, so you should see that the english version is translated. To see all the translations in english for the AppBundle,
+
+```
+-> app/console debug:translation en AppBundle
+```
+
+You should see a lot of missing translations for the FOSUserBundle. Don't worry about that for now.
+
+Tip: Again, don't remember this command. Just type in "app/console debug:translation" in the command line to see the options.
+
+What about french? How do we set the locale? Just update the parameters in the config.yml
+
+```
+# app/config/config.yml
+...
+parameters:
+    locale: fr
+    admin_path: admin
+...
+```
+
+Now refresh the dashboard and you should see the welcome block translated.
+
+Its french. Viola!
+
+How do we make the language dynamic? Perhaps we should have a selector on the top menu for users to select the language and persists throughout the session.
+
+What about the menu?
+
+Let us update the translation files
+
+```
+# app/Resources/translations/messages.fr.yml
+
+admin.link.user_management: Gestion des utilisateurs
+admin.link.profile: Mon profil
+```
+
+and
+
+```
+# app/Resources/translations/messages.en.yml
+
+admin.link.user_management: User Management
+admin.link.profile: My Profile
+```
+
+and
+
+```
+# app/config/easyadmin/user.yml
+...
+    entities:
+        User:
+            class: AppBundle\Entity\User
+            label: admin.link.user_management
+            ...
+```
+
+## Sticky Locale
+
+Let us create the supported languages in config.yml
+```
+# app/config/config.yml
+
+...
+parameters:
+    # set this to english as default
+    locale: en
+    supported_lang: [ 'en', 'fr']
+    admin_path: admin
+...
+twig:
+    debug:            "%kernel.debug%"
+    strict_variables: "%kernel.debug%"
+    globals:
+        supported_lang: %supported_lang%
+...
+```
+
+We have created a variable called supported_lang (consisting of an array) and passed it to twig as a global variable.
+
+Now in the layout twig
 
 ```
 # app/Resources/easy_admin/layout.html.twig
 
+...
+{% block page_title %}
+    {{ 'dashboard.welcome.title' | trans({}, 'app') }}
+{% endblock %}
+
+{% set urlPrefix = (app.environment == 'dev') ? '/app_dev.php/' : '/' %}
+
+{% block head_javascript %}
+    {{ parent() }}
+    <script>
+        $(function() {
+            // select the box based on locale
+            $('#lang').val('{{ app.request.getLocale() }}');
+            // redirect user if user change locale
+            $('#lang').change(function() {
+                window.location='{{ urlPrefix }}'+$(this).val()+'/locale';
+            });
+        });
+    </script>
+{% endblock head_javascript %}
+
 {% block user_menu %}
-    <span class="sr-only">{{ 'user.logged_in_as'|trans(domain = 'EasyAdminBundle') }}</span>
+    <i class="fa fa-language" aria-hidden="true">
+        <select id="lang" name="lang">
+            {% for lang in supported_lang %}
+                <option value="{{ lang }}">{{ lang }}</option>
+            {% endfor %}
+        </select>
+    </i>
     <i class="hidden-xs fa fa-user">
     {% if app.user %}
         <a href="{{ path('easyadmin') }}/?entity=User&action=show&id={{ app.user.id }}">{{ app.user.username|default('user.unnamed'|trans(domain = 'EasyAdminBundle')) }}</a>
@@ -187,113 +256,262 @@ Let us also create a profile link for the user link on the top right
 {% endblock user_menu %}
 ```
 
-## Removing hardcoding of admin prefix
-
-There is one more thing to mention before we end this chapter. At the moment, the admin url seems to be prefixed to '/admin/xx'. What if we want it to be a bit harder to guess, like 'admin9/xx'? Let us create a variable in the config.yml
+Note that we have made logic and css tweaks to the top nav. The new CSS is as follows:
 
 ```
-# app/config/config.yml
+# src/AppBundle/Resources/public/css/styles.css
+
+.user-menu a{
+    color: rgba(255, 255, 255, 0.8);
+}
+
+i {
+    padding: 5px;
+}
+
+#lang {
+    color: #333;
+}
+
+```
+
+The new language dropdown box allows user to select a language and if there is a change in the selection, the user is redirected to a url /{_locale}/locale where the change of locale magic is supposed to happen.
+
+and create a new controller from the command line.
+
+```
+-> app/console generate:controller --controller=AppBundle:Locale -n
+```
+
+and the controller code in full:
+
+```
+# src/AppBundle/Controller/LocaleController.php
+
+namespace AppBundle\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\HttpFoundation\Request;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+
+class LocaleController extends Controller
+{
+    /**
+     * Redirects user based on their referer
+     *
+     * @Route("/{_locale}/locale", name="app_set_locale")
+     * @Method("GET")
+     */
+    public function setLocaleAction(Request $request, $_locale)
+    {
+        $auth_checker = $this->get('security.authorization_checker');
+
+        // if referrer exists, redirect to referrer
+        $referer = $request->headers->get('referer');
+        if ($referer) {
+            return $this->redirect($referer);
+        }
+        // if logged in, redirect to dashboard
+        elseif ($auth_checker->isGranted('ROLE_USER')) {
+            return $this->redirectToRoute('dashboard');
+        }
+        // else redirect to homepage
+        else {
+            return $this->redirect('/');
+        }
+    }
+}
+```
+
+As you can see, the annotation defines the the new route /{_locale}/locale. To make sure that this route is working,
+
+```
+-> app/console debug:router | grep locale
+ app_set_locale                          GET      ANY    ANY  /{_locale}/locale
+```
+
+The AdminController gets the request object and redirects the user to the referer if there is one. If not, it redirects the user to either the admin dashboard or the homepage depending if the user is logged in or not. Again, don't memorise security.authorization_checker. Google around, make intelligent guesses and use the command line to verify the containers.
+
+```
+-> app/console debug:container | grep security
 ...
-parameters:
-    admin_path: admin
-    ...
 ```
 
-We can now use this variable in other places. Once we change this variable, it will automatically update the prefix in all places for us.
+We said that the controller is the place where magic happens... but where is the magic? We haven't even change the locale session yet! We cannot change it at the controller level because it is too late. We have to change it very early on in the [Http workflow](http://symfony.com/doc/current/components/http_kernel/introduction.html)
+
+Basically, what we need to do is to hook on to the kernel.request event and modify some logic there. The symfony cookbook has good information on [sticky sessions](http://symfony.com/doc/current/cookbook/session/locale_sticky_session.html).
+
+We have create an event subscriber before. Let us create an event listener this time round.
 
 ```
-# app/config/routing.yml
-...
-# easyadmin
-easy_admin_bundle:
-    resource: "@AppBundle/Controller/AdminController.php"
-    type:     annotation
-    prefix:   /%admin_path%
+# src/AppBundle/Resources/config/services.yml
 
 ...
-```
-
-and
-
-```
-# app/config/security.yml
-...
-    firewalls:
-        dev:
-            pattern: ^/(_(profiler|wdt|error)|css|images|js)/
-            security: false
-
-        main:
-            anonymous: ~
-            pattern: ^/
-            form_login:
-                provider: fos_userbundle
-                csrf_provider: security.csrf.token_manager
-                default_target_path: /%admin_path%/dashboard
-            logout:       true
-
-    access_control:
-        - { path: ^/login$, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        # We do not allow user registration
-        # - { path: ^/register, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/resetting, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/%admin_path%/, role: ROLE_USER }
+  app.locale.listener:
+    class: AppBundle\EventListener\LocaleListener
+    arguments:
+      - "%kernel.default_locale%"
+    tags:
+      - { name: kernel.event_listener, event: kernel.request, priority: 17 }
 ...
 ```
 
-The default admin page is now default_target_path: /%admin_path%/dashboard
+Why did we use priority 17? Every listener has a priority. The higher the priority, the earlier the listener will be executed. We want our custom LocaleListener to be earlier than the Kernel's LocaleListener. According to [Kernel events](http://symfony.com/doc/current/reference/events.html), The kernel LocaleListener has priority 16. Let us go abit higher, ie 17.
 
-Try changing admin_path to something else and check if all the routes have been updated. Let's change the admin_path back to 'admin' after back.
-
-## Update BDD Test (Optional)
-
-Now that we have defined the admin layout, we should add new BDD tests to the dashboard cest to test on the dashboard and left menu.
-
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.1.2</td><td>See my dashboard content</td><td>I login correctly</td><td>I should not see the text "User Management" and should see the text "Dear test1"</td></tr>
-</table>
-
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.2.2</td><td>See my dashboard content</td><td>I login correctly</td><td>I should see the text "User Management" and "Dear Admin"</td></tr>
-</table>
-
-Also with the left menu installed, we should be clicking on the links rather than going to the page directly. In all the "cest", replace all amOnPage methods to "click" method.
+Now we need to create the LocaleListener class.
 
 ```
-# go to page directly
-$I->amOnPage('/admin/?action=list&entity=User');
+# src/AppBundle/EventListener/LocaleListener.php
 
-# replace it with
-$I->click('User Management');
+namespace AppBundle\EventListener;
+
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
+class LocaleListener
+{
+    private $defaultLocale;
+
+    public function __construct($defaultLocale = 'en')
+    {
+        $this->defaultLocale = $defaultLocale;
+    }
+
+    public function onKernelRequest(GetResponseEvent $event)
+    {
+        $request = $event->getRequest();
+        if (!$request->hasPreviousSession()) {
+            return;
+        }
+
+        // try to see if the locale has been set as a _locale routing parameter
+        if ($locale = $request->attributes->get('_locale')) {
+            $request->getSession()->set('_locale', $locale);
+        } else {
+            // if no explicit locale has been set on this request, use one from the session
+            $request->setLocale($request->getSession()->get('_locale', $this->defaultLocale));
+        }
+    }
+}
 ```
 
-Update all the tests to click on links rather than going to the url directly and I will leave this part to you. Once you are confident that all your tests are correct, run it and fix it till everything passes.
+To see what is going on with the events sequencing,
+
+```
+# now view the event dispatcher list
+-> app/console debug:event-dispatcher kernel.request
+```
+
+Look at the kernel.request section and you should see our custom event listener ranked 7, just above the kernel LocaleListener.
+
+![kernel event dispatcher](images/kernel_event_dispatcher.png)
+
+Can you use the AppSubscriber class that we have created to do the same job?
+
+
+Now, clear the cache and refresh the browser. Try changing the locale dropdown and see for yourself.
+
+```
+-> ./scripts/resetapp
+```
+![dashboard with translation](images/dashboard_with_translation1.png)
+
+Try changing the priority to 15 of kernel.event_listener tag and see what happens?
+
+## Update BDD (Optional)
+
+Let us create the cest file based on the User Story.
+
+```
+-> vendor/bin/codecept generate:cest acceptance As_Test1_User/IWantToSwitchLanguageCest -c src/AppBundle
+```
+
+now within the cest file:
+
+```
+#src/AppBundle/Tests/acceptance/As_Test1_User/IWantToSwitchLanguageCest.php
+
+namespace As_Test1_User;
+use \AcceptanceTester;
+use \Common;
+
+class IWantToSwitchLanguageCest
+{
+    public function _before(AcceptanceTester $I)
+    {
+        Common::login($I, TEST1_USERNAME, TEST1_PASSWORD);
+    }
+
+    public function _after(AcceptanceTester $I)
+    {
+    }
+
+    /**
+     * Scenario 13.1.1
+     */
+    public function localeInFrench(AcceptanceTester $I)
+    {
+        // switch to french
+        $I->selectOption('//select[@id="lang"]', 'fr');
+        // I should be able to see "my profile" in french
+        $I->canSee('Déconnexion');
+        $I->click('test1');
+        // now in show profile page
+        $I->canSee("Éditer");
+        // now switch back to english
+        $I->selectOption('//select[@id="lang"]', 'en');
+        $I->canSee('Edit');
+    }
+}
+```
+
+Lets run the test to make sure everything is working.
+
+```
+-> ./scripts/runtest As_Test1_User/IWantToSwitchLanguageCest.php
+```
+
+Since the UI has been changed, some previous BDD tests might fail. Fix them and re-run the full BDD tests till everything passes.
+
+```
+-> ./scripts/runtest
+```
 
 ## Summary
 
-In this chapter, we have touched up the admin area and created a simple dashboard block.
+In this chapter, we learned how to create translation files and updated the twig files to handle the translation. We have also created a language switcher in the admin area and added a new BDD test to test internalisation.
 
-The admin area is now looking more polished.
+I am not french and my french translation might not be correct as I was using google translate. The use of french in this book is just an example.
 
-Next Chapter: [Chapter 13: Internalisation](https://github.com/bernardpeh/songbird/tree/chapter_13)
+Remember to commit all your changes before moving on to the next chapter.
 
-Previous Chapter: [Chapter 11: Customising the Login Process](https://github.com/bernardpeh/songbird/tree/chapter_11)
+Next Chapter: [Chapter 14: The Media Manager](https://github.com/bernardpeh/songbird/tree/chapter_14)
 
+Previous Chapter: [Chapter 12: The Admin Panel Part 2](https://github.com/bernardpeh/songbird/tree/chapter_12)
 
 ## Stuck? Checkout my code
+
 ```
--> git checkout -b chapter_12 origin/chapter_12
+-> git checkout -b chapter_13 origin/chapter_13
 -> git clean -fd
 ```
 
 ## Exercises
 
-* Try creating another Sonata block yourself. (Optional)
+* Remember all the twig files you have created in [chapter 11](https://github.com/bernardpeh/songbird/tree/chapter_11)
+? Update them to support i18n.
 
-* Review and Update BDD for all admin and test1 user stories. (Optional)
+* (Optional) Try creating translations in other languages other than french.
 
 ## References
 
-* [Twig Templating](http://symfony.com/doc/current/templating.html)
+* [Symfony translations](http://symfony.com/doc/current/book/translation.html)
+
+* [Translations best practices](http://symfony.com/doc/current/best_practices/i18n.html)
+
+* [Sticky Session](http://symfony.com/doc/current/cookbook/session/locale_sticky_session.html)
+
+* [Kernel Events](http://symfony.com/doc/current/reference/events.html)
+
+* [EasyAdmin Translations](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/tutorials/i18n.md)

@@ -8,6 +8,7 @@ imports:
 # http://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     locale: en
+    supported_lang: [ 'en', 'fr']
     admin_path: admin
 
 framework:
@@ -36,6 +37,8 @@ framework:
 twig:
     debug:            "%kernel.debug%"
     strict_variables: "%kernel.debug%"
+    globals:
+        supported_lang: %supported_lang%
 
 # Doctrine Configuration
 doctrine:
