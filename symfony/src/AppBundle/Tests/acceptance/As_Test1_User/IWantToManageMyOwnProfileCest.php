@@ -28,6 +28,7 @@ class IWantToManageMyOwnProfileCest
         $I->click('test1');
         $I->canSee('test1@songbird.app');
         $I->canSee('Email');
+        $I->waitForElement('//img[contains(@src, "test_profile")]');
     }
 
     /**
@@ -96,5 +97,67 @@ class IWantToManageMyOwnProfileCest
         // i should be able to login with the old password
         $this->login($I);
         $I->canSee('Dear test1');
+    }
+
+    /**
+     * Scenario 10.4.5
+     * @before login
+     */
+    public function deleteAndAddProfileImage(AcceptanceTester $I)
+    {
+        // get original image
+        $imagePath = $I->grabFromDatabase('user', 'image', array('username' => 'test1'));
+        // check image available
+        $I->canSeeFileFound($imagePath, '../../web/uploads/profiles');
+
+        $I->click('test1');
+        $I->click('Edit');
+        $I->click('//input[@id="user_imageFile_delete"]');
+        // submit form
+        $I->click('//button[@type="submit"]');
+        // i am on the show page
+        $I->canSeeInCurrentUrl('/admin/?action=show&entity=User&id=2');
+        // can see empty images
+        $I->canSee('Empty');
+        // check that image is not there
+        $I->cantSeeFileFound($imagePath, '../../web/uploads/profiles');
+
+        // now revert changes
+        $I->click('test1');
+        $I->click('Edit');
+        $I->waitForElementVisible('//input[@type="file"]');
+        $I->attachFile('//input[@type="file"]', 'test_profile.jpg');
+        // update
+        $I->click('//button[@type="submit"]');
+        // get image from db
+        $imagePath = $I->grabFromDatabase('user', 'image', array('username' => 'test1'));
+        // check image available
+        $I->canSeeFileFound($imagePath, '../../web/uploads/profiles');
+    }
+
+    /**
+     * Scenario 10.4.6
+     * @before login
+     */
+    public function updateProfileImageOnly(AcceptanceTester $I)
+    {
+        // get original image
+        $imagePath = $I->grabFromDatabase('user', 'image', array('username' => 'test1'));
+        // check image available
+        $I->canSeeFileFound($imagePath, '../../web/uploads/profiles');
+
+        $I->click('test1');
+        $I->click('Edit');
+        $I->attachFile('//input[@type="file"]', 'test_profile.jpg');
+        // submit form
+        $I->click('//button[@type="submit"]');
+
+        // get new id
+        $imagePath = $I->grabFromDatabase('user', 'image', array('username' => 'test1'));
+        // i am on the show page
+        $I->canSeeInCurrentUrl('/admin/?action=show&entity=User&id=2');
+        // can see new image
+        $I->waitForElement('//img[contains(@src, "'.$imagePath.'")]');
+        $I->canSeeFileFound($imagePath, '../../web/uploads/profiles');
     }
 }

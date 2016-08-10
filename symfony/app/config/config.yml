@@ -10,6 +10,7 @@ parameters:
     locale: en
     supported_lang: [ 'en', 'fr']
     admin_path: admin
+    app.profile_image.path: /uploads/profiles
 
 framework:
     #esi:             ~
@@ -38,7 +39,7 @@ twig:
     debug:            "%kernel.debug%"
     strict_variables: "%kernel.debug%"
     globals:
-        supported_lang: %supported_lang%
+        supported_lang: '%supported_lang%'
 
 # Doctrine Configuration
 doctrine:
@@ -75,3 +76,12 @@ fos_user:
     db_driver: orm
     firewall_name: main
     user_class: AppBundle\Entity\User
+
+# Vich Configuration
+vich_uploader:
+    db_driver: orm
+    mappings:
+        profile_images:
+            uri_prefix: '%app.profile_image.path%'
+            upload_destination: '%kernel.root_dir%/../web/uploads/profiles'
+            namer: vich_uploader.namer_uniqid

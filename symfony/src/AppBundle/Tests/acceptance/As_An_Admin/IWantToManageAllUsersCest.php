@@ -26,6 +26,7 @@ class IWantToManageAllUsersCest
     {
         $I->click('User Management');
         $I->canSeeNumberOfElements('//table/tbody/tr',4);
+        $I->seeNumberOfElements('//td[@data-label="Image"]',4);
     }
 
     /**

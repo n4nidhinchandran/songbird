@@ -1,15 +1,13 @@
-# Chapter 13: Internalisation
+# Chapter 14: Uploading Files
 
-No CMS is complete with being being able to support multiple languages ([i18n](https://en.wikipedia.org/wiki/Internationalization_and_localization)). So far we have been typing english directly into the twig templates. This is quick and easy but its not the best practice. What if we are marketing our software to the french market? Wouldn't it be nice if the interface can be in french rather than english? Even though its time consuming to create translations for every term that we use, it is worth the effort if you want to make your software international.
-
-What about [Google Translate](http://translate.google.com.au)? Google translate is never accurate and should not be used for professional purposes. Internalisation is something you want to work on early in the software development phase rather than later.
+Our CMS should allow uploading of files. Let's say we want to allow user to upload their own profile image. EasyAdmin has nice integration with a popular bundle called [VichUploaderBundle](https://github.com/dustin10/VichUploaderBundle).
 
 ## Objectives
 
-> * Define User Story
-> * Translations for the AppBundle
-> * Update the Dashboard
-> * Sticky Locale
+> * Update User Stories
+> * Install VichUploaderBundle
+> * Update Fixtures
+> * Update UI
 > * Update BDD (Optional)
 
 ## Pre-setup
@@ -20,498 +18,384 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 # check your branch
 -> git status
 # start branching now
--> git checkout -b my_chapter13
+-> git checkout -b my_chapter14
 ```
 
-## Define User Story
+## Update User Stories
 
-**13. Internalisation**
-
-<table>
-<tr><td><strong>Story Id</strong></td><td><strong>As a</strong></td><td><strong>I</strong></td><td><strong>So that I</strong></td></tr>
-<tr><td>13.1</td><td>test1 user</td><td>want to be able to switch language</td><td>can choose my preferred language anytime.</td></tr>
-</table>
-
-**Story ID 13.1: As a test1 user, I want to be able to switch language, so that I can choose my preferred language anytime.**
+**Story ID 10.6: As an admin user, I want to manage all users, so that I can control user access of the system.**
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>13.1.1</td><td>Locale in french</td><td>I login and switch language to french</td><td>I should be able to see the dashboard in french till I switched back to english</td></tr>
+<tr><td>10.6.1</td><td>List all profiles</td><td>I go show profile page" url</td><td>I should see a list of all users in a table with image fields</td></tr>
 </table>
 
-## Translations for the AppBundle
+**Story ID 10.1: As a test1 user, I want to manage my profile, so that I can update it any time.**
 
-let us create the translation files in the AppBundle. The naming convention for the file is domain.language_prefix.file_format, eg app.en.xlf.
+<table>
+<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
+<tr><td>10.4.1</td><td>Show my profile</td><td>I go to show profile page</td><td>I should see test1@songbird.app and an Image field</td></tr>
+<tr><td>10.4.5</td><td>Delete and Add profile image</td><td>I go to edit profile page And delete profile image and add a new image</td><td>I should see an empty profile, previous profile image gone and then a new one appearing in the file system.</td></tr>
+<tr><td>10.4.6</td><td>Update profile image Only</td><td>I go to edit profile page And update profile image and submit</td><td>I should see user profile updated and previous profile image gone from file system.</td></tr>
+</table>
 
+## Install Vich Uploader Bundle
+
+Add the media bundle to composer.json
 ```
-# src/AppBundle/Resources/translations/app.en.xlf
-
-<?xml version="1.0"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-    <file source-language="en" datatype="plaintext" original="file.ext">
-        <body>
-            <trans-unit id="1">
-                <source>dashboard.welcome.title</source>
-                <target>Welcome to SongBird CMS</target>
-            </trans-unit>
-            <trans-unit id="2">
-                <source>dashboard.welcome.credit</source>
-                <target>The whole project can be forked from <![CDATA[
-                <a href="https://github.com/bernardpeh/songbird">github</a>
-                ]]></target>
-            </trans-unit>
-            <trans-unit id="3">
-                <source>dashboard.welcome.last_login</source>
-                <target>You last login at</target>
-            </trans-unit>
-        </body>
-    </file>
-</xliff>
-```
-
-Likewise, we need to create the translation file for french.
-
-```
-# src/AppBundle/Resources/translations/app.fr.xlf
-
-<?xml version="1.0"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-    <file source-language="en" datatype="plaintext" original="file.ext">
-        <body>
-            <trans-unit id="1">
-                <source>dashboard.welcome.title</source>
-                <target>Bienvenue à SongBird CMS</target>
-            </trans-unit>
-            <trans-unit id="2">
-                <source>dashboard.welcome.credit</source>
-                <target>L'ensemble du projet peut être fourchue de <![CDATA[
-                <a href="https://github.com/bernardpeh/songbird">github</a>
-                ]]></target>
-            </trans-unit>
-            <trans-unit id="3">
-                <source>dashboard.welcome.last_login</source>
-                <target>Vous dernière connexion au</target>
-            </trans-unit>
-        </body>
-    </file>
-</xliff>
-```
-
-## Update the Dashboard
-
-How do we get the twig files to do the translation? You would have seen glimpse of it while working with the login files.
-
-Let us update the dashboard template.
-
-```
-# app/Resources/easy_admin/dashboard.html.twig
-
+# composer.json
 ...
-{% block main %}
-<p>
-    Dear {{ app.user.firstname }} {{ app.user.lastname }},
-</p>
-<p>
-    {{ 'dashboard.welcome.last_login' | trans({}, 'app') }} {{ app.user.lastLogin | date('Y-m-d H:i:s') }}
-</p>
-
-<p>
-    {{ 'dashboard.welcome.credit' | trans({}, 'app') | raw }}
-</p>
-
-{% endblock %}
-
+"require": {
+   ...
+   "vich/uploader-bundle": "^1.2"
+...
 ```
 
-refresh your browser and have a look. If things are not working, remember to clear the cache.
+Then,
 
 ```
--> ./scripts/resetapp
+-> composer update
 ```
 
-By default, we are using english, so you should see that the english version is translated. To see all the translations in english for the AppBundle,
-
-```
--> app/console debug:translation en AppBundle
-```
-
-You should see a lot of missing translations for the FOSUserBundle. Don't worry about that for now.
-
-Tip: Again, don't remember this command. Just type in "app/console debug:translation" in the command line to see the options.
-
-What about french? How do we set the locale? Just update the parameters in the config.yml
+In config.yml, we need to add a few parameters
 
 ```
 # app/config/config.yml
 ...
 parameters:
-    locale: fr
+    locale: en
+    supported_lang: [ 'en', 'fr']
     admin_path: admin
+    app.profile_image.path: /uploads/profiles
+    ...
+# Vich Configuration
+vich_uploader:
+    db_driver: orm
+    mappings:
+        profile_images:
+            uri_prefix: '%app.profile_image.path%'
+            upload_destination: '%kernel.root_dir%/../web/uploads/profiles'
+            # this will allow all uploaded filenames to be unique
+            namer: vich_uploader.namer_uniqid
 ...
 ```
 
-Now refresh the dashboard and you should see the welcome block translated.
-
-Its french. Viola!
-
-How do we make the language dynamic? Perhaps we should have a selector on the top menu for users to select the language and persists throughout the session.
-
-What about the menu?
-
-Let us update the translation files
+and in Appkernel.php
 
 ```
-# app/Resources/translations/messages.fr.yml
-
-admin.link.user_management: Gestion des utilisateurs
-admin.link.profile: Mon profil
+# app/AppKernel.php
+...
+public function registerBundles()
+{
+    return array(
+        // ...
+        new Vich\UploaderBundle\VichUploaderBundle(),
+    );
+}
+...
 ```
 
-and
+
+
+let us reset the app
 
 ```
-# app/Resources/translations/messages.en.yml
-
-admin.link.user_management: User Management
-admin.link.profile: My Profile
+-> ./scripts/resetapp
 ```
 
-and
+go to adminer and verify that the new image field has been added.
+
+![New image field](images/new_image_field.png)
+
+
+
+We need to create the new upload folder
+
+```
+-> mkdir -p web/uploads/profiles
+```
+
+but we should ignore in git. In .gitignore
+
+```
+# .gitignore
+/web/bundles/
+/web/uploads/
+/app/bootstrap.php.cache
+/app/cache/*
+/app/config/parameters.yml
+/app/logs/*
+!app/cache/.gitkeep
+!app/logs/.gitkeep
+/app/phpunit.xml
+/build/
+/vendor/
+/bin/
+/composer.phar
+/composer.lock
+
+src/AppBundle/tests/_output/*
+```
+
+## Update Fixtures
+
+Let us update the Image field to help us with automate testing.
+
+```
+# src/AppBundle/DataFixtures/ORM/LoadUserData.php
+
+...
+    public function load(ObjectManager $manager)
+        {
+            $userManager = $this->container->get('fos_user.user_manager');
+
+            // add admin user
+            $admin = $userManager->createUser();
+            $admin->setUsername('admin');
+            $admin->setEmail('admin@songbird.app');
+            $admin->setPlainPassword('admin');
+            $userManager->updatePassword($admin);
+            $admin->setEnabled(1);
+            $admin->setFirstname('Admin Firstname');
+            $admin->setLastname('Admin Lastname');
+            $admin->setRoles(array('ROLE_SUPER_ADMIN'));
+            $admin->setImage('test_profile.jpg');
+            $userManager->updateUser($admin);
+
+            // add test user 1
+            $test1 = $userManager->createUser();
+            $test1->setUsername('test1');
+            $test1->setEmail('test1@songbird.app');
+            $test1->setPlainPassword('test1');
+            $userManager->updatePassword($test1);
+            $test1->setEnabled(1);
+            $test1->setFirstname('test1 Firstname');
+            $test1->setLastname('test1 Lastname');
+            $test1->setImage('test_profile.jpg');
+            $userManager->updateUser($test1);
+
+            // add test user 2
+            $test2 = $userManager->createUser();
+            $test2->setUsername('test2');
+            $test2->setEmail('test2@songbird.app');
+            $test2->setPlainPassword('test2');
+            $userManager->updatePassword($test2);
+            $test2->setEnabled(1);
+            $test2->setFirstname('test2 Firstname');
+            $test2->setLastname('test2 Lastname');
+            $test2->setImage('test_profile.jpg');
+            $userManager->updateUser($test2);
+
+            // add test user 3
+            $test3 = $userManager->createUser();
+            $test3->setUsername('test3');
+            $test3->setEmail('test3@songbird.app');
+            $test3->setPlainPassword('test3');
+            $userManager->updatePassword($test3);
+            $test3->setEnabled(0);
+            $test3->setFirstname('test3 Firstname');
+            $test3->setLastname('test3 Lastname');
+            $test3->setImage('test_profile.jpg');
+            $userManager->updateUser($test3);
+
+            // use this reference in data fixtures elsewhere
+            $this->addReference('admin_user', $admin);
+        }
+    ...
+```
+
+We will update the resetapp script to copy the test_profile.jpg to the web folder
+
+```
+# scripts/resetapp
+
+#!/bin/bash
+rm -rf app/cache/*
+# app/console cache:clear --no-warmup
+app/console doctrine:database:drop --force
+app/console doctrine:database:create
+app/console doctrine:schema:create
+app/console doctrine:fixtures:load -n
+
+# copy test data over to web folder
+cp src/AppBundle/Tests/_data/test_profile.jpg web/uploads/profiles/
+```
+
+## Update UI
+
+Let us update the UI to include the image field.
 
 ```
 # app/config/easyadmin/user.yml
-...
+
+easy_admin:
+    design:
+        brand_color: '#337ab7'
+        assets:
+            css:
+              - /bundles/app/css/style.css
+
     entities:
         User:
             class: AppBundle\Entity\User
             label: admin.link.user_management
-            ...
+            # for new user
+            new:
+                fields:
+                  - username
+                  - firstname
+                  - lastname
+                  - { property: 'plainPassword', type: 'repeated', type_options: { type: 'Symfony\Component\Form\Extension\Core\Type\PasswordType', first_options: {label: 'Password'}, second_options: {label: 'Repeat Password'}, invalid_message: 'The password fields must match.'}}
+                  - { property: 'email', type: 'email', type_options: { trim: true } }
+                  - { property: 'imageFile', type: 'vich_image' }
+                  - roles
+                  - enabled
+            edit:
+                  actions: ['-delete', '-list']
+                  fields:
+                    - username
+                    - firstname
+                    - lastname
+                    - { property: 'plainPassword', type: 'repeated', type_options: { type: 'Symfony\Component\Form\Extension\Core\Type\PasswordType', required: false, first_options: {label: 'Password'}, second_options: {label: 'Repeat Password'}, invalid_message: 'The password fields must match.'}}
+                    - { property: 'email', type: 'email', type_options: { trim: true } }
+                    - { property: 'imageFile', type: 'vich_image' }
+                    - roles
+                    - enabled
+                    - locked
+                    - expired
+            show:
+                  actions: ['edit', '-delete', '-list']
+                  fields:
+                    - id
+                    - { property: 'image', type: 'image', base_path: '%app.profile_image.path%'}
+                    - username
+                    - firstname
+                    - lastname
+                    - email
+                    - roles
+                    - enabled
+                    - locked
+                    - expired
+                    - { property: 'last_login', type: 'datetime' }
+                    - modified
+                    - created
+            list:
+                title: 'User Listing'
+                actions: ['show']
+                fields:
+                  - id
+                  - { property: 'image', type: 'image', base_path: '%app.profile_image.path%'}
+                  - username
+                  - email
+                  - firstname
+                  - lastname
+                  - enabled
+                  - locked
+                  - expired
+                  - roles
+                  - { property: 'last_login', type: 'datetime' }
 ```
 
-## Sticky Locale
-
-Let us create the supported languages in config.yml
-```
-# app/config/config.yml
-
-...
-parameters:
-    # set this to english as default
-    locale: en
-    supported_lang: [ 'en', 'fr']
-    admin_path: admin
-...
-twig:
-    debug:            "%kernel.debug%"
-    strict_variables: "%kernel.debug%"
-    globals:
-        supported_lang: %supported_lang%
-...
-```
-
-We have created a variable called supported_lang (consisting of an array) and passed it to twig as a global variable.
-
-Now in the layout twig
-
-```
-# app/Resources/easy_admin/layout.html.twig
-
-...
-{% block page_title %}
-    {{ 'dashboard.welcome.title' | trans({}, 'app') }}
-{% endblock %}
-
-{% set urlPrefix = (app.environment == 'dev') ? '/app_dev.php/' : '/' %}
-
-{% block head_javascript %}
-    {{ parent() }}
-    <script>
-        $(function() {
-            // select the box based on locale
-            $('#lang').val('{{ app.request.getLocale() }}');
-            // redirect user if user change locale
-            $('#lang').change(function() {
-                window.location='{{ urlPrefix }}'+$(this).val()+'/locale';
-            });
-        });
-    </script>
-{% endblock head_javascript %}
-
-{% block user_menu %}
-    <i class="fa fa-language" aria-hidden="true">
-        <select id="lang" name="lang">
-            {% for lang in supported_lang %}
-                <option value="{{ lang }}">{{ lang }}</option>
-            {% endfor %}
-        </select>
-    </i>
-    <i class="hidden-xs fa fa-user">
-    {% if app.user %}
-        <a href="{{ path('easyadmin') }}/?entity=User&action=show&id={{ app.user.id }}">{{ app.user.username|default('user.unnamed'|trans(domain = 'EasyAdminBundle')) }}</a>
-    {% else %}
-        {{ 'user.anonymous'|trans(domain = 'EasyAdminBundle') }}
-    {% endif %}
-        </i>
-    <i class="hidden-xs fa fa-sign-out"><a href="{{ path('fos_user_security_logout') }}">Logout</a></i>
-{% endblock user_menu %}
-```
-
-Note that we have made logic and css tweaks to the top nav. The new CSS is as follows:
-
-```
-# src/AppBundle/Resources/public/css/styles.css
-
-.user-menu a{
-    color: rgba(255, 255, 255, 0.8);
-}
-
-i {
-    padding: 5px;
-}
-
-#lang {
-    color: #333;
-}
-
-```
-
-The new language dropdown box allows user to select a language and if there is a change in the selection, the user is redirected to a url /{_locale}/locale where the change of locale magic is supposed to happen.
-
-and create a new controller from the command line.
-
-```
--> app/console generate:controller --controller=AppBundle:Locale -n
-```
-
-and the controller code in full:
-
-```
-# src/AppBundle/Controller/LocaleController.php
-
-namespace AppBundle\Controller;
-
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Symfony\Component\HttpFoundation\Request;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-
-class LocaleController extends Controller
-{
-    /**
-     * Redirects user based on their referer
-     *
-     * @Route("/{_locale}/locale", name="app_set_locale")
-     * @Method("GET")
-     */
-    public function setLocaleAction(Request $request, $_locale)
-    {
-        $auth_checker = $this->get('security.authorization_checker');
-
-        // if referrer exists, redirect to referrer
-        $referer = $request->headers->get('referer');
-        if ($referer) {
-            return $this->redirect($referer);
-        }
-        // if logged in, redirect to dashboard
-        elseif ($auth_checker->isGranted('ROLE_USER')) {
-            return $this->redirectToRoute('dashboard');
-        }
-        // else redirect to homepage
-        else {
-            return $this->redirect('/');
-        }
-    }
-}
-```
-
-As you can see, the annotation defines the the new route /{_locale}/locale. To make sure that this route is working,
-
-```
--> app/console debug:router | grep locale
- app_set_locale                          GET      ANY    ANY  /{_locale}/locale
-```
-
-The AdminController gets the request object and redirects the user to the referer if there is one. If not, it redirects the user to either the admin dashboard or the homepage depending if the user is logged in or not. Again, don't memorise security.authorization_checker. Google around, make intelligent guesses and use the command line to verify the containers.
-
-```
--> app/console debug:container | grep security
-...
-```
-
-We said that the controller is the place where magic happens... but where is the magic? We haven't even change the locale session yet! We cannot change it at the controller level because it is too late. We have to change it very early on in the [Http workflow](http://symfony.com/doc/current/components/http_kernel/introduction.html)
-
-Basically, what we need to do is to hook on to the kernel.request event and modify some logic there. The symfony cookbook has good information on [sticky sessions](http://symfony.com/doc/current/cookbook/session/locale_sticky_session.html).
-
-We have create an event subscriber before. Let us create an event listener this time round.
-
-```
-# src/AppBundle/Resources/config/services.yml
-
-...
-  app.locale.listener:
-    class: AppBundle\EventListener\LocaleListener
-    arguments:
-      - "%kernel.default_locale%"
-    tags:
-      - { name: kernel.event_listener, event: kernel.request, priority: 17 }
-...
-```
-
-Why did we use priority 17? Every listener has a priority. The higher the priority, the earlier the listener will be executed. We want our custom LocaleListener to be earlier than the Kernel's LocaleListener. According to [Kernel events](http://symfony.com/doc/current/reference/events.html), The kernel LocaleListener has priority 16. Let us go abit higher, ie 17.
-
-Now we need to create the LocaleListener class.
-
-```
-# src/AppBundle/EventListener/LocaleListener.php
-
-namespace AppBundle\EventListener;
-
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-
-class LocaleListener
-{
-    private $defaultLocale;
-
-    public function __construct($defaultLocale = 'en')
-    {
-        $this->defaultLocale = $defaultLocale;
-    }
-
-    public function onKernelRequest(GetResponseEvent $event)
-    {
-        $request = $event->getRequest();
-        if (!$request->hasPreviousSession()) {
-            return;
-        }
-
-        // try to see if the locale has been set as a _locale routing parameter
-        if ($locale = $request->attributes->get('_locale')) {
-            $request->getSession()->set('_locale', $locale);
-        } else {
-            // if no explicit locale has been set on this request, use one from the session
-            $request->setLocale($request->getSession()->get('_locale', $this->defaultLocale));
-        }
-    }
-}
-```
-
-To see what is going on with the events sequencing,
-
-```
-# now view the event dispatcher list
--> app/console debug:event-dispatcher kernel.request
-```
-
-Look at the kernel.request section and you should see our custom event listener ranked 7, just above the kernel LocaleListener.
-
-![kernel event dispatcher](images/kernel_event_dispatcher.png)
-
-Can you use the AppSubscriber class that we have created to do the same job?
-
-
-Now, clear the cache and refresh the browser. Try changing the locale dropdown and see for yourself.
+Let us resetapp and have a look
 
 ```
 -> ./scripts/resetapp
 ```
-![dashboard with translation](images/dashboard_with_translation1.png)
-
-Try changing the priority to 15 of kernel.event_listener tag and see what happens?
-
 ## Update BDD (Optional)
 
-Let us create the cest file based on the User Story.
+In this chapter, we might need other modules like Db and Filesystem. Let us update our acceptance config file
 
 ```
--> vendor/bin/codecept generate:cest acceptance As_Test1_User/IWantToSwitchLanguageCest -c src/AppBundle
+# src/AppBundle/Tests/acceptance.suite.yml
+
+class_name: AcceptanceTester
+modules:
+    enabled:
+        - WebDriver:
+            url: 'http://songbird.app'
+            browser: chrome
+            window_size: 1024x768
+            capabilities:
+                unexpectedAlertBehaviour: 'accept'
+                webStorageEnabled: true
+        - MailCatcher:
+            url: 'http://songbird.app'
+            port: '1080'
+        - FileSystem:
+        - Db:
+        - \Helper\Acceptance
 ```
 
-now within the cest file:
+and our db credentials
 
 ```
-#src/AppBundle/Tests/acceptance/As_Test1_User/IWantToSwitchLanguageCest.php
+# src/AppBundle/codeception.yml
 
-namespace As_Test1_User;
-use \AcceptanceTester;
-use \Common;
-
-class IWantToSwitchLanguageCest
-{
-    public function _before(AcceptanceTester $I)
-    {
-        Common::login($I, TEST1_USERNAME, TEST1_PASSWORD);
-    }
-
-    public function _after(AcceptanceTester $I)
-    {
-    }
-
-    /**
-     * Scenario 13.1.1
-     */
-    public function localeInFrench(AcceptanceTester $I)
-    {
-        // switch to french
-        $I->selectOption('//select[@id="lang"]', 'fr');
-        // I should be able to see "my profile" in french
-        $I->canSee('Déconnexion');
-        $I->click('test1');
-        // now in show profile page
-        $I->canSee("Éditer");
-        // now switch back to english
-        $I->selectOption('//select[@id="lang"]', 'en');
-        $I->canSee('Edit');
-    }
-}
+actor: Tester
+paths:
+    tests: Tests
+    log: Tests/_output
+    data: Tests/_data
+    support: Tests/_support
+    envs: Tests/_envs
+settings:
+    bootstrap: _bootstrap.php
+    colors: true
+    memory_limit: 1024M
+extensions:
+    enabled:
+        - Codeception\Extension\RunFailed
+modules:
+    config:
+        Db:
+            dsn: 'mysql:host=192.168.56.111;dbname=songbird'
+            user: 'homestead'
+            password: 'secret'
+            dump: Tests/_data/dump.sql
 ```
 
-Lets run the test to make sure everything is working.
+now run the build to update the acceptance library
 
 ```
--> ./scripts/runtest As_Test1_User/IWantToSwitchLanguageCest.php
+-> vendor/bin/codecept build -c src/AppBundle
 ```
 
-Since the UI has been changed, some previous BDD tests might fail. Fix them and re-run the full BDD tests till everything passes.
+You should now have lots of new functions to use in AcceptanceTesterActions.php.
+
+Write the stories in this chapter as a practice. Again, get all the test to pass before moving to the next chapter.
+
+> Tip: To test a file upload, put a file under src/AppBundle/Tests/_data folder and you can then use the attachFile function like so
 
 ```
--> ./scripts/runtest
+$I->waitForElementVisible('//input[@type="file"]');
+$I->attachFile('//input[@type="file"]', 'testfile.png');
+$I->click('Submit');
 ```
+
+Remember to commit everything before moving on to the next chapter.
 
 ## Summary
 
-In this chapter, we learned how to create translation files and updated the twig files to handle the translation. We have also created a language switcher in the admin area and added a new BDD test to test internalisation.
+In this chapter, we have integrated VichuploadBundle with EasyAdminBundle. We made minor change to the ui and added new BDD tests.
 
-I am not french and my french translation might not be correct as I was using google translate. The use of french in this book is just an example.
+Next Chapter: [Chapter 15: Logging User Activities](https://github.com/bernardpeh/songbird/tree/chapter_15)
 
-Remember to commit all your changes before moving on to the next chapter.
-
-Next Chapter: [Chapter 14: The Media Manager](https://github.com/bernardpeh/songbird/tree/chapter_14)
-
-Previous Chapter: [Chapter 12: The Admin Panel Part 2](https://github.com/bernardpeh/songbird/tree/chapter_12)
+Previous Chapter: [Chapter 13: Internalisation](https://github.com/bernardpeh/songbird/tree/chapter_13)
 
 ## Stuck? Checkout my code
 
 ```
--> git checkout -b chapter_13 origin/chapter_13
+-> git checkout -b chapter_14 origin/chapter_14
 -> git clean -fd
 ```
 
 ## Exercises
 
-* Remember all the twig files you have created in [chapter 11](https://github.com/bernardpeh/songbird/tree/chapter_11)
-? Update them to support i18n.
+* Integrate [SonataMediaBundle](https://sonata-project.org/bundles/media/master/doc/index.html) instead. (Optional)
 
-* (Optional) Try creating translations in other languages other than french.
+* Write BDD Test for User stories in this chapter. (Optional)
 
 ## References
 
-* [Symfony translations](http://symfony.com/doc/current/book/translation.html)
+* [EasyAdmin Vich Uploader](https://github.com/bernardpeh/EasyAdminBundle/blob/master/Resources/doc/tutorials/upload-files-and-images.md)
 
-* [Translations best practices](http://symfony.com/doc/current/best_practices/i18n.html)
-
-* [Sticky Session](http://symfony.com/doc/current/cookbook/session/locale_sticky_session.html)
-
-* [Kernel Events](http://symfony.com/doc/current/reference/events.html)
-
-* [EasyAdmin Translations](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/tutorials/i18n.md)

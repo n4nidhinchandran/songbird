@@ -21,7 +21,8 @@ class AppKernel extends Kernel
 	        new AppBundle\AppBundle(),
 	        // init my fosuser
 	        new FOS\UserBundle\FOSUserBundle(),
-	        new AppBundle\User()
+	        new AppBundle\User(),
+            new Vich\UploaderBundle\VichUploaderBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'), true)) {

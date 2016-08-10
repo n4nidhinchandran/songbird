@@ -17,4 +17,6 @@ modules:
         - MailCatcher:
             url: 'http://songbird.app'
             port: '1080'
+        - FileSystem:
+        - Db:
         - \Helper\Acceptance

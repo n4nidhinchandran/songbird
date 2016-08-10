@@ -15,7 +15,7 @@ extensions:
 modules:
     config:
         Db:
-            dsn: ''
-            user: ''
-            password: ''
+            dsn: 'mysql:host=192.168.56.111;dbname=songbird'
+            user: 'homestead'
+            password: 'secret'
             dump: Tests/_data/dump.sql
