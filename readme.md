@@ -486,7 +486,7 @@ I am not french and my french translation might not be correct as I was using go
 
 Remember to commit all your changes before moving on to the next chapter.
 
-Next Chapter: [Chapter 14: The Media Manager](https://github.com/bernardpeh/songbird/tree/chapter_14)
+Next Chapter: [Chapter 14: Uploading Files](https://github.com/bernardpeh/songbird/tree/chapter_14)
 
 Previous Chapter: [Chapter 12: The Admin Panel Part 2](https://github.com/bernardpeh/songbird/tree/chapter_12)
 
