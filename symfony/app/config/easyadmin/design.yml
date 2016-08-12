@@ -1,0 +1,6 @@
+easy_admin:
+    design:
+        brand_color: '#337ab7'
+        assets:
+            css:
+              - /bundles/app/css/style.css
