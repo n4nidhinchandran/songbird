@@ -37,18 +37,17 @@ There is a popular [loggable doctrine extension](https://github.com/Atlantic18/D
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>15.11</td><td>List user log</td><td>I click on user log on the left menu</td><td>I should see 2 rows in the table</td></tr>
-<tr><td>15.12</td><td>Show user log 1</td><td>I click on the first log entry</td><td>I should see the text admin in the content area</td></tr>
-<tr><td>15.13</td><td>Create user log</td><td>create a new user called tlog and login again</td><td>I should see tlog in the log, not see the user log url in the log and data populated with serialised data.</td></tr>
+<tr><td>15.1.1</td><td>List user log</td><td>I click on user log on the left menu</td><td>I should see more than 1 row in the table</td></tr>
+<tr><td>15.1.2</td><td>Show user log 1</td><td>I go to the first log entry</td><td>I should see the text "/admin/dashboard"</td></tr>
 </table>
 
 <strong>Story ID 15.2: As test1 user, I don't want to manage user logs, so that I dont breach security.</strong>
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>15.21</td><td>List user log</td><td>I go to the user log url</td><td>I should get a access denied message</td></tr>
-<tr><td>15.22</td><td>Show log 1</td><td>I go to the the first log url</td><td>I should get a access denied message</td></tr>
-<tr><td>15.23</td><td>Edit log 1</td><td>I go to the first log url</td><td>I should get a access denied message</td></tr>
+<tr><td>15.2.1</td><td>List user log</td><td>I go to the user log url</td><td>I should get an access denied message</td></tr>
+<tr><td>15.2.2</td><td>Show log 1</td><td>I go to the show log id 1 url</td><td>I should get an access denied message</td></tr>
+<tr><td>15.2.3</td><td>Edit log 1</td><td>I go to the edit log id 1 url</td><td>I should get an access denied message</td></tr>
 </table>
 
 ## Implementation
@@ -311,192 +310,55 @@ use Symfony\Component\HttpKernel\KernelEvents;
     }
     ...
 
+    public function onKernelRequest(GetResponseEvent $event)
+        {
+            $request = $event->getRequest();
+            $current_url = $request->server->get('REQUEST_URI');
+            // ensures we track admin only.
+            $admin_path = $this->container->getParameter('admin_path');
+
+            // only log admin area and only if user is logged in. Dont log search by filter
+            if (!is_null($this->container->get('security.token_storage')->getToken()) && preg_match('/\/'.$admin_path.'\//', $current_url)
+                && ($request->query->get('filter') === null) && !preg_match('/\/userlog\//', $current_url)) {
+
+                $em = $this->container->get('doctrine.orm.entity_manager');
+                $log = new UserLog();
+                $log->setData(json_encode($request->request->all()));
+                $log->setUsername($this->container->get('security.token_storage')->getToken()->getUser()
+                    ->getUsername());
+                $log->setCurrentUrl($current_url);
+                $log->setReferrer($request->server->get('HTTP_REFERER'));
+                $log->setAction($request->getMethod());
+                $log->setCreated(new \DateTime('now'));
+                $em->persist($log);
+                $em->flush();
+            }
+        }
+        ...
 ```
 
-and the userLog function
+Let us create the new menu.
 
 ```
-# src/AppBundle/Event/UserCustomAction
-...
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-...
-public function userLog(GetResponseEvent $event)
-{
-    // check if user is logged in, if not, return
-    $request = $event->getRequest();
-    $current_url = $request->server->get('REQUEST_URI');
-    $admin_path = $this->container->getParameter('admin_path');
+# app/config/easyadmin/userlog.yml
 
-    // only log admin area and only if user is logged in. Dont log search by filter
-    if (!is_null($this->container->get('security.context')->getToken()) && preg_match('/\/'.$admin_path.'\//', $current_url)
-        && ($request->query->get('filter') === null) && !preg_match('/\/userlog\//', $current_url)) {
-
-        $em = $this->container->get('doctrine.orm.entity_manager');
-        $log = new UserLog();
-        $log->setData(json_encode($request->request->all()));
-        $log->setUsername($this->container->get('security.token_storage')->getToken()->getUser()
-            ->getUsername());
-        $log->setCurrentUrl($current_url);
-        $log->setReferrer($request->server->get('HTTP_REFERER'));
-        $log->setAction($request->getMethod());
-        $log->setCreated(new \DateTime('now'));
-        $em->persist($log);
-        $em->flush();
-    }
-}
-...
-```
-
-Noticed the long if statement? We only want to log users who are logged in, accessing the admin pages and not accessing the log pages.
-
-We will generate the admin class using SonataAdmin command line. After the admin generation, remove services.yml because we are using the services.xml instead.
+easy_admin:
+    entities:
+        UserLog:
+            class: AppBundle\Entity\UserLog
+            label: admin.link.user_log
+            show:
+                  actions: ['list', '-edit', '-delete']
+            list:
+                actions: ['show', '-edit', '-delete']
 
 ```
--> app/console sonata:admin:generate -b AppBundle -a UserLogAdmin -c UserLogAdminController --no-interaction AppBundle/Entity/UserLog
-rm src/AppBundle/Resources/config/services.yml
-```
-
-Again, we can find out how to use the sonata:admin:generate usage from the command prompt. Let us hook get SonataAdmin to link up with out UserLogAdmin class.
-
-```
-# src/AppBundle/Resources/config/services.xml
-...
-<service id="app.admin.user.log" class="AppBundle\Admin\UserLogAdmin">
-        <tag name="sonata.admin" manager_type="orm" group="admin" label="User"/>
-        <argument>null</argument>
-        <argument>AppBundle\Entity\UserLog</argument>
-        <argument>AppBundle:UserLogAdmin</argument>
-</service>
-...
-```
-
-The new UserLogAdmin should look like this:
-
-```
-# src/AppBundle/Admin/UserLogAdmin.php
-
-<?php
-
-namespace AppBundle\Admin;
-
-use Sonata\AdminBundle\Admin\Admin;
-use Sonata\AdminBundle\Datagrid\DatagridMapper;
-use Sonata\AdminBundle\Datagrid\ListMapper;
-use Sonata\AdminBundle\Form\FormMapper;
-use Sonata\AdminBundle\Show\ShowMapper;
-
-class UserLogAdmin extends Admin
-{
-    protected $maxPerPage = 10;
-
-    /**
-     * @param DatagridMapper $datagridMapper
-     */
-    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
-    {
-        $datagridMapper
-            ->add('id')
-            ->add('username')
-            ->add('current_url')
-            ->add('referrer')
-            ->add('action')
-            ->add('data')
-            ->add('created')
-        ;
-    }
-
-    /**
-     * @param ListMapper $listMapper
-     */
-    protected function configureListFields(ListMapper $listMapper)
-    {
-        $listMapper
-            ->add('id')
-            ->add('username')
-            ->add('current_url')
-            ->add('referrer')
-            ->add('action')
-            ->add('created')
-            ->add('_action', 'actions', array(
-                'actions' => array(
-                    'show' => array(),
-                    'edit' => array(),
-                    'delete' => array(),
-                )
-            ))
-        ;
-    }
-
-    /**
-     * @param FormMapper $formMapper
-     */
-    protected function configureFormFields(FormMapper $formMapper)
-    {
-        $formMapper
-            ->add('id')
-            ->add('username')
-            ->add('current_url')
-            ->add('referrer')
-            ->add('action')
-            ->add('data')
-        ;
-    }
-
-    /**
-     * @param ShowMapper $showMapper
-     */
-    protected function configureShowFields(ShowMapper $showMapper)
-    {
-        $showMapper
-            ->add('id')
-            ->add('username')
-            ->add('current_url')
-            ->add('referrer')
-            ->add('action')
-            ->add('data')
-            ->add('created')
-        ;
-    }
-
-    public function createQuery($context = 'list')
-    {
-
-        $query = parent::createQuery($context);
-        $query->orderby($query->getRootAliases()[0].'.id', 'desc');
-
-        return $query;
-    }
-}
-```
-
-By inheriting Sonata Admin class, we can overwrite the protected variables. We have just set the maximum items per page to 10.
-
-Noticed that we have also customised the createQuery function because we want to see the latest entry first.
-
-Next, We will update the base view template such that a new "User Log" menu appears on the left menu.
-
-```
-# src/AppBundle/Resources/Views/Admin/standard_layout.html.twig
-...
-    <ul>
-        {% if is_granted('ROLE_SUPER_ADMIN') %}
-        <li><a href="{{ path('admin_app_user_list') }}">{{ 'admin.link.user_management' | trans({}, 'app') }}</a></li>
-        <li><a href="{{ path('admin_app_gallery_list') }}">{{ 'admin.link.gallery_management' | trans({}, 'app') }}</a></li>
-        <li><a href="{{ path('admin_app_media_list') }}">{{ 'admin.link.media_management' | trans({}, 'app') }}</a></li>
-        <li><a href="{{ path('admin_app_userlog_list') }}">{{ 'admin.link.user_log' | trans({}, 'app') }}</a></li>
-        {% endif %}
-...
-```
-
-Let us create the translation for the new menu.
+and the translation.
 
 ```
 # src/AppBundle/Resources/translations/app.en.xlf
 ...
-<trans-unit id="8">
-    <source>admin.link.user_log</source>
-    <target>User Log</target>
-</trans-unit>
+admin.link.user_log: User Log
 ...
 ```
 
@@ -505,14 +367,11 @@ and the french version
 ```
 # src/AppBundle/Resources/translations/app.fr.xlf
 ...
-<trans-unit id="8">
-    <source>admin.link.user_log</source>
-    <target>Connexion utilisateur</target>
-</trans-unit>
+admin.link.user_log: Connexion utilisateur
 ...
 ```
 
-Now reset the db, re-login again, click on the user log menu and you see some data.
+Now reset the db, re-login again, click on the user log menu and you will see the new menu on the left.
 
 ```
 -> ./scripts/resetapp
@@ -523,15 +382,32 @@ Now reset the db, re-login again, click on the user log menu and you see some da
 Let us create the cest files.
 
 ```
--> bin/codecept generate:cest acceptance As_An_Admin/IWantToManageUserLog -c src/AppBundle
--> bin/codecept generate:cest acceptance As_Test1_User/IDontWantToManageUserLog -c src/AppBundle
+-> vendor/bin/codecept generate:cest acceptance As_An_Admin/IWantToManageUserLog -c src/AppBundle
+-> vendor/bin/codecept generate:cest acceptance As_Test1_User/IDontWantToManageUserLog -c src/AppBundle
+```
+
+*Tip: The assert module is very useful.*
+
+Let us add the assert module
+
+```
+# src/AppBundle/Tests/acceptance.suite.yml
+...
+        - Asserts:
+        ...
+```
+
+Let us rebuild the libraries
+
+```
+-> vendor/bin/codecept build -c src/AppBundle/
 ```
 
 Again, I will leave you to write the bdd tests. The more detail your scenario is, the better the test coverage will be. Get all the test to pass and remember to commit everything before moving on to the next chapter.
 
 ## Summary
 
-In this chapter, we created a new entity called UserLog and created the admin class for it. We used the kernel.request event to inject the required request data into the database.
+In this chapter, we created a new entity called UserLog and used the kernel request event to inject the required request data into the database.
 
 ## Stuck? Checkout my code
 

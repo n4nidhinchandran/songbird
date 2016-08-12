@@ -52,7 +52,7 @@ class AppSubscriber implements EventSubscriberInterface
      */
     public function checkUserRights(GenericEvent $event)
     {
-
+        
         // if super admin, allow all
         if ($this->container->get('security.authorization_checker')->isGranted('ROLE_SUPER_ADMIN')) {
             return;
@@ -72,6 +72,7 @@ class AppSubscriber implements EventSubscriberInterface
                 }
             }
         }
+
         // throw exception in all cases
         throw new AccessDeniedException();
     }
