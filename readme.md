@@ -1,13 +1,11 @@
-# Chapter 14: Uploading Files
+# Chapter 15: Logging User Activities
 
-Our CMS should allow uploading of files. Let's say we want to allow user to upload their own profile image. EasyAdmin has nice integration with a popular bundle called [VichUploaderBundle](https://github.com/dustin10/VichUploaderBundle).
+A proper CMS needs a logging mechanism. We are talking about the admin area, not the front end. If something happens, we need to know what was done and what happened? We can log user activities in a file system but it is not very efficient. File system is good for logging errors - see [monolog](http://symfony.com/doc/current/cookbook/logging/monolog.html). Ideally, we need a database solution.
 
 ## Objectives
 
-> * Update User Stories
-> * Install VichUploaderBundle
-> * Update Fixtures
-> * Update UI
+> * Define User Stories
+> * Implementation
 > * Update BDD (Optional)
 
 ## Pre-setup
@@ -18,384 +16,544 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 # check your branch
 -> git status
 # start branching now
--> git checkout -b my_chapter14
+-> git checkout -b my_chapter15
 ```
 
-## Update User Stories
+## Define User Stories
 
-**Story ID 10.6: As an admin user, I want to manage all users, so that I can control user access of the system.**
+After the user logs in, we want to record the username, current_url, previous_url, CRUD action, data on every page that the user visits. These data should be recorded in a new table. When the user is deleted, we do not want the logs associated with the user to be deleted, therefore the 2 tables are not related.
+
+There is a popular [loggable doctrine extension](https://github.com/Atlantic18/DoctrineExtensions/blob/master/doc/loggable.md) that we can use. However, it is easy enough to built one for ourselves.
+
+**15. Logging User Activitiy**
+
+<table>
+<tr><td><strong>Story Id</strong></td><td><strong>As a</strong></td><td><strong>I</strong></td><td><strong>So that I</strong></td></tr>
+<tr><td>15.1</td><td>admin user</td><td>want to manage user logs</td><td>check on user activity anytime.</td></tr>
+<tr><td>15.2</td><td>test1 user</td><td>don't want to manage user logs</td><td>don't breach security</td></tr>
+</table>
+
+<strong>Story ID 15.1: As an admin, I want to manage user logs, so that I can check on user activity anytime.</strong>
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.6.1</td><td>List all profiles</td><td>I go show profile page" url</td><td>I should see a list of all users in a table with image fields</td></tr>
+<tr><td>15.11</td><td>List user log</td><td>I click on user log on the left menu</td><td>I should see 2 rows in the table</td></tr>
+<tr><td>15.12</td><td>Show user log 1</td><td>I click on the first log entry</td><td>I should see the text admin in the content area</td></tr>
+<tr><td>15.13</td><td>Create user log</td><td>create a new user called tlog and login again</td><td>I should see tlog in the log, not see the user log url in the log and data populated with serialised data.</td></tr>
 </table>
 
-**Story ID 10.1: As a test1 user, I want to manage my profile, so that I can update it any time.**
+<strong>Story ID 15.2: As test1 user, I don't want to manage user logs, so that I dont breach security.</strong>
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>10.4.1</td><td>Show my profile</td><td>I go to show profile page</td><td>I should see test1@songbird.app and an Image field</td></tr>
-<tr><td>10.4.5</td><td>Delete and Add profile image</td><td>I go to edit profile page And delete profile image and add a new image</td><td>I should see an empty profile, previous profile image gone and then a new one appearing in the file system.</td></tr>
-<tr><td>10.4.6</td><td>Update profile image Only</td><td>I go to edit profile page And update profile image and submit</td><td>I should see user profile updated and previous profile image gone from file system.</td></tr>
+<tr><td>15.21</td><td>List user log</td><td>I go to the user log url</td><td>I should get a access denied message</td></tr>
+<tr><td>15.22</td><td>Show log 1</td><td>I go to the the first log url</td><td>I should get a access denied message</td></tr>
+<tr><td>15.23</td><td>Edit log 1</td><td>I go to the first log url</td><td>I should get a access denied message</td></tr>
 </table>
 
-## Install Vich Uploader Bundle
+## Implementation
 
-Add the media bundle to composer.json
-```
-# composer.json
-...
-"require": {
-   ...
-   "vich/uploader-bundle": "^1.2"
-...
-```
-
-Then,
+We will create a new entity called UserLog. The UserLog entity should have the following fields: id, username, current_url, referrer, action, data, created.
 
 ```
--> composer update
+-> app/console doctrine:generate:entity --entity=AppBundle:UserLog --format=annotation --fields="username:string(255) current_url:text referrer:text action:string(255) data:text created:datetime" --no-interaction
 ```
 
-In config.yml, we need to add a few parameters
+Again, don't memorise this command. You can find out more about this command using
 
 ```
-# app/config/config.yml
-...
-parameters:
-    locale: en
-    supported_lang: [ 'en', 'fr']
-    admin_path: admin
-    app.profile_image.path: /uploads/profiles
-    ...
-# Vich Configuration
-vich_uploader:
-    db_driver: orm
-    mappings:
-        profile_images:
-            uri_prefix: '%app.profile_image.path%'
-            upload_destination: '%kernel.root_dir%/../web/uploads/profiles'
-            # this will allow all uploaded filenames to be unique
-            namer: vich_uploader.namer_uniqid
-...
+app/console doctrine:generate:entity --help
 ```
 
-and in Appkernel.php
+or from the [online documentation](http://symfony.com/doc/current/bundles/SensioGeneratorBundle/commands/generate_doctrine_entity.html)
 
+In the entity, note that we are populating the username field from the user entity but not creating a constraint between the 2 entities. The reason for that is that when we delete the user, we still want to keep the user entries. We haven't really gone through doctrine yet. You can read more about association mapping [here](http://doctrine-orm.readthedocs.org/projects/doctrine-orm/en/latest/reference/association-mapping.html) if we want them to be related. We will touch on doctrine again in the later chapters.
 ```
-# app/AppKernel.php
-...
-public function registerBundles()
+# src/AppBundle/Entity/UserLog.php
+
+<?php
+
+/**
+ * UserLog
+ *
+ * @ORM\Table(name="user_log")
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\UserLogRepository")
+ */
+class UserLog
 {
-    return array(
-        // ...
-        new Vich\UploaderBundle\VichUploaderBundle(),
-    );
+    /**
+     * @var int
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    private $id;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="username", type="string", length=255)
+     */
+    private $username;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="current_url", type="text")
+     */
+    private $current_url;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="referrer", type="text", nullable=true)
+     */
+    private $referrer;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="action", type="string", length=255)
+     */
+    private $action;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="data", type="text", nullable=true)
+     */
+    private $data;
+
+    /**
+     * @var \DateTime
+     *
+     * @ORM\Column(name="created", type="datetime")
+     */
+    private $created;
+
+
+    /**
+     * Get id
+     *
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Set username
+     *
+     * @param string $username
+     *
+     * @return UserLog
+     */
+    public function setUsername($username)
+    {
+        $this->username = $username;
+
+        return $this;
+    }
+
+    /**
+     * Get username
+     *
+     * @return string
+     */
+    public function getUsername()
+    {
+        return $this->username;
+    }
+
+    /**
+     * Set currentUrl
+     *
+     * @param string $currentUrl
+     *
+     * @return UserLog
+     */
+    public function setCurrentUrl($currentUrl)
+    {
+        $this->current_url = $currentUrl;
+
+        return $this;
+    }
+
+    /**
+     * Get currentUrl
+     *
+     * @return string
+     */
+    public function getCurrentUrl()
+    {
+        return $this->current_url;
+    }
+
+    /**
+     * Set referrer
+     *
+     * @param string $referrer
+     *
+     * @return UserLog
+     */
+    public function setReferrer($referrer)
+    {
+        $this->referrer = $referrer;
+
+        return $this;
+    }
+
+    /**
+     * Get referrer
+     *
+     * @return string
+     */
+    public function getReferrer()
+    {
+        return $this->referrer;
+    }
+
+    /**
+     * Set action
+     *
+     * @param string $action
+     *
+     * @return UserLog
+     */
+    public function setAction($action)
+    {
+        $this->action = $action;
+
+        return $this;
+    }
+
+    /**
+     * Get action
+     *
+     * @return string
+     */
+    public function getAction()
+    {
+        return $this->action;
+    }
+
+    /**
+     * Set data
+     *
+     * @param string $data
+     *
+     * @return UserLog
+     */
+    public function setData($data)
+    {
+        $this->data = $data;
+
+        return $this;
+    }
+
+    /**
+     * Get data
+     *
+     * @return string
+     */
+    public function getData()
+    {
+        return $this->data;
+    }
+
+    /**
+     * Set created
+     *
+     * @param \DateTime $created
+     *
+     * @return UserLog
+     */
+    public function setCreated($created)
+    {
+        $this->created = $created;
+
+        return $this;
+    }
+
+    /**
+     * Get created
+     *
+     * @return \DateTime
+     */
+    public function getCreated()
+    {
+        return $this->created;
+    }
+}
+```
+
+Noticed we have added "nullable=true" to both the data and referrer fields. Next, we will create a new service to subscribe to the kernel.request event.
+
+```
+# src/AppBundle/EventListener/AppSubscriber.php
+
+...
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
+...
+    public static function getSubscribedEvents()
+    {
+        // return the subscribed events, their methods and priorities
+        return array(
+            EasyAdminEvents::PRE_LIST => 'checkUserRights',
+            EasyAdminEvents::PRE_EDIT => 'checkUserRights',
+            EasyAdminEvents::PRE_SHOW => 'checkUserRights',
+            FOSUserEvents::RESETTING_RESET_SUCCESS => 'redirectUserAfterPasswordReset',
+            KernelEvents::REQUEST => 'onKernelRequest'
+        );
+    }
+    ...
+
+```
+
+and the userLog function
+
+```
+# src/AppBundle/Event/UserCustomAction
+...
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+...
+public function userLog(GetResponseEvent $event)
+{
+    // check if user is logged in, if not, return
+    $request = $event->getRequest();
+    $current_url = $request->server->get('REQUEST_URI');
+    $admin_path = $this->container->getParameter('admin_path');
+
+    // only log admin area and only if user is logged in. Dont log search by filter
+    if (!is_null($this->container->get('security.context')->getToken()) && preg_match('/\/'.$admin_path.'\//', $current_url)
+        && ($request->query->get('filter') === null) && !preg_match('/\/userlog\//', $current_url)) {
+
+        $em = $this->container->get('doctrine.orm.entity_manager');
+        $log = new UserLog();
+        $log->setData(json_encode($request->request->all()));
+        $log->setUsername($this->container->get('security.token_storage')->getToken()->getUser()
+            ->getUsername());
+        $log->setCurrentUrl($current_url);
+        $log->setReferrer($request->server->get('HTTP_REFERER'));
+        $log->setAction($request->getMethod());
+        $log->setCreated(new \DateTime('now'));
+        $em->persist($log);
+        $em->flush();
+    }
 }
 ...
 ```
 
+Noticed the long if statement? We only want to log users who are logged in, accessing the admin pages and not accessing the log pages.
 
-
-let us reset the app
-
-```
--> ./scripts/resetapp
-```
-
-go to adminer and verify that the new image field has been added.
-
-![New image field](images/new_image_field.png)
-
-
-
-We need to create the new upload folder
+We will generate the admin class using SonataAdmin command line. After the admin generation, remove services.yml because we are using the services.xml instead.
 
 ```
--> mkdir -p web/uploads/profiles
+-> app/console sonata:admin:generate -b AppBundle -a UserLogAdmin -c UserLogAdminController --no-interaction AppBundle/Entity/UserLog
+rm src/AppBundle/Resources/config/services.yml
 ```
 
-but we should ignore in git. In .gitignore
+Again, we can find out how to use the sonata:admin:generate usage from the command prompt. Let us hook get SonataAdmin to link up with out UserLogAdmin class.
 
 ```
-# .gitignore
-/web/bundles/
-/web/uploads/
-/app/bootstrap.php.cache
-/app/cache/*
-/app/config/parameters.yml
-/app/logs/*
-!app/cache/.gitkeep
-!app/logs/.gitkeep
-/app/phpunit.xml
-/build/
-/vendor/
-/bin/
-/composer.phar
-/composer.lock
-
-src/AppBundle/tests/_output/*
-```
-
-## Update Fixtures
-
-Let us update the Image field to help us with automate testing.
-
-```
-# src/AppBundle/DataFixtures/ORM/LoadUserData.php
-
+# src/AppBundle/Resources/config/services.xml
 ...
-    public function load(ObjectManager $manager)
-        {
-            $userManager = $this->container->get('fos_user.user_manager');
-
-            // add admin user
-            $admin = $userManager->createUser();
-            $admin->setUsername('admin');
-            $admin->setEmail('admin@songbird.app');
-            $admin->setPlainPassword('admin');
-            $userManager->updatePassword($admin);
-            $admin->setEnabled(1);
-            $admin->setFirstname('Admin Firstname');
-            $admin->setLastname('Admin Lastname');
-            $admin->setRoles(array('ROLE_SUPER_ADMIN'));
-            $admin->setImage('test_profile.jpg');
-            $userManager->updateUser($admin);
-
-            // add test user 1
-            $test1 = $userManager->createUser();
-            $test1->setUsername('test1');
-            $test1->setEmail('test1@songbird.app');
-            $test1->setPlainPassword('test1');
-            $userManager->updatePassword($test1);
-            $test1->setEnabled(1);
-            $test1->setFirstname('test1 Firstname');
-            $test1->setLastname('test1 Lastname');
-            $test1->setImage('test_profile.jpg');
-            $userManager->updateUser($test1);
-
-            // add test user 2
-            $test2 = $userManager->createUser();
-            $test2->setUsername('test2');
-            $test2->setEmail('test2@songbird.app');
-            $test2->setPlainPassword('test2');
-            $userManager->updatePassword($test2);
-            $test2->setEnabled(1);
-            $test2->setFirstname('test2 Firstname');
-            $test2->setLastname('test2 Lastname');
-            $test2->setImage('test_profile.jpg');
-            $userManager->updateUser($test2);
-
-            // add test user 3
-            $test3 = $userManager->createUser();
-            $test3->setUsername('test3');
-            $test3->setEmail('test3@songbird.app');
-            $test3->setPlainPassword('test3');
-            $userManager->updatePassword($test3);
-            $test3->setEnabled(0);
-            $test3->setFirstname('test3 Firstname');
-            $test3->setLastname('test3 Lastname');
-            $test3->setImage('test_profile.jpg');
-            $userManager->updateUser($test3);
-
-            // use this reference in data fixtures elsewhere
-            $this->addReference('admin_user', $admin);
-        }
-    ...
+<service id="app.admin.user.log" class="AppBundle\Admin\UserLogAdmin">
+        <tag name="sonata.admin" manager_type="orm" group="admin" label="User"/>
+        <argument>null</argument>
+        <argument>AppBundle\Entity\UserLog</argument>
+        <argument>AppBundle:UserLogAdmin</argument>
+</service>
+...
 ```
 
-We will update the resetapp script to copy the test_profile.jpg to the web folder
+The new UserLogAdmin should look like this:
 
 ```
-# scripts/resetapp
+# src/AppBundle/Admin/UserLogAdmin.php
 
-#!/bin/bash
-rm -rf app/cache/*
-# app/console cache:clear --no-warmup
-app/console doctrine:database:drop --force
-app/console doctrine:database:create
-app/console doctrine:schema:create
-app/console doctrine:fixtures:load -n
+<?php
 
-# copy test data over to web folder
-cp src/AppBundle/Tests/_data/test_profile.jpg web/uploads/profiles/
+namespace AppBundle\Admin;
+
+use Sonata\AdminBundle\Admin\Admin;
+use Sonata\AdminBundle\Datagrid\DatagridMapper;
+use Sonata\AdminBundle\Datagrid\ListMapper;
+use Sonata\AdminBundle\Form\FormMapper;
+use Sonata\AdminBundle\Show\ShowMapper;
+
+class UserLogAdmin extends Admin
+{
+    protected $maxPerPage = 10;
+
+    /**
+     * @param DatagridMapper $datagridMapper
+     */
+    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+    {
+        $datagridMapper
+            ->add('id')
+            ->add('username')
+            ->add('current_url')
+            ->add('referrer')
+            ->add('action')
+            ->add('data')
+            ->add('created')
+        ;
+    }
+
+    /**
+     * @param ListMapper $listMapper
+     */
+    protected function configureListFields(ListMapper $listMapper)
+    {
+        $listMapper
+            ->add('id')
+            ->add('username')
+            ->add('current_url')
+            ->add('referrer')
+            ->add('action')
+            ->add('created')
+            ->add('_action', 'actions', array(
+                'actions' => array(
+                    'show' => array(),
+                    'edit' => array(),
+                    'delete' => array(),
+                )
+            ))
+        ;
+    }
+
+    /**
+     * @param FormMapper $formMapper
+     */
+    protected function configureFormFields(FormMapper $formMapper)
+    {
+        $formMapper
+            ->add('id')
+            ->add('username')
+            ->add('current_url')
+            ->add('referrer')
+            ->add('action')
+            ->add('data')
+        ;
+    }
+
+    /**
+     * @param ShowMapper $showMapper
+     */
+    protected function configureShowFields(ShowMapper $showMapper)
+    {
+        $showMapper
+            ->add('id')
+            ->add('username')
+            ->add('current_url')
+            ->add('referrer')
+            ->add('action')
+            ->add('data')
+            ->add('created')
+        ;
+    }
+
+    public function createQuery($context = 'list')
+    {
+
+        $query = parent::createQuery($context);
+        $query->orderby($query->getRootAliases()[0].'.id', 'desc');
+
+        return $query;
+    }
+}
 ```
 
-## Update UI
+By inheriting Sonata Admin class, we can overwrite the protected variables. We have just set the maximum items per page to 10.
 
-Let us update the UI to include the image field.
+Noticed that we have also customised the createQuery function because we want to see the latest entry first.
+
+Next, We will update the base view template such that a new "User Log" menu appears on the left menu.
 
 ```
-# app/config/easyadmin/user.yml
-
-easy_admin:
-    design:
-        brand_color: '#337ab7'
-        assets:
-            css:
-              - /bundles/app/css/style.css
-
-    entities:
-        User:
-            class: AppBundle\Entity\User
-            label: admin.link.user_management
-            # for new user
-            new:
-                fields:
-                  - username
-                  - firstname
-                  - lastname
-                  - { property: 'plainPassword', type: 'repeated', type_options: { type: 'Symfony\Component\Form\Extension\Core\Type\PasswordType', first_options: {label: 'Password'}, second_options: {label: 'Repeat Password'}, invalid_message: 'The password fields must match.'}}
-                  - { property: 'email', type: 'email', type_options: { trim: true } }
-                  - { property: 'imageFile', type: 'vich_image' }
-                  - roles
-                  - enabled
-            edit:
-                  actions: ['-delete', '-list']
-                  fields:
-                    - username
-                    - firstname
-                    - lastname
-                    - { property: 'plainPassword', type: 'repeated', type_options: { type: 'Symfony\Component\Form\Extension\Core\Type\PasswordType', required: false, first_options: {label: 'Password'}, second_options: {label: 'Repeat Password'}, invalid_message: 'The password fields must match.'}}
-                    - { property: 'email', type: 'email', type_options: { trim: true } }
-                    - { property: 'imageFile', type: 'vich_image' }
-                    - roles
-                    - enabled
-                    - locked
-                    - expired
-            show:
-                  actions: ['edit', '-delete', '-list']
-                  fields:
-                    - id
-                    - { property: 'image', type: 'image', base_path: '%app.profile_image.path%'}
-                    - username
-                    - firstname
-                    - lastname
-                    - email
-                    - roles
-                    - enabled
-                    - locked
-                    - expired
-                    - { property: 'last_login', type: 'datetime' }
-                    - modified
-                    - created
-            list:
-                title: 'User Listing'
-                actions: ['show']
-                fields:
-                  - id
-                  - { property: 'image', type: 'image', base_path: '%app.profile_image.path%'}
-                  - username
-                  - email
-                  - firstname
-                  - lastname
-                  - enabled
-                  - locked
-                  - expired
-                  - roles
-                  - { property: 'last_login', type: 'datetime' }
+# src/AppBundle/Resources/Views/Admin/standard_layout.html.twig
+...
+    <ul>
+        {% if is_granted('ROLE_SUPER_ADMIN') %}
+        <li><a href="{{ path('admin_app_user_list') }}">{{ 'admin.link.user_management' | trans({}, 'app') }}</a></li>
+        <li><a href="{{ path('admin_app_gallery_list') }}">{{ 'admin.link.gallery_management' | trans({}, 'app') }}</a></li>
+        <li><a href="{{ path('admin_app_media_list') }}">{{ 'admin.link.media_management' | trans({}, 'app') }}</a></li>
+        <li><a href="{{ path('admin_app_userlog_list') }}">{{ 'admin.link.user_log' | trans({}, 'app') }}</a></li>
+        {% endif %}
+...
 ```
 
-Let us resetapp and have a look
+Let us create the translation for the new menu.
+
+```
+# src/AppBundle/Resources/translations/app.en.xlf
+...
+<trans-unit id="8">
+    <source>admin.link.user_log</source>
+    <target>User Log</target>
+</trans-unit>
+...
+```
+
+and the french version
+
+```
+# src/AppBundle/Resources/translations/app.fr.xlf
+...
+<trans-unit id="8">
+    <source>admin.link.user_log</source>
+    <target>Connexion utilisateur</target>
+</trans-unit>
+...
+```
+
+Now reset the db, re-login again, click on the user log menu and you see some data.
 
 ```
 -> ./scripts/resetapp
 ```
+
 ## Update BDD (Optional)
 
-In this chapter, we might need other modules like Db and Filesystem. Let us update our acceptance config file
+Let us create the cest files.
 
 ```
-# src/AppBundle/Tests/acceptance.suite.yml
-
-class_name: AcceptanceTester
-modules:
-    enabled:
-        - WebDriver:
-            url: 'http://songbird.app'
-            browser: chrome
-            window_size: 1024x768
-            capabilities:
-                unexpectedAlertBehaviour: 'accept'
-                webStorageEnabled: true
-        - MailCatcher:
-            url: 'http://songbird.app'
-            port: '1080'
-        - FileSystem:
-        - Db:
-        - \Helper\Acceptance
+-> bin/codecept generate:cest acceptance As_An_Admin/IWantToManageUserLog -c src/AppBundle
+-> bin/codecept generate:cest acceptance As_Test1_User/IDontWantToManageUserLog -c src/AppBundle
 ```
 
-and our db credentials
-
-```
-# src/AppBundle/codeception.yml
-
-actor: Tester
-paths:
-    tests: Tests
-    log: Tests/_output
-    data: Tests/_data
-    support: Tests/_support
-    envs: Tests/_envs
-settings:
-    bootstrap: _bootstrap.php
-    colors: true
-    memory_limit: 1024M
-extensions:
-    enabled:
-        - Codeception\Extension\RunFailed
-modules:
-    config:
-        Db:
-            dsn: 'mysql:host=192.168.56.111;dbname=songbird'
-            user: 'homestead'
-            password: 'secret'
-            dump: Tests/_data/dump.sql
-```
-
-now run the build to update the acceptance library
-
-```
--> vendor/bin/codecept build -c src/AppBundle
-```
-
-You should now have lots of new functions to use in AcceptanceTesterActions.php.
-
-Write the stories in this chapter as a practice. Again, get all the test to pass before moving to the next chapter.
-
-> Tip: To test a file upload, put a file under src/AppBundle/Tests/_data folder and you can then use the attachFile function like so
-
-```
-$I->waitForElementVisible('//input[@type="file"]');
-$I->attachFile('//input[@type="file"]', 'testfile.png');
-$I->click('Submit');
-```
-
-Remember to commit everything before moving on to the next chapter.
+Again, I will leave you to write the bdd tests. The more detail your scenario is, the better the test coverage will be. Get all the test to pass and remember to commit everything before moving on to the next chapter.
 
 ## Summary
 
-In this chapter, we have integrated VichuploadBundle with EasyAdminBundle. We made minor change to the ui and added new BDD tests.
-
-Next Chapter: [Chapter 15: Logging User Activities](https://github.com/bernardpeh/songbird/tree/chapter_15)
-
-Previous Chapter: [Chapter 13: Internalisation](https://github.com/bernardpeh/songbird/tree/chapter_13)
+In this chapter, we created a new entity called UserLog and created the admin class for it. We used the kernel.request event to inject the required request data into the database.
 
 ## Stuck? Checkout my code
 
 ```
--> git checkout -b chapter_14 origin/chapter_14
+-> git checkout -b chapter_15 origin/chapter_15
 -> git clean -fd
 ```
 
 ## Exercises
 
-* Integrate [SonataMediaBundle](https://sonata-project.org/bundles/media/master/doc/index.html) instead. (Optional)
+* Modify the UserLog entity such that deleting the user in the User entity will delete the associated user entries in the UserLog entity. (optional)
 
-* Write BDD Test for User stories in this chapter. (Optional)
+* What are the pros and cons of allowing CRUD actions on log entries?
+
+* Can you use doctrine loggable extension to achieve what was achieved here? (optional)
+
+* Can you implement automated entity logging using [Traits](http://php.net/manual/en/language.oop5.traits.php)?
 
 ## References
 
-* [EasyAdmin Vich Uploader](https://github.com/bernardpeh/EasyAdminBundle/blob/master/Resources/doc/tutorials/upload-files-and-images.md)
+* [Symfony Events](http://symfony.com/doc/current/reference/events.html)
 
+* [Doctrine Extensions](http://symfony.com/doc/current/cookbook/doctrine/common_extensions.html)
+
+* [Doctrine Association Mapping](http://doctrine-orm.readthedocs.org/projects/doctrine-orm/en/latest/reference/association-mapping.html)

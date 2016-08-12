@@ -11,6 +11,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use FOS\UserBundle\FOSUserEvents;
 use FOS\UserBundle\Event\FormEvent;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
+use AppBundle\Entity\UserLog;
 
 class AppSubscriber implements EventSubscriberInterface
 {
@@ -35,7 +38,8 @@ class AppSubscriber implements EventSubscriberInterface
             EasyAdminEvents::PRE_LIST => 'checkUserRights',
             EasyAdminEvents::PRE_EDIT => 'checkUserRights',
             EasyAdminEvents::PRE_SHOW => 'checkUserRights',
-            FOSUserEvents::RESETTING_RESET_SUCCESS => 'redirectUserAfterPasswordReset'
+            FOSUserEvents::RESETTING_RESET_SUCCESS => 'redirectUserAfterPasswordReset',
+            KernelEvents::REQUEST => 'onKernelRequest'
         );
     }
 
@@ -84,4 +88,28 @@ class AppSubscriber implements EventSubscriberInterface
         $event->setResponse(new RedirectResponse($url));
     }
 
+    public function onKernelRequest(GetResponseEvent $event)
+    {
+        $request = $event->getRequest();
+        $current_url = $request->server->get('REQUEST_URI');
+        // ensures we track admin only.
+        $admin_path = $this->container->getParameter('admin_path');
+
+        // only log admin area and only if user is logged in. Dont log search by filter
+        if (!is_null($this->container->get('security.token_storage')->getToken()) && preg_match('/\/'.$admin_path.'\//', $current_url)
+            && ($request->query->get('filter') === null) && !preg_match('/\/userlog\//', $current_url)) {
+
+            $em = $this->container->get('doctrine.orm.entity_manager');
+            $log = new UserLog();
+            $log->setData(json_encode($request->request->all()));
+            $log->setUsername($this->container->get('security.token_storage')->getToken()->getUser()
+                ->getUsername());
+            $log->setCurrentUrl($current_url);
+            $log->setReferrer($request->server->get('HTTP_REFERER'));
+            $log->setAction($request->getMethod());
+            $log->setCreated(new \DateTime('now'));
+            $em->persist($log);
+            $em->flush();
+        }
+    }
 }
