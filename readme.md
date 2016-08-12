@@ -4,7 +4,7 @@ Let us continue with tweaking EasyAdmin by changing the layout and try more adve
 
 ## Objectives
 
-> * Tweaking the Admin Layout
+> * Tweaking the UI
 > * Your Dashboard
 > * Menu Tweaking
 > * Removing hardcoding of admin prefix
@@ -21,12 +21,12 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 -> git checkout -b my_chapter12
 ```
 
-## Tweaking the Admin Layout
+## Tweaking the UI
 
-Its easy to change the theme colour and add our own custom css
+Its easy to change the theme colour and add our own custom css. For the sake of manageability, let us create a new file, design.yml
 
 ```
-# app/config/easyadmin/user.yml
+# app/config/easyadmin/design.yml
 
 easy_admin:
     design:
@@ -34,7 +34,67 @@ easy_admin:
         assets:
             css:
               - /bundles/app/css/style.css
-        ...
+```
+
+and our old user.yml
+
+```
+easy_admin:
+    entities:
+        User:
+            class: AppBundle\Entity\User
+            label: 'User Management'
+            # for new user
+            new:
+                fields:
+                  - username
+                  - firstname
+                  - lastname
+                  - { property: 'plainPassword', type: 'repeated', type_options: { type: 'Symfony\Component\Form\Extension\Core\Type\PasswordType', first_options: {label: 'Password'}, second_options: {label: 'Repeat Password'}, invalid_message: 'The password fields must match.'}}
+                  - { property: 'email', type: 'email', type_options: { trim: true } }
+                  - roles
+                  - enabled
+            edit:
+                  actions: ['-delete', '-list']
+                  fields:
+                    - username
+                    - firstname
+                    - lastname
+                    - { property: 'plainPassword', type: 'repeated', type_options: { type: 'Symfony\Component\Form\Extension\Core\Type\PasswordType', required: false, first_options: {label: 'Password'}, second_options: {label: 'Repeat Password'}, invalid_message: 'The password fields must match.'}}
+                    - { property: 'email', type: 'email', type_options: { trim: true } }
+                    - roles
+                    - enabled
+                    - locked
+                    - expired
+            show:
+                  actions: ['edit', '-delete', '-list']
+                  fields:
+                    - id
+                    - username
+                    - firstname
+                    - lastname
+                    - email
+                    - roles
+                    - enabled
+                    - locked
+                    - expired
+                    - { property: 'last_login', type: 'datetime' }
+                    - modified
+                    - created
+            list:
+                title: 'User Listing'
+                actions: ['show']
+                fields:
+                  - id
+                  - username
+                  - email
+                  - firstname
+                  - lastname
+                  - enabled
+                  - locked
+                  - expired
+                  - roles
+                  - { property: 'last_login', type: 'datetime' }
 ```
 
 and our css
