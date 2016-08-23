@@ -25,7 +25,7 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 
 Since we are using Homestead to run our vm, apc is already enabled. We only need to configure blackfire.
 
-For the installation to work correctly, go to [blackfire.io](http://blackfire.io) and sign up for an account. In https://blackfire.io/account, get the client and server (id and token). Enter them in Homestead.yaml.
+For the installation to work correctly, go to [blackfire.io](http://blackfire.io) (another great product by sensiolabs) and sign up for an account. In https://blackfire.io/account, get the client and server (id and token). Enter them in Homestead.yaml.
 
 ```
 # ../Homestead.yaml
@@ -432,92 +432,84 @@ You would see the obvious alert icon in the toolbar... Clicking on the red icon 
 
 There are lots of "messages" under the domain column because if there is no translation for certain text, it defaults to using the messages translation file which hasn't been created.
 
-How would you fix the translation errors? Using the debug toolbar is straight forward and should be self-explainatory.
+How would you fix the translation errors? Using the debug toolbar is straight forward and should be self explainatory.
 
 > Tip: PHP developers should be aware of the print_r or var_dump command to dump objects or variables. Try doing it with Symfony and your browser will crash. Use the [dump](http://symfony.com/doc/current/components/var_dumper/introduction.html) function instead.
 
 
 ## Identifying bottlenecks with blackfire.io
 
-Even though the debug profiler can provide the rendering time, it doesn't go into detail where the bottlenecks are. To find out where the bottlenecks are, we need Blackfire -  another great product by sensiolabs.
+Even though the in-built debug profiler can provide the rendering time, it doesn't go into detail where the bottlenecks are. To find out where the bottlenecks are, we need Blackfire.
 
-Head over to [http://blackfire.io](https://blackfire.io) and
+You should have installed blackfire from the previous section.
 
-1) Sign up a free account.
+To make using Blackfire easy, install the [google chrome companion extension](https://blackfire.io/docs/integrations/chrome).
 
-2) Install the [blackfire google chrome companion extension](https://blackfire.io/docs/integrations/chrome)</a>
 
-3) Ensure blackfire is installed correctly in the vm (This should have been done when you reprovision the vm earlier). If you are using a different system, read the [installation doc](https://blackfire.io/docs/introduction).
-
-After you have installed the chrome companion plugin, you should see a new blackfire icon on the top right. Let us load a resonably heavy page:
+Once done, you should see a new blackfire icon on the top right of google chrome. Let us load the user management page:
 
 ```
-http://songbird.dev/admin/app/gallery/1/edit?context=default
+http://songbird.app/admin/?entity=User&action=list
+
 ```
-and click on the blackfire icon.
 
-<img src="http://practicalsymfony.com/wp-content/uploads/2015/10/show_gallery_1.png" alt="show_gallery_1" width="1397" height="581" class="aligncenter size-full wp-image-847" />
+![blackfire screenshot](images/blackfire.png)
 
-At this point, the chrome browser will interact with the vm and tells the blackfire agent to pass the diagnositic data over to blackfire server. You will also see some values in the blackfire toolbar. So we are talking about 1 sec of processing time.
+and click "create a new reference", then click on on the Profile button.
 
-Symfony comes with a reverse proxy, let us enable it.
+At this point, the chrome browser will interact with the vm and tells the blackfire agent to pass the diagnostic data over to blackfire server. You will also see some values in the blackfire toolbar. So we are talking about 1 sec of processing time.
+
+![blackfire profile](images/blackfire_profile.png)
+
+Once done, you will see a new profile toolbar. Give the profile a name, say "prod app".
+
+We will do another optimisation for the sake of illustration. Symfony comes with a reverse proxy, let us enable it.
 
 ```
 # web/app.php
-...
-// Enable APC for autoloading to improve performance.
-// You should change the ApcClassLoader first argument to a unique prefix
-// in order to prevent cache key conflicts with other applications
-// also using APC.
-$apcLoader = new ApcClassLoader(sha1(__FILE__), $loader);
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\ClassLoader\ApcClassLoader;
+
+/**
+ * @var Composer\Autoload\ClassLoader
+ */
+$loader = require __DIR__.'/../app/autoload.php';
+include_once __DIR__.'/../app/bootstrap.php.cache';
+
+$apcLoader = new ApcClassLoader(sha1('songbird'), $loader);
 $loader->unregister();
 $apcLoader->register(true);
 
-require_once __DIR__.'/../app/AppKernel.php';
-require_once __DIR__.'/../app/AppCache.php';
-
 $kernel = new AppKernel('prod', true);
-$kernel-&gt;loadClassCache();
+$kernel->loadClassCache();
 $kernel = new AppCache($kernel);
+
+
 
 // When using the HttpCache, you need to call the method in your front controller instead of relying on the configuration parameter
 Request::enableHttpMethodParameterOverride();
-...
+$request = Request::createFromGlobals();
+$response = $kernel->handle($request);
+$response->send();
+$kernel->terminate($request, $response);
 ```
 
-Now run refresh the page and then click on the blackfire icon again. There should be some improvements in the loading time. What was the improvement?
+Now refresh the page and then click on the blackfire icon again. In the blackfire toolbar, compare it with the previous profile.
 
-Login to blackfire.io and go to the timelines page.
+![blackfire profile](images/blackfire_profile_compare.png)
 
-<img src="http://practicalsymfony.com/wp-content/uploads/2015/10/blackfire_show_profiles.png" alt="blackfire_show_profiles" width="1166" height="689" class="aligncenter size-full wp-image-846" />
+There should be some improvements in the loading time. What was the improvement?
 
-We have done 2 snapshots, so they should be listed in the profiles page. We could also change the reference name to something more meaningful like "show gallery 1".
+Click on "View comparision"
 
-We could compare the profiles in blackfire.io or to make life easier, we could do it in the chrome extension.
+![blackfire profile](images/blackfire_profile_improvements.png)
 
-In chrome, upon clicking on the delta link on the top right, the numerical values in the toolbar changed to percentages. This was because it was trying to compare it with the reference snapshot - the first snapshot. You could change the reference easily in blackfire.io profiles page. Next click on the comparison button and it opened a new page detailing the process flow.
+As you would expect, it should be clear where the bottleneck was huh? See the blue lines...
 
-<img src="http://practicalsymfony.com/wp-content/uploads/2015/10/blackfire_kernel_cache.png" alt="blackfire_kernel_cache" width="881" height="763" class="aligncenter size-full wp-image-844" />
+I was merely scrapping the surface of blackfire. I suggest you do the [24 days of blackfire](https://blackfire.io/docs/24-days/index) tutorials if you want to dig in deeper.
 
-From the diagram, you could see that snapshot with the reverse proxy implementation bypasses the httpcache classes (blue line), providing some time savings.
-
-Next, let us run the test again in the dev environment.
-
-```
-http://songbird.app/app_dev.php/admin/app/gallery/1/edit?context=default
-```
-
-<img src="http://practicalsymfony.com/wp-content/uploads/2015/10/show_gallery_1_dev.png" alt="show_gallery_1_dev" width="1331" height="673" class="aligncenter size-full wp-image-848" />
-
-compare the dev and reference (prod) snapshot.
-
-<img src="http://practicalsymfony.com/wp-content/uploads/2015/10/blackfire_show_gallery_1_app_dev.png" alt="blackfire_show_gallery_1_app_dev" width="1035" height="669" class="aligncenter size-full wp-image-845" />
-
-As you would expect, it should be clear where the bottleneck was huh?
-
-I was merely scrapping the surface of blackfire. I suggest you do the <a href="https://blackfire.io/docs/24-days/index">24 days of blackfire</a> tutorials if you want to dig in deeper.
-
-We are almost done, remember to fix all the test cases and do a git commit before moving on to the next chapter.
+We are almost done, remember to do a git commit before moving on to the next chapter.
 
 ## Summary
 
