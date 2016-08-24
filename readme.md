@@ -443,7 +443,7 @@ Even though the in-built debug profiler can provide the rendering time, it doesn
 
 You should have installed blackfire from the previous section.
 
-To make using Blackfire easy, install the [google chrome companion extension](https://blackfire.io/docs/integrations/chrome).
+To make use of Blackfire is easy, install the [google chrome companion extension](https://blackfire.io/docs/integrations/chrome).
 
 
 Once done, you should see a new blackfire icon on the top right of google chrome. Let us load the user management page:
