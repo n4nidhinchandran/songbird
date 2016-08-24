@@ -6,7 +6,7 @@ So far, we have been very lazy (a good thing?). We have offloaded bulk of the CM
 
 > * The Plan
 > * Define User Stories
-> * Create Our Own Bundle Generation Script
+> * Create Our Own Bundle Generation Script (Optional)
 > * Implementation
 > * Create Sample Data
 > * Integrating NestableJS
@@ -54,7 +54,7 @@ Since SongbirdNestableBundle is going to be decoupled from AppBundle, so we will
 <tr><td>1.16</td><td>Delete contact us page</td><td>go to /songbird_page/5 and click "Delete" button</td><td>I should see the contact_us slug no longer available in the listing page. Page id 5 should no longer be found in the pagemeta table.</td></tr>
 </table>
 
-## Create Our Own Bundle Generation Script
+## Create Our Own Bundle Generation Script (Optional)
 
 The default bundle generation script is cool. Let us customise it further to make our life easier. We will create a custom script to generate songbird bundles.
 
@@ -1897,6 +1897,10 @@ Remember to commit all the code before moving on.
 ## Summary
 
 In this chapter, we created our own page bundle. We have taken measures to isolate the bundle from other bundles, customised the listing page and created a draggable menu using the jquery nestable menu. Data is submitted to the backend via ajax and updated dynamically.
+
+Next Chapter: [Chapter 18: Making Your Bundle Reusable](https://github.com/bernardpeh/songbird/tree/chapter_18)
+
+Previous Chapter: [Chapter 16: Improving Performance and Troubleshooting](https://github.com/bernardpeh/songbird/tree/chapter_16)
 
 ## Stuck? Checkout my code
 
