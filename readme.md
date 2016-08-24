@@ -409,6 +409,10 @@ Again, I will leave you to write the bdd tests. The more detail your scenario is
 
 In this chapter, we created a new entity called UserLog and used the kernel request event to inject the required request data into the database.
 
+Next Chapter: [Chapter 16: Improving Performance and Troubleshooting](https://github.com/bernardpeh/songbird/tree/chapter_16)
+
+Previous Chapter: [Chapter 14: Uploading Files](https://github.com/bernardpeh/songbird/tree/chapter_14)
+
 ## Stuck? Checkout my code
 
 ```
