@@ -1,2 +1,24 @@
 admin.link.user_management: Gestion des utilisateurs
 admin.link.user_log: Connexion utilisateur
+User: Utilisateur
+ID: ID
+Image: Image
+Username: Nom d'utilisateur
+Email: Email
+Firstname: Prénom
+Lastname: nom de famille
+Enabled: activée
+Locked: Fermé à clef
+Expired: Expiré
+Roles: Les rôles
+Last login: Dernière connexion
+Password: Mot de passe
+Repeat Password: Répéter le mot de passe
+Image file: Fichier d'image
+Modified: Modifié
+Created: Créé
+UserLog: Journal utilisateur
+Action: Action
+Current url: Url actuelle
+Referrer: Référer
+Data: Données

@@ -44,7 +44,6 @@ easy_admin:
                     - modified
                     - created
             list:
-                title: 'User Listing'
                 actions: ['show']
                 fields:
                   - id

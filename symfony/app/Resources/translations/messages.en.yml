@@ -1,2 +1,24 @@
 admin.link.user_management: User Management
 admin.link.user_log: User Log
+User: User
+ID: ID
+Image: Image
+Username: Username
+Email: Email
+Firstname: First name
+Lastname: Last name
+Enabled: Enabled
+Locked: Locked
+Expired: Expired
+Roles: Roles
+Last login: Last login
+Password: Password
+Repeat Password: Repeat Password
+Image file: Image file
+Modified: Modified
+Created: Created
+UserLog: User Log
+Action: Action
+Current url: Current url
+Referrer: Referrer
+Data: Data
