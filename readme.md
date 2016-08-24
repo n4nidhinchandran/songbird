@@ -430,7 +430,7 @@ If you have been observant enough, you should have seen the red alert on the too
 
 You would see the obvious alert icon in the toolbar... Clicking on the red icon will tell you that you have missing translations.
 
-There are lots of "messages" under the domain column because if there is no translation for certain text, it defaults to using the messages translation file which hasn't been created.
+There are lots of "messages" under the domain column because if there is no translation for certain text.
 
 How would you fix the translation errors? Using the debug toolbar is straight forward and should be self explainatory.
 
@@ -515,10 +515,14 @@ We are almost done, remember to do a git commit before moving on to the next cha
 
 In this chapter, we briefly discussed several optimisation strategies. We installed apc and minified css and js using gulpjs. We have also refactored the runtest script so that it doesn't clear the cache every time it starts a new test. lastly, we walked through troubleshooting using the web toolbar and blackfire.io.
 
+Next Chapter: [Chapter 17: The Page Manager Part 1](https://github.com/bernardpeh/songbird/tree/chapter_17)
+
+Previous Chapter: [Chapter 15: Logging User Activities](https://github.com/bernardpeh/songbird/tree/chapter_15)
+
 ## Stuck? Checkout my code
 
 ```
--> git checkout -b chapter_17 origin/chapter_16
+-> git checkout -b chapter_16 origin/chapter_16
 -> git clean -fd
 ```
 
