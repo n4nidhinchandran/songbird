@@ -29,7 +29,7 @@ To be truly **decoupled** from the rest of the bundles, we want our page bundle 
 
 We will create 2 entities. The first entity is the Page entity and will consist of simple attributes like id, slug, sequence, parent and children id...etc. The second entity will be the PageMeta entity consisting of attributes like name, locale, title, short description and content. The relationship between the Page and PageMeta entity will be one to many. 
 
-Note that there is a already a [SonataPageBundle](https://sonata-project.org/bundles/page/master/doc/reference/introduction.html). This bundle creation is for **illustration only** and has a lot of rooms for improvement. 
+This bundle creation is for **illustration only** and has lots of rooms for improvement. 
 
 ## Define User Stories
 
@@ -39,19 +39,19 @@ Since SongbirdNestableBundle is going to be decoupled from AppBundle, so we will
 
 <table>
 <tr><td><strong>Story Id</strong></td><td><strong>As a</strong></td><td><strong>I</strong></td><td><strong>So that I</strong></td></tr>
-<tr><td>1.1</td><td>any user</td><td>want to manage pages</td><td>can update them anytime.</td></tr>
+<tr><td>17.1</td><td>test2 user</td><td>want to manage pages</td><td>can update them anytime.</td></tr>
 </table>
 
-<strong>Story ID 1.1: As any user, I want to manage pages, so that I can update them anytime.</strong>
+<strong>Story ID 17.1: As test2 user, I want to manage pages, so that I can update them anytime.</strong>
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>1.11</td><td>List Pages</td><td>I go to /songbird_page</td><td>I should see the why_songbird slug under the about slug</td></tr>
-<tr><td>1.12</td><td>Show contact us page</td><td>I go to /songbird_page/5</td><td>I should see the word "contact_us" and the word "Created"</td></tr>
-<tr><td>1.13</td><td>Reorder home</td><td>I simulate a drag and drop of the home menu to under the about menu and submit the post data to /songbird_page/reorder</td><td>I should see "reordered successfully message" in the response and menus should be updated</td></tr>
-<tr><td>1.14</td><td>Edit home page meta</td><td>I go to edit homepage url and update the menu title of "Home" to "Home1" and click update</td><td>I should see the text "successfully updated" message</td></tr>
-<tr><td>1.15</td><td>Create and delete test pagemeta</td><td>go to /new and fill in details and click "Create" button, then go to test page and click add new meta and fill in the details and click "create" button, then click delete button</td><td>I should see the new page and pagemeta being created and pagemeta deleted</td></tr>
-<tr><td>1.16</td><td>Delete contact us page</td><td>go to /songbird_page/5 and click "Delete" button</td><td>I should see the contact_us slug no longer available in the listing page. Page id 5 should no longer be found in the pagemeta table.</td></tr>
+<tr><td>17.11</td><td>List Pages</td><td>I go to /songbird_page</td><td>I should see the why_songbird slug under the about slug</td></tr>
+<tr><td>17.12</td><td>Show contact us page</td><td>I go to /songbird_page/5</td><td>I should see the word "contact_us" and the word "Created"</td></tr>
+<tr><td>17.13</td><td>Reorder home</td><td>I simulate a drag and drop of the home menu to under the about menu and submit the post data to /songbird_page/reorder</td><td>I should see "reordered successfully message" in the response and menus should be updated</td></tr>
+<tr><td>17.14</td><td>Edit home page meta</td><td>I go to edit homepage url and update the menu title of "Home" to "Home1" and click update</td><td>I should see the text "successfully updated" message</td></tr>
+<tr><td>17.15</td><td>Create and delete test pagemeta</td><td>go to /new and fill in details and click "Create" button, then go to test page and click add new meta and fill in the details and click "create" button, then click delete button</td><td>I should see the new page and pagemeta being created and pagemeta deleted</td></tr>
+<tr><td>17.16</td><td>Delete contact us page</td><td>go to /songbird_page/5 and click "Delete" button</td><td>I should see the contact_us slug no longer available in the listing page. Page id 5 should no longer be found in the pagemeta table.</td></tr>
 </table>
 
 ## Create Our Own Bundle Generation Script (Optional)
@@ -64,7 +64,7 @@ The default bundle generation script is cool. Let us customise it further to mak
 #!/bin/bash
 
 if [ -z "$*" ]; then 
- 	echo -e "\nUsage: $0 Organisation BundleName\n"; 
+ 	echo -e "\nUsage: $0 VendorName BundleName\n"; 
  	exit;
 fi
 
@@ -85,7 +85,7 @@ now let us run the script
 -> ./scripts/createbundle Songbird NestablePageBundle
 ```
 
-run a git status to make sure everything is working
+run a git status to make sure everything is working. Do a git diff and you will see that the script does a lot of work for you.
 
 ```
 -> git status
@@ -96,6 +96,7 @@ Changes not staged for commit:
 
 	modified:   app/AppKernel.php
 	modified:   app/config/routing.yml
+	modified:   app/config/config.yml
 
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
@@ -111,7 +112,7 @@ Let us create the entities.
 For Page entity:
 
 ```
--> app/console generate:doctrine:entity --entity=SongbirdNestablePageBundle:Page --format=annotation --fields="slug:string(255) isPublished:boolean sequence:integer modified:datetime created:datetime" --with-repository --no-interaction
+-> app/console generate:doctrine:entity --entity=SongbirdNestablePageBundle:Page --format=annotation --fields="slug:string(255) isPublished:boolean sequence:integer modified:datetime created:datetime" --no-interaction
 ```
 
 and for PageMeta entity:
@@ -259,9 +260,7 @@ We will also create a helper to help us find the page meta entries based on loca
 ```
 # src/Songbird/NestablePageBundle/Entity/PageRepository.php
 
-namespace Songbird\NestablePageBundle\Entity;
-
-use Doctrine\ORM\EntityRepository;
+namespace Songbird\NestablePageBundle\Repository;
 
 /**
  * PageRepository
@@ -317,10 +316,10 @@ We are going to use a variant of [nestable.js](https://github.com/BeFiveINFO/Nes
 -> mkdir -p src/Songbird/NestablePageBundle/Resources/public/{js,css}
 ```
 
-Download jquery and jquery.nestable.js and put it under src/Songbird/NestablePageBundle/Resources/public/js/jquery.nestable.js
+Download jquery.nestable.js and put it under src/Songbird/NestablePageBundle/Resources/public/js/jquery.nestable.js
 
 ```
--> wget http://code.jquery.com/jquery-1.11.3.min.js
+-> cd src/Songbird/NestablePageBundle/Resources/public/js
 -> wget https://raw.githubusercontent.com/BeFiveINFO/Nestable/master/jquery.nestable.js
 ```
 
