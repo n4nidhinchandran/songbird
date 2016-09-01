@@ -320,6 +320,7 @@ Download jquery.nestable.js and put it under src/Songbird/NestablePageBundle/Res
 
 ```
 -> cd src/Songbird/NestablePageBundle/Resources/public/js
+-> wget http://code.jquery.com/jquery-1.11.3.min.js
 -> wget https://raw.githubusercontent.com/BeFiveINFO/Nestable/master/jquery.nestable.js
 ```
 
@@ -641,24 +642,24 @@ reset the app to load the fixtures and check that the entries have been added to
 Now go to the page url and you should see the default crud template
 
 ```
-http://songbird.dev/songbird_page/
+http://songbird.app/songbird_page/
 ```
 
 Everything is looking plain at the moment, let us integrate nestablejs.
 
 ## Integrating NestableJS
 
-Our Page Controller look something like this
+How do we integrate NestableJS to our bundle? The secret will be in the Page Controller.
 
 ```
 # src/Songbird/NestablePageBundle/Controller/PageController.php
+
 namespace Songbird\NestablePageBundle\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Songbird\NestablePageBundle\Entity\Page;
 use Songbird\NestablePageBundle\Form\PageType;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -690,112 +691,70 @@ class PageController extends Controller
         return $this->redirect($this->generateUrl('songbird_page_list'));
     }
 
-        /**
+    /**
      * Lists all nested page
      *
      * @Route("/list", name="songbird_page_list")
      * @Method("GET")
-     * @Template()
      */
     public function listAction()
     {
         $em = $this->getDoctrine()->getManager();
-        // $rootMenuItems = $em->getRepository('SongbirdPageBundle:Page')->findParentByLocale($this->get('request')->getLocale());
         $rootMenuItems = $em->getRepository('SongbirdNestablePageBundle:Page')->findParent();
 
-        return array(
+        return $this->render('SongbirdNestablePageBundle:Page:list.html.twig', array(
             'tree' => $rootMenuItems,
-        );
+        ));
     }
 
-    /**
-     * reorder pages
-     *
-     * @Route("/reorder", name="songbird_page_reorder")
-     * @Method("POST")
-     * @Template()
-     */
-    public function reorderAction()
-    {
-        $em = $this->getDoctrine()->getManager();
-        // id of affected element
-        $id = $this->get('request')->get('id');
-        // parent Id
-        $parentId = ($this->get('request')->get('parentId') == '') ? null : $this->get('request')->get('parentId');
-        // new sequence of this element. 0 means first element.
-        $position = $this->get('request')->get('position');
+	/**
+	 * reorder pages
+	 *
+	 * @Route("/reorder", name="songbird_page_reorder")
+	 * @Method("POST")
+	 */
+	public function reorderAction(Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
+		// id of affected element
+		$id = $request->get('id');
+		// parent Id
+		$parentId = ($request->get('parentId') == '') ? null : $request->get('parentId');
+		// new sequence of this element. 0 means first element.
+		$position = $request->get('position');
 
-        $result = $em->getRepository('SongbirdNestablePageBundle:Page')->reorderElement($id, $parentId, $position); 
+		$result = $em->getRepository('SongbirdNestablePageBundle:Page')->reorderElement($id, $parentId, $position);
 
-        return new JsonResponse(
-            array('message' => $this->get('translator')->trans($result[0], array(), 'SongbirdNestablePageBundle')
-, 'success' => $result[1])
-        );
-
-    }
+		return new JsonResponse(
+			array('message' => $this->get('translator')->trans($result[0], array(), 'SongbirdNestablePageBundle')
+			, 'success' => $result[1])
+		);
+	}
 
     /**
      * Creates a new Page entity.
      *
-     * @Route("/", name="songbird_page_create")
-     * @Method("POST")
-     * @Template("SongbirdNestablePageBundle:Page:new.html.twig")
+     * @Route("/new", name="songbird_page_new")
+     * @Method({"GET", "POST"})
      */
-    public function createAction(Request $request)
+    public function newAction(Request $request)
     {
-        $entity = new Page();
-        $form = $this->createCreateForm($entity);
+        $page = new Page();
+        $form = $this->createForm('Songbird\NestablePageBundle\Form\PageType', $page);
         $form->handleRequest($request);
 
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $em = $this->getDoctrine()->getManager();
-            $em->persist($entity);
+            $em->persist($page);
             $em->flush();
 
-            return $this->redirect($this->generateUrl('songbird_page_show', array('id' => $entity->getId())));
+            return $this->redirectToRoute('songbird_page_show', array('id' => $page->getId()));
         }
 
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
-    }
-
-    /**
-     * Creates a form to create a Page entity.
-     *
-     * @param Page $entity The entity
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createCreateForm(Page $entity)
-    {
-        $form = $this->createForm(new PageType(), $entity, array(
-            'action' => $this->generateUrl('songbird_page_create'),
-            'method' => 'POST',
+        return $this->render('page/new.html.twig', array(
+            'page' => $page,
+            'form' => $form->createView(),
         ));
-
-        $form->add('submit', 'submit', array('label' => 'Create'));
-
-        return $form;
-    }
-
-    /**
-     * Displays a form to create a new Page entity.
-     *
-     * @Route("/new", name="songbird_page_new")
-     * @Method("GET")
-     * @Template()
-     */
-    public function newAction()
-    {
-        $entity = new Page();
-        $form   = $this->createCreateForm($entity);
-
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
     }
 
     /**
@@ -803,143 +762,76 @@ class PageController extends Controller
      *
      * @Route("/{id}", name="songbird_page_show")
      * @Method("GET")
-     * @Template()
      */
-    public function showAction($id)
+    public function showAction(Page $page)
     {
-        $em = $this->getDoctrine()->getManager();
+        $deleteForm = $this->createDeleteForm($page);
 
-        $entity = $em->getRepository('SongbirdNestablePageBundle:Page')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Page entity.');
-        }
-
-        $deleteForm = $this->createDeleteForm($id);
-
-        return array(
-            'entity'      => $entity,
+        return $this->render('page/show.html.twig', array(
+            'page' => $page,
             'delete_form' => $deleteForm->createView(),
-        );
-    }
-
-    /**
-     * Displays a form to edit an existing Page entity.
-     *
-     * @Route("/{id}/edit", name="songbird_page_edit")
-     * @Method("GET")
-     * @Template()
-     */
-    public function editAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('SongbirdNestablePageBundle:Page')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Page entity.');
-        }
-
-        $editForm = $this->createEditForm($entity);
-        $deleteForm = $this->createDeleteForm($id);
-
-        return array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-
-    /**
-    * Creates a form to edit a Page entity.
-    *
-    * @param Page $entity The entity
-    *
-    * @return \Symfony\Component\Form\Form The form
-    */
-    private function createEditForm(Page $entity)
-    {
-        $form = $this->createForm(new PageType(), $entity, array(
-            'action' => $this->generateUrl('songbird_page_update', array('id' => $entity->getId())),
-            'method' => 'PUT',
         ));
-
-        $form->add('submit', 'submit', array('label' => 'Update'));
-
-        return $form;
     }
-    /**
-     * Edits an existing Page entity.
-     *
-     * @Route("/{id}", name="songbird_page_update")
-     * @Method("PUT")
-     * @Template("SongbirdNestablePageBundle:Page:edit.html.twig")
-     */
-    public function updateAction(Request $request, $id)
-    {
-        $em = $this->getDoctrine()->getManager();
 
-        $entity = $em->getRepository('SongbirdNestablePageBundle:Page')->find($id);
+	/**
+	 * Displays a form to edit an existing Page entity.
+	 *
+	 * @Route("/{id}/edit", name="songbird_page_edit")
+	 * @Method({"GET", "POST"})
+	 */
+	public function editAction(Request $request, Page $page)
+	{
+		$deleteForm = $this->createDeleteForm($page);
+		$editForm = $this->createForm('Songbird\NestablePageBundle\Form\PageType', $page);
+		$editForm->handleRequest($request);
 
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Page entity.');
-        }
+		if ($editForm->isSubmitted() && $editForm->isValid()) {
+			$em = $this->getDoctrine()->getManager();
+			$em->persist($page);
+			$em->flush();
 
-        $deleteForm = $this->createDeleteForm($id);
-        $editForm = $this->createEditForm($entity);
-        $editForm->handleRequest($request);
+			return $this->redirectToRoute('songbird_page_edit', array('id' => $page->getId()));
+		}
 
-        if ($editForm->isValid()) {
-            $em->flush();
+		return $this->render('page/edit.html.twig', array(
+			'page' => $page,
+			'edit_form' => $editForm->createView(),
+			'delete_form' => $deleteForm->createView(),
+		));
+	}
 
-            return $this->redirect($this->generateUrl('songbird_page_edit', array('id' => $id)));
-        }
-
-        return array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
     /**
      * Deletes a Page entity.
      *
      * @Route("/{id}", name="songbird_page_delete")
      * @Method("DELETE")
      */
-    public function deleteAction(Request $request, $id)
+    public function deleteAction(Request $request, Page $page)
     {
-        $form = $this->createDeleteForm($id);
+        $form = $this->createDeleteForm($page);
         $form->handleRequest($request);
 
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $em = $this->getDoctrine()->getManager();
-            $entity = $em->getRepository('SongbirdNestablePageBundle:Page')->find($id);
-
-            if (!$entity) {
-                throw $this->createNotFoundException('Unable to find Page entity.');
-            }
-
-            $em->remove($entity);
+            $em->remove($page);
             $em->flush();
         }
 
-        return $this->redirect($this->generateUrl('songbird_page'));
+        return $this->redirectToRoute('songbird_page_index');
     }
 
     /**
-     * Creates a form to delete a Page entity by id.
+     * Creates a form to delete a Page entity.
      *
-     * @param mixed $id The entity id
+     * @param Page $page The Page entity
      *
      * @return \Symfony\Component\Form\Form The form
      */
-    private function createDeleteForm($id)
+    private function createDeleteForm(Page $page)
     {
         return $this->createFormBuilder()
-            ->setAction($this->generateUrl('songbird_page_delete', array('id' => $id)))
+            ->setAction($this->generateUrl('songbird_page_delete', array('id' => $page->getId())))
             ->setMethod('DELETE')
-            ->add('submit', 'submit', array('label' => 'Delete'))
             ->getForm()
         ;
     }
@@ -951,7 +843,7 @@ We have added 2 extra methods, listAction and reorderAction. As the controller s
 ```
 # src/Songbird/NestablePageBundle/Entity/PageRepository.php
 ...
-/**
+    /**
      * reorder element based on user input
      * @param  int $id       id of element dragged
      * @param  int $parentId parent id
@@ -1070,7 +962,7 @@ We have added 2 extra methods, listAction and reorderAction. As the controller s
 ...
 ``` 
 
-We then remove the created and modified date from the form.
+We then remove the created and modified date from the form as these fields should not be editable.
 
 ```
 # src/Songbird/NestablePageBundle/Form/PageType.php
@@ -1098,280 +990,18 @@ class PageType extends AbstractType
     }
     
     /**
-     * @param OptionsResolverInterface $resolver
+     * @param OptionsResolver $resolver
      */
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(array(
             'data_class' => 'Songbird\NestablePageBundle\Entity\Page'
         ));
     }
-
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        return 'songbird_nestablepagebundle_page';
-    }
 }
 ```
 
-and now the PageMetaController.php
-
-```
-# src/Songbird/NestablePageBundle/Controller/PageMetaController.php
-
-namespace Songbird\NestablePageBundle\Controller;
-
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Songbird\NestablePageBundle\Entity\PageMeta;
-use Songbird\NestablePageBundle\Form\PageMetaType;
-
-/**
- * PageMeta controller.
- *
- * @Route("/songbird_pagemeta")
- */
-class PageMetaController extends Controller
-{
-
-    /**
-     * Lists all PageMeta entities.
-     *
-     * @Route("/page/{id}", name="songbird_pagemeta")
-     * @Method("GET")
-     * @Template()
-     */
-    public function indexAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        $entities = $em->getRepository('SongbirdNestablePageBundle:PageMeta')->findByPage($id);
-
-        return array(
-            'entities' => $entities,
-            'pageId' => $id
-        );
-    }
-    /**
-     * Creates a new PageMeta entity.
-     *
-     * @Route("/", name="songbird_pagemeta_create")
-     * @Method("POST")
-     * @Template("SongbirdNestablePageBundle:PageMeta:new.html.twig")
-     */
-    public function createAction(Request $request)
-    {
-        $entity = new PageMeta();
-        $form = $this->createCreateForm($entity);
-        $form->handleRequest($request);
-
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($entity);
-            $em->flush();
-
-            return $this->redirect($this->generateUrl('songbird_pagemeta_show', array('id' => $entity->getId())));
-        }
-
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
-    }
-
-    /**
-     * Creates a form to create a PageMeta entity.
-     *
-     * @param PageMeta $entity The entity
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createCreateForm(PageMeta $entity)
-    {
-        $form = $this->createForm(new PageMetaType(), $entity, array(
-            'action' => $this->generateUrl('songbird_pagemeta_create'),
-            'method' => 'POST',
-        ));
-
-        $form->add('submit', 'submit', array('label' => 'Create'));
-
-        return $form;
-    }
-
-    /**
-     * Displays a form to create a new PageMeta entity.
-     *
-     * @Route("/new", name="songbird_pagemeta_new")
-     * @Method("GET")
-     * @Template()
-     */
-    public function newAction()
-    {
-        $entity = new PageMeta();
-        $form   = $this->createCreateForm($entity);
-
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
-    }
-
-    /**
-     * Finds and displays a PageMeta entity.
-     *
-     * @Route("/{id}", name="songbird_pagemeta_show")
-     * @Method("GET")
-     * @Template()
-     */
-    public function showAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('SongbirdNestablePageBundle:PageMeta')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find PageMeta entity.');
-        }
-
-        $deleteForm = $this->createDeleteForm($id);
-
-        return array(
-            'entity'      => $entity,
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-
-    /**
-     * Displays a form to edit an existing PageMeta entity.
-     *
-     * @Route("/{id}/edit", name="songbird_pagemeta_edit")
-     * @Method("GET")
-     * @Template()
-     */
-    public function editAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('SongbirdNestablePageBundle:PageMeta')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find PageMeta entity.');
-        }
-
-        $editForm = $this->createEditForm($entity);
-        $deleteForm = $this->createDeleteForm($id);
-
-        return array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-
-    /**
-    * Creates a form to edit a PageMeta entity.
-    *
-    * @param PageMeta $entity The entity
-    *
-    * @return \Symfony\Component\Form\Form The form
-    */
-    private function createEditForm(PageMeta $entity)
-    {
-        $form = $this->createForm(new PageMetaType(), $entity, array(
-            'action' => $this->generateUrl('songbird_pagemeta_update', array('id' => $entity->getId())),
-            'method' => 'PUT',
-        ));
-
-        $form->add('submit', 'submit', array('label' => 'Update'));
-
-        return $form;
-    }
-    /**
-     * Edits an existing PageMeta entity.
-     *
-     * @Route("/{id}", name="songbird_pagemeta_update")
-     * @Method("PUT")
-     * @Template("SongbirdNestablePageBundle:PageMeta:edit.html.twig")
-     */
-    public function updateAction(Request $request, $id)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('SongbirdNestablePageBundle:PageMeta')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find PageMeta entity.');
-        }
-
-        $deleteForm = $this->createDeleteForm($id);
-        $editForm = $this->createEditForm($entity);
-        $editForm->handleRequest($request);
-
-        if ($editForm->isValid()) {
-            $em->flush();
-
-            return $this->redirect($this->generateUrl('songbird_pagemeta_edit', array('id' => $id)));
-        }
-
-        return array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-    /**
-     * Deletes a PageMeta entity.
-     *
-     * @Route("/{id}", name="songbird_pagemeta_delete")
-     * @Method("DELETE")
-     */
-    public function deleteAction(Request $request, $id)
-    {
-        $form = $this->createDeleteForm($id);
-        $form->handleRequest($request);
-
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $entity = $em->getRepository('SongbirdNestablePageBundle:PageMeta')->find($id);
-            $pageId = $entity->getPage()->getId();
-
-            if (!$entity) {
-                throw $this->createNotFoundException('Unable to find PageMeta entity.');
-            }
-
-            $em->remove($entity);
-            $em->flush();
-        }
-
-        return $this->redirect($this->generateUrl('songbird_pagemeta', array('id' => $pageId)));
-    }
-
-    /**
-     * Creates a form to delete a PageMeta entity by id.
-     *
-     * @param mixed $id The entity id
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createDeleteForm($id)
-    {
-        return $this->createFormBuilder()
-            ->setAction($this->generateUrl('songbird_pagemeta_delete', array('id' => $id)))
-            ->setMethod('DELETE')
-            ->add('submit', 'submit', array('label' => 'Delete'))
-            ->getForm()
-        ;
-    }
-}
-```
-
-We have made minor modifications to some actions so that they accept another page id argument.
+and we will leave the PageMetaController.php as default.
 
 Now, we need to make changes to the view to include nestablejs.
 
@@ -1480,146 +1110,41 @@ Now, we need to make changes to the view to include nestablejs.
 {% endfor %}
 ```
 
+We need to update the show.html.twig to allow user to view pagemeta.
+
 ```
-# src/Songbird/NestablePageBundle/Resources/views/PageMeta/index.html.twig
-{% extends '::base.html.twig' %}
+# app/Resources/views/pagemeta/show.html.twig
 
-{% block body -%}
-    <h1>PageMeta list</h1>
-
-    <table class="records_list">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Page_title</th>
-                <th>Menu_title</th>
-                <th>Locale</th>
-                <th>Short_description</th>
-                <th>Content</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for entity in entities %}
-            <tr>
-                <td><a href="{{ path('songbird_pagemeta_show', { 'id': entity.id }) }}">{{ entity.id }}</a></td>
-                <td>{{ entity.pagetitle }}</td>
-                <td>{{ entity.menutitle }}</td>
-                <td>{{ entity.locale }}</td>
-                <td>{{ entity.shortdescription }}</td>
-                <td>{{ entity.content }}</td>
-                <td>
-                <ul>
-                    <li>
-                        <a href="{{ path('songbird_pagemeta_show', { 'id': entity.id }) }}">show</a>
-                    </li>
-                    <li>
-                        <a href="{{ path('songbird_pagemeta_edit', { 'id': entity.id }) }}">edit</a>
-                    </li>
-                </ul>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-
-        <ul>
+...
+<ul>
         <li>
-            <a href="{{ path('songbird_page_show', {'id': pageId} ) }}">
-                View Page
-            </a>
+            <a href="{{ path('songbird_page_index') }}">Back to the list</a>
         </li>
         <li>
-            <a href="{{ path('songbird_pagemeta_new') }}">
-                Create a new entry
-            </a>
+            <a href="{{ path('songbird_page_edit', { 'id': page.id }) }}">Edit Page</a>
         </li>
-    </ul>
-    {% endblock %}
-```
-
-```
-# src/Songbird/NestablePageBundle/Resources/views/PageMeta/new.html.twig
-{% extends '::base.html.twig' %}
-
-{% block body -%}
-    <h1>PageMeta creation</h1>
-
-    {{ form(form) }}
-
-{% endblock %}
-```
-
-```
-# src/Songbird/NestablePageBundle/Resources/views/PageMeta/show.html.twig
-{% extends '::base.html.twig' %}
-
-{% block body -%}
-    <h1>PageMeta</h1>
-
-    <table class="record_properties">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ entity.id }}</td>
-            </tr>
-            <tr>
-                <th>Page Slug</th>
-                <td>{{ entity.page }}</td>
-            </tr>
-            <tr>
-                <th>Page_title</th>
-                <td>{{ entity.pagetitle }}</td>
-            </tr>
-            <tr>
-                <th>Menu_title</th>
-                <td>{{ entity.menutitle }}</td>
-            </tr>
-            <tr>
-                <th>Locale</th>
-                <td>{{ entity.locale }}</td>
-            </tr>
-            <tr>
-                <th>Short_description</th>
-                <td>{{ entity.shortdescription }}</td>
-            </tr>
-            <tr>
-                <th>Content</th>
-                <td>{{ entity.content }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <ul class="record_actions">
-    <li>
-        <a href="{{ path('songbird_page_show', {'id': entity.page.getId()} ) }}">
-            View Page
-        </a>
-    </li>
-    <li>
-        <a href="{{ path('songbird_pagemeta', {'id': entity.page.getId()}) }}">
-            Back to the list
-        </a>
-    </li>
-    <li>
-        <a href="{{ path('songbird_pagemeta_edit', { 'id': entity.id }) }}">
-            Edit
-        </a>
-    </li>
-    <li>{{ form(delete_form) }}</li>
+        <li>
+            <a href="{{ path('songbird_pagemeta_show', { 'id': page.id }) }}">View PageMeta</a>
+        </li>
+        <li>
+            <a href="{{ path('songbird_pagemeta_edit', { 'id': page.id }) }}">Edit PageMeta</a>
+        </li>
+        <li>
+            {{ form_start(delete_form) }}
+                <input type="submit" value="Delete">
+            {{ form_end(delete_form) }}
+        </li>
 </ul>
-{% endblock %}
 ```
 
-The rest of the views template can use the defaults. Ready to test the bundle?
+The rest of the view templates can use the defaults. Ready to test the bundle?
 
 ```
 -> ./scripts/resetapp
 -> ./scripts/assetsinstall
 ```
 
-<img src="http://practicalsymfony.com/wp-content/uploads/2015/10/nestablebundle_menu.png" alt="nestablebundle_menu" width="617" height="247" class="aligncenter size-full wp-image-903" />
-
+![nestable menu](images/nestablebundle_menu.png)
 
 ## Create Functional Tests
 
@@ -1678,7 +1203,7 @@ class PageControllerTest extends WebTestCase
     }
 
     /**
-     * scenario 1.11
+     * scenario 17.11
      */
     public function testListPages()
     {
@@ -1700,7 +1225,7 @@ class PageControllerTest extends WebTestCase
     }
 
     /**
-     * scenario 1.12
+     * scenario 17.12
      */
     public function testShowContactUsPage()
     {
@@ -1724,8 +1249,8 @@ class PageControllerTest extends WebTestCase
     } 
 
     /**
-     * scenario 1.13
-     * We simulate ajax submission
+     * scenario 17.13
+     * We simulate ajax submission to reorder pages
      */
     public function testReorderHomePage()
     {
@@ -1761,7 +1286,7 @@ class PageControllerTest extends WebTestCase
     } 
     
     /**
-     * scenario 1.14
+     * scenario 17.14
      */
     public function testEditHomePage()
     {
@@ -1784,7 +1309,9 @@ class PageControllerTest extends WebTestCase
     } 
 
     /**
-     * scenario 1.15
+     * scenario 17.15
+     *
+     * 
      */
     public function testCreateDeleteTestPage()
     {
@@ -1846,7 +1373,7 @@ class PageControllerTest extends WebTestCase
     } 
     
    /**
-     * scenario 1.16
+     * scenario 17.16
      */
     public function testDeleteContactUsPage()
     {
@@ -1895,7 +1422,7 @@ Remember to commit all the code before moving on.
 
 ## Summary
 
-In this chapter, we created our own page bundle. We have taken measures to isolate the bundle from other bundles, customised the listing page and created a draggable menu using the jquery nestable menu. Data is submitted to the backend via ajax and updated dynamically.
+In this chapter, we have created our own page bundle. We have taken measures to isolate this bundle from other bundles. We have customised the listing page and created a draggable menu using the jquery nestable menu. Data is submitted to the backend via ajax and updated dynamically.
 
 Next Chapter: [Chapter 18: Making Your Bundle Reusable](https://github.com/bernardpeh/songbird/tree/chapter_18)
 
@@ -1910,8 +1437,8 @@ Previous Chapter: [Chapter 16: Improving Performance and Troubleshooting](https:
 
 ## Exercises
 
-* Are there any benefits of creating a page bundle that has no dependency on Symfony at all? Is it hard? How would you do it?
-* [KnpmenuBundle](https://github.com/KnpLabs/KnpMenuBundle) is a popular bundle for handling menus. How would you integrate it with SongbirdNestableMenu?
+* Are there any benefits of creating a page bundle that has no dependency on Symfony at all? Is it hard? How would you do it? (Optional)
+* [KnpmenuBundle](https://github.com/KnpLabs/KnpMenuBundle) is a popular bundle for handling menus. How would you integrate it with SongbirdNestableMenu? (Optional)
 
 ## References
 * [Nestable js](https://github.com/BeFiveINFO/Nestable)

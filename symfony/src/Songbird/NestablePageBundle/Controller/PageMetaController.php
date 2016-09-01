@@ -16,7 +16,8 @@ use Songbird\NestablePageBundle\Form\PageMetaType;
  */
 class PageMetaController extends Controller
 {
-    /**
+
+	/**
      * Lists all PageMeta entities.
      *
      * @Route("/", name="songbird_pagemeta_index")

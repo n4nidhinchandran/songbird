@@ -229,6 +229,7 @@ class Page
 	public function __toString() {
 		return $this->slug;
 	}
+
     /**
      * Constructor
      */

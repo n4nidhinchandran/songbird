@@ -7,6 +7,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Songbird\NestablePageBundle\Entity\Page;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Songbird\NestablePageBundle\Form\PageType;
 
 /**
@@ -24,14 +25,24 @@ class PageController extends Controller
      */
     public function indexAction()
     {
-        $em = $this->getDoctrine()->getManager();
-
-        $pages = $em->getRepository('SongbirdNestablePageBundle:Page')->findAll();
-
-        return $this->render('page/index.html.twig', array(
-            'pages' => $pages,
-        ));
+	    return $this->redirect($this->generateUrl('songbird_page_list'));
     }
+
+	/**
+	 * Lists all nested page
+	 *
+	 * @Route("/list", name="songbird_page_list")
+	 * @Method("GET")
+	 */
+	public function listAction()
+	{
+		$em = $this->getDoctrine()->getManager();
+		$rootMenuItems = $em->getRepository('SongbirdNestablePageBundle:Page')->findParent();
+
+		return $this->render('SongbirdNestablePageBundle:Page:list.html.twig', array(
+			'tree' => $rootMenuItems,
+		));
+	}
 
     /**
      * Creates a new Page entity.
@@ -75,32 +86,56 @@ class PageController extends Controller
         ));
     }
 
-    /**
-     * Displays a form to edit an existing Page entity.
-     *
-     * @Route("/{id}/edit", name="songbird_page_edit")
-     * @Method({"GET", "POST"})
-     */
-    public function editAction(Request $request, Page $page)
-    {
-        $deleteForm = $this->createDeleteForm($page);
-        $editForm = $this->createForm('Songbird\NestablePageBundle\Form\PageType', $page);
-        $editForm->handleRequest($request);
+	/**
+	 * Displays a form to edit an existing Page entity.
+	 *
+	 * @Route("/{id}/edit", name="songbird_page_edit")
+	 * @Method({"GET", "POST"})
+	 */
+	public function editAction(Request $request, Page $page)
+	{
+		$deleteForm = $this->createDeleteForm($page);
+		$editForm = $this->createForm('Songbird\NestablePageBundle\Form\PageType', $page);
+		$editForm->handleRequest($request);
 
-        if ($editForm->isSubmitted() && $editForm->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($page);
-            $em->flush();
+		if ($editForm->isSubmitted() && $editForm->isValid()) {
+			$em = $this->getDoctrine()->getManager();
+			$em->persist($page);
+			$em->flush();
 
-            return $this->redirectToRoute('songbird_page_edit', array('id' => $page->getId()));
-        }
+			return $this->redirectToRoute('songbird_page_edit', array('id' => $page->getId()));
+		}
 
-        return $this->render('page/edit.html.twig', array(
-            'page' => $page,
-            'edit_form' => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        ));
-    }
+		return $this->render('page/edit.html.twig', array(
+			'page' => $page,
+			'edit_form' => $editForm->createView(),
+			'delete_form' => $deleteForm->createView(),
+		));
+	}
+
+	/**
+	 * reorder pages
+	 *
+	 * @Route("/reorder", name="songbird_page_reorder")
+	 * @Method("POST")
+	 */
+	public function reorderAction(Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
+		// id of affected element
+		$id = $request->get('id');
+		// parent Id
+		$parentId = ($request->get('parentId') == '') ? null : $request->get('parentId');
+		// new sequence of this element. 0 means first element.
+		$position = $request->get('position');
+
+		$result = $em->getRepository('SongbirdNestablePageBundle:Page')->reorderElement($id, $parentId, $position);
+
+		return new JsonResponse(
+			array('message' => $this->get('translator')->trans($result[0], array(), 'SongbirdNestablePageBundle')
+			, 'success' => $result[1])
+		);
+	}
 
     /**
      * Deletes a Page entity.

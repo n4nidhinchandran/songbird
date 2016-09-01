@@ -8,21 +8,19 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class PageType extends AbstractType
 {
-    /**
-     * @param FormBuilderInterface $builder
-     * @param array $options
-     */
-    public function buildForm(FormBuilderInterface $builder, array $options)
-    {
-        $builder
-            ->add('slug')
-            ->add('isPublished')
-            ->add('sequence')
-            ->add('modified', 'datetime')
-            ->add('created', 'datetime')
-            ->add('parent')
-        ;
-    }
+	/**
+	 * @param FormBuilderInterface $builder
+	 * @param array $options
+	 */
+	public function buildForm(FormBuilderInterface $builder, array $options)
+	{
+		$builder
+			->add('slug')
+			->add('isPublished')
+			->add('sequence')
+			->add('parent')
+		;
+	}
     
     /**
      * @param OptionsResolver $resolver
@@ -33,4 +31,5 @@ class PageType extends AbstractType
             'data_class' => 'Songbird\NestablePageBundle\Entity\Page'
         ));
     }
+
 }
