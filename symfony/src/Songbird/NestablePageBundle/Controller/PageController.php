@@ -76,12 +76,17 @@ class PageController extends Controller
      * @Route("/{id}", name="songbird_page_show")
      * @Method("GET")
      */
-    public function showAction(Page $page)
+    public function showAction(Request $request, Page $page)
     {
-        $deleteForm = $this->createDeleteForm($page);
+	    $em = $this->getDoctrine()->getManager();
+
+	    $pageMeta = $em->getRepository('SongbirdNestablePageBundle:PageMeta')->findPageMetaByLocale($page,$request->getLocale());
+
+    	$deleteForm = $this->createDeleteForm($page);
 
         return $this->render('page/show.html.twig', array(
             'page' => $page,
+	        'pageMeta' => $pageMeta,
             'delete_form' => $deleteForm->createView(),
         ));
     }

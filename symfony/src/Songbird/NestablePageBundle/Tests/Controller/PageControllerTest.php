@@ -130,8 +130,8 @@ class PageControllerTest extends WebTestCase
 
 		$crawler = $client->request('GET', '/songbird_page/1/edit');
 
-		$form = $crawler->selectButton('Update')->form(array(
-			'songbird_nestablepagebundle_page[slug]'  => 'home1',
+		$form = $crawler->selectButton('Edit')->form(array(
+			'page[slug]'  => 'home1',
 		));
 
 		$client->submit($form);
@@ -156,10 +156,10 @@ class PageControllerTest extends WebTestCase
 		$crawler = $client->request('GET', '/songbird_page/new');
 
 		$form = $crawler->selectButton('Create')->form(array(
-			'songbird_nestablepagebundle_page[slug]'  => 'test_page',
-			'songbird_nestablepagebundle_page[isPublished]'  => true,
-			'songbird_nestablepagebundle_page[sequence]'  => 1,
-			'songbird_nestablepagebundle_page[parent]'  => 2,
+			'page[slug]'  => 'test_page',
+			'page[isPublished]'  => true,
+			'page[sequence]'  => 1,
+			'page[parent]'  => 2,
 		));
 
 		$client->submit($form);
@@ -170,19 +170,15 @@ class PageControllerTest extends WebTestCase
 			'test_page',
 			$client->getResponse()->getContent()
 		);
-		// click on test page link
-		$crawler = $client->click($crawler->selectLink('test_page')->link());
-		// at show pagemeta
-		$crawler = $client->click($crawler->selectLink('View PageMeta')->link());
-		// at view pagemeta list
-		$crawler = $client->click($crawler->selectLink('Create a new entry')->link());
+
+		$crawler = $client->click($crawler->selectLink('Create New PageMeta')->link());
 		// at create new pagemeta page. new test_page is id 6
 		$form = $crawler->selectButton('Create')->form(array(
-			'songbird_nestablepagebundle_pagemeta[page_title]'  => 'test page title',
-			'songbird_nestablepagebundle_pagemeta[menu_title]'  => 'test menu title',
-			'songbird_nestablepagebundle_pagemeta[short_description]'  => 'short content',
-			'songbird_nestablepagebundle_pagemeta[content]'  => 'long content',
-			'songbird_nestablepagebundle_pagemeta[page]'  => 6,
+			'page_meta[page_title]'  => 'test page title',
+			'page_meta[menu_title]'  => 'test menu title',
+			'page_meta[short_description]'  => 'short content',
+			'page_meta[content]'  => 'long content',
+			'page_meta[page]'  => 6,
 		));
 
 		$crawler = $client->submit($form);
@@ -200,7 +196,7 @@ class PageControllerTest extends WebTestCase
 		$crawler = $client->submit($form);
 
 		// go back to the pagemeta list again and i should NOT see the test_page anymore
-		$crawler = $client->request('GET', '/songbird_pagemeta/page/6');
+		$crawler = $client->request('GET', '/songbird_pagemeta');
 
 		$this->assertNotContains(
 			'test page title',

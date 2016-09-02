@@ -16,8 +16,7 @@ use Songbird\NestablePageBundle\Form\PageMetaType;
  */
 class PageMetaController extends Controller
 {
-
-	/**
+    /**
      * Lists all PageMeta entities.
      *
      * @Route("/", name="songbird_pagemeta_index")
@@ -68,7 +67,7 @@ class PageMetaController extends Controller
      */
     public function showAction(PageMeta $pageMetum)
     {
-        $deleteForm = $this->createDeleteForm($pageMetum);
+    	$deleteForm = $this->createDeleteForm($pageMetum);
 
         return $this->render('pagemeta/show.html.twig', array(
             'pageMetum' => $pageMetum,

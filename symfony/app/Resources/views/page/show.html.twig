@@ -40,10 +40,10 @@
             <a href="{{ path('songbird_page_edit', { 'id': page.id }) }}">Edit Page</a>
         </li>
         <li>
-            <a href="{{ path('songbird_pagemeta_show', { 'id': page.id }) }}">View PageMeta</a>
+            <a href="{{ path('songbird_pagemeta_show', { 'id': pageMeta.id }) }}">View PageMeta</a>
         </li>
         <li>
-            <a href="{{ path('songbird_pagemeta_edit', { 'id': page.id }) }}">Edit PageMeta</a>
+            <a href="{{ path('songbird_pagemeta_edit', { 'id': pageMeta.id }) }}">Edit PageMeta</a>
         </li>
         <li>
             {{ form_start(delete_form) }}

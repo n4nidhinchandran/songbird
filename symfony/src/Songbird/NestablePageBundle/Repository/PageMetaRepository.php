@@ -2,6 +2,8 @@
 
 namespace Songbird\NestablePageBundle\Repository;
 
+use Songbird\NestablePageBundle\Entity\Page;
+
 /**
  * PageMetaRepository
  *
@@ -10,4 +12,22 @@ namespace Songbird\NestablePageBundle\Repository;
  */
 class PageMetaRepository extends \Doctrine\ORM\EntityRepository
 {
+	/**
+	 * @param Page $page
+	 * @param $locale
+	 *
+	 * @return PageMeta
+	 */
+	 public function findPageMetaByLocale(Page $page, $locale) {
+
+		$query = $this->createQueryBuilder('pm')
+		              ->where('pm.locale = :locale')
+		              ->andWhere('pm.page = :page')
+		              ->setParameter('locale', $locale)
+		              ->setParameter('page', $page)
+		              ->getQuery();
+
+		return $query->getOneOrNullResult();
+
+	}
 }

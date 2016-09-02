@@ -10,24 +10,11 @@ namespace Songbird\NestablePageBundle\Repository;
  */
 class PageRepository extends \Doctrine\ORM\EntityRepository
 {
-
-	public function findPageMetaByLocale($slug, $locale) {
-
-		$query = $this->createQueryBuilder('p')
-		              ->select('p', 'pm')
-		              ->Join('p.pageMetas','pm')
-		              ->where('p.isPublished = :isPublished')
-		              ->andWhere('pm.locale = :locale')
-		              ->andWhere('p.slug = :slug')
-		              ->setParameter('isPublished', '1')
-		              ->setParameter('locale', $locale)
-		              ->setParameter('slug', $slug)
-		              ->getQuery();
-
-		return $query->getOneOrNullResult();
-
-	}
-
+	/**
+	 * Find parent node
+	 *
+	 * @return array
+	 */
 	public function findParent() {
 
 		$query = $this->createQueryBuilder('p')
