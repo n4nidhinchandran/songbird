@@ -23,7 +23,8 @@ class AppKernel extends Kernel
 	        new FOS\UserBundle\FOSUserBundle(),
 	        new AppBundle\User(),
             new Vich\UploaderBundle\VichUploaderBundle(),
-            new Songbird\NestablePageBundle\SongbirdNestablePageBundle(),
+	        new Bpeh\NestablePageBundle\BpehNestablePageBundle(),
+	        new Bpeh\NestablePageBundle\PageTestBundle\PageTestBundle()
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'), true)) {

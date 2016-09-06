@@ -1,16 +1,16 @@
-# Chapter 17: The Page Manager Part 1
+# Chapter 18: Making Your Bundle Reusable
 
-So far, we have been very lazy (a good thing?). We have offloaded bulk of the CMS functionality to FOS and EasyAdmin bundles. In this chapter, we will create a simple **reusable** page bundle and the bulk of the logic ourselves. Let us call this NestablePageBundle.
+We have created a page bundle in the previous chapter. It's not perfect but let's say we want to share it with everyone. How do we do that? Be warned, we need lots of refactoring in the code to make it sharable.
+
+This is a long chapter. It goes through the process of creating a resuable bundle by trial and error. I think it is a good process to go through because it makes you pause and think. If you already know the process and want to skip through, simple clone the [NestablePageBundle from github](https://github.com/bernardpeh/NestablePageBundle) and follow the installation instructions in the readme file. Then, jump over to the next chapter.
 
 ## Objectives
 
-> * The Plan
-> * Define User Stories
-> * Create Our Own Bundle Generation Script (Optional)
-> * Implementation
-> * Create Sample Data
-> * Integrating NestableJS
-> * Create Functional Tests
+> * Creating a Separate Repository
+> * Updating Application composer.json
+> * Renaming SongbirdNestablePageBundle
+> * Making the Bundle Extensible
+
 
 ## Pre-setup
 
@@ -20,166 +20,495 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 # check your branch
 -> git status
 # start branching now
--> git checkout -b my_chapter17
+-> git checkout -b my_chapter18
 ```
 
-## The Plan
+## Creating a separate repository
 
-To be truly **decoupled** from the rest of the bundles, we want our page bundle to have no dependency on other bundles like sonata and fos bundles. Each page should have a unique slug and a couple of meta data such as title, short description, long description, created_date...etc. We will be using [nestable js](https://github.com/BeFiveINFO/Nestable) to allow drag and drop + page nesting using ajax.
-
-We will create 2 entities. The first entity is the Page entity and will consist of simple attributes like id, slug, sequence, parent and children id...etc. The second entity will be the PageMeta entity consisting of attributes like name, locale, title, short description and content. The relationship between the Page and PageMeta entity will be one to many. 
-
-This bundle creation is for **illustration only** and has lots of rooms for improvement. 
-
-## Define User Stories
-
-Since SongbirdNestableBundle is going to be decoupled from AppBundle, so we will need 2 sets of tests, one for SongbirdNestableBundle and one for the AppBundle. We will worry about the AppBundle tests in the next chapter.
-
-**SongbirdNestableBundle**
-
-<table>
-<tr><td><strong>Story Id</strong></td><td><strong>As a</strong></td><td><strong>I</strong></td><td><strong>So that I</strong></td></tr>
-<tr><td>17.1</td><td>test2 user</td><td>want to manage pages</td><td>can update them anytime.</td></tr>
-</table>
-
-<strong>Story ID 17.1: As test2 user, I want to manage pages, so that I can update them anytime.</strong>
-
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>17.11</td><td>List Pages</td><td>I go to /songbird_page</td><td>I should see the why_songbird slug under the about slug</td></tr>
-<tr><td>17.12</td><td>Show contact us page</td><td>I go to /songbird_page/5</td><td>I should see the word "contact_us" and the word "Created"</td></tr>
-<tr><td>17.13</td><td>Reorder home</td><td>I simulate a drag and drop of the home menu to under the about menu and submit the post data to /songbird_page/reorder</td><td>I should see "reordered successfully message" in the response and menus should be updated</td></tr>
-<tr><td>17.14</td><td>Edit home page meta</td><td>I go to edit homepage url and update the menu title of "Home" to "Home1" and click update</td><td>I should see the text "successfully updated" message</td></tr>
-<tr><td>17.15</td><td>Create and delete test pagemeta</td><td>go to /new and fill in details and click "Create" button, then go to test page and click add new meta and fill in the details and click "create" button, then click delete button</td><td>I should see the new page and pagemeta being created and pagemeta deleted</td></tr>
-<tr><td>17.16</td><td>Delete contact us page</td><td>go to /songbird_page/5 and click "Delete" button</td><td>I should see the contact_us slug no longer available in the listing page. Page id 5 should no longer be found in the pagemeta table.</td></tr>
-</table>
-
-## Create Our Own Bundle Generation Script (Optional)
-
-The default bundle generation script is cool. Let us customise it further to make our life easier. We will create a custom script to generate songbird bundles.
+First of all, let us create a readme file.
 
 ```
-# scripts/createbundle
-
-#!/bin/bash
-
-if [ -z "$*" ]; then 
- 	echo -e "\nUsage: $0 VendorName BundleName\n"; 
- 	exit;
-fi
-
-# using symfony bundle generation script is a quick way to generate bundles but doesn't mean its the best way.
-app/console generate:bundle --namespace=$1/$2 --dir=src --bundle-name=$1$2 --format=annotation --no-interaction
-rm -rf src/$1/$2/Tests/*
-rm -rf src/$1/$2/Resources/views/Default
-rm src/$1/$2/Controller/DefaultController.php
-
-touch src/$1/$2/Resources/views/.gitkeep
-touch src/$1/$2/Controller/.gitkeep
+-> cd src/Songbird/NestablePageBundle
+-> touch readme.md
 ```
 
-now let us run the script
+Update the readme file.
+
+Let us create the composer.json file for this repo. We will do a simple one
 
 ```
--> chmod u+x ./scripts/createbundle
--> ./scripts/createbundle Songbird NestablePageBundle
+-> composer init
 ```
 
-run a git status to make sure everything is working. Do a git diff and you will see that the script does a lot of work for you.
+Follow the prompts. You might need to read up on software licensing. <a href="https://en.wikipedia.org/wiki/MIT_License">MIT license</a> is becoming really popular. The sample composer.json might look like this:
 
 ```
--> git status
-
-Changes not staged for commit:
-  (use "git add <file>..." to update what will be committed)
-  (use "git checkout -- <file>..." to discard changes in working directory)
-
-	modified:   app/AppKernel.php
-	modified:   app/config/routing.yml
-	modified:   app/config/config.yml
-
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-
-	scripts/createbundle
-        src/Songbird
+{
+    "name": "Yourname/nestable-page-bundle",
+    "description": "your description",
+    "type": "symfony-bundle",
+    "require": {
+        "symfony/symfony": "~3.0"
+    },
+    "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "~2.0"
+    },
+    "autoload": {
+        "psr-4": { "Songbird\NestablePageBundle\": "" }
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "your name",
+            "email": "your_email@your_email.xx"
+        }
+    ]
+}
 ```
 
-## Implementation
-
-Let us create the entities.
-
-For Page entity:
+Note that we have to add the "autoload" component so that Symfony can autoload the namespace post installation. <a href="https://getcomposer.org/doc/04-schema.md#autoload">PS-4</a> is the default standard at the time of writing. Next, let us create the license in a text file
 
 ```
--> app/console generate:doctrine:entity --entity=SongbirdNestablePageBundle:Page --format=annotation --fields="slug:string(255) isPublished:boolean sequence:integer modified:datetime created:datetime" --no-interaction
+-> touch LICENSE
 ```
 
-and for PageMeta entity:
+copy the [MIT LICENSE](http://opensource.org/licenses/MIT) and update the LICENSE file.
+
+Init the repo
 
 ```
--> app/console generate:doctrine:entity --entity=SongbirdNestablePageBundle:PageMeta --format=annotation --fields="page_title:string(255) menu_title:string(255) locale:string(4) short_description:text content:text" --no-interaction
+-> cd src/Songbird/NestablePageBundle
+-> git init .
+-> git add .
+-> git commit -m"init commit"
 ```
 
-We now need to update the relationship between the 2 entities:
+In [github](http://github.com) (create a new acct if not done), create a new repo. Let's call it NestablePageBundle for example. Once you have created the new repo, you should see instructions on how to push your code.
 
 ```
-# src/Songbird/NestablePageBundle/Entity/Page.php
+-> git remote add origin git@github.com:your_username/NestablePageBundle.git
+-> git push -u origin master
+```
 
-namespace Songbird\NestablePageBundle\Entity;
+Let us give our first release a version number using the [semantic versioning](http://semver.org) convention.
+
+```
+-> git tag 0.1.0
+-> git push --tags
+```
+
+Your repository is now available for the public to pull.
+
+## Updating Application composer.json
+
+Note that this composer.json is different from the one that we have just created. If we add our repo to [packagist](https://packagist.org), we could install our bundle like any other bundles. I was afraid that anyone reading this tutorial might submit their test bundle to packagist, so I thought it would be a better idea to install the bundle from git instead.
+
+```
+# composer.json
+...
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/your_name/NestablePageBundle"
+        }
+    ],
+...
+    "require": {
+        ...
+        "your_name/nestable-page-bundle": ">0.1.0"
+    }
+...
+```
+
+Note that the bundle name is "nestable-page-bundle" under the "require" section. Why not NestablePageBundle following Symfony's convention? Remember the composer.json file that you have created previously? "nestable-page-bundle" is the name of the bundle as specified in that composer file.
+
+Now lets run composer update and see what happens
+
+```
+-> cd ../../../
+-> composer update
+...
+
+  - Installing your_name/nestable-page-bundle (0.1.0)
+    Downloading: 100%    
+```
+
+At this point, look at the vendor directory and you will see your bundle being installed in there. That's a good start.
+
+## Renaming SongbirdNestablePageBundle
+
+Let us do some cleaning up. We no longer need the src/Songbird/NestablePageBundle since we have installed the bundle under vendor dir.
+
+```
+git rm -rf src/Songbird/
+```
+Let us check if the route is still there.
+
+```
+-> app/console debug:router | grep songbird
+...
+songbird_page            GET      ANY    ANY  /songbird_page/                                    
+songbird_page_list       GET      ANY    ANY  /songbird_page/list                                
+songbird_page_reorder    POST     ANY    ANY  /songbird_page/reorder
+```
+
+Woah!! We have already deleted src/Songbird/NestablePageBundle and we should expect to see some errors. Why are the songbird routes still there?
+
+That's right, that shows that vendor/your_name/nestable-page-bundle is working. The *new SongbirdNestablePageBundleSongbirdNestablePageBundle()* initialised in AppKernel.php is working because of the namespace.
+
+We have a problem. The namespace "Songbird" is no longer relevant in vendor/your-name/nestable-page-bundle since the bundle is already decoupled from Songbird CMS. We want to change the bundle's filename and namespace so that it is more intuitive. How do we do that?
+
+Let us re-download the repo and do some mass restructuring
+
+```
+-> cd vendor/your-name
+-> rm -rf nestable-page-bundle
+-> git clone git@github.com:your_name/NestablePageBundle.git nestable-page-bundle
+-> cd nestable-page-bundle
+```
+
+There is no quick way for this, some bash magic helps
+
+```
+# Your-Initial can be something short but has to be unique
+# let us change the namespace
+-> find . -type f | grep -v .git/ | while read s; do sed -i '' 's/Songbird\NestablePageBundle/{your-initial}\NestablePageBundle/g' $s ; done
+# change the bundle name
+-> find . -type f | grep -v .git/ | while read s; do sed -i '' 's/SongbirdNestablePage/{your-initial}NestablePage/g' $s ; done
+-> find . -type f | grep -v .git/ | while read s; do sed -i '' 's/songbird_/{your_initial}_/g' $s ; done
+-> find . -type f | grep -v .git/ | while read s; do sed -i '' 's/songbirdnestable/{your_initial}nestable/g' $s ; done
+```
+
+That should save us 90% of the time. Then visually walk through all the files and check that they are ok.
+
+Lastly, rename the bundle file
+
+```
+-> git mv SongbirdNestablePageBundle.php {your-initial}NestablePageBundle.php
+-> cd DependencyInjection
+-> git mv SongbirdNestablePageExtension.php BpehNestablePageExtension.php
+-> cd ../Resources/translations
+-> git mv SongbirdNestablePageBundle.en.xlf {your-initial}NestablePageBundle.en.xlf
+-> git mv SongbirdNestablePageBundle.fr.xlf {your-initial}NestablePageBundle.fr.xlf
+```
+
+Now, here is the question. How do we test our changes without commiting to git and re-run composer update? We can update our entry in vendor/composer/autoload_psr4.php
+
+```
+# vendor/composer/autoload_psr4.php
+...
+    # 'Songbird\NestablePageBundle\' => array($vendorDir . '/{your-name}/nestable-page-bundle'),
+    '{your-initial}\NestablePageBundle\' => array($vendorDir . '/{your-name}/nestable-page-bundle'),
+...
+```
+
+Now, let us update AppKernel
+
+```
+# app/config/AppKernel.php
+# new SongbirdNestablePageBundleSongbirdNestablePageBundle(),
+new {your-initial}NestablePageBundle{your-initial}NestablePageBundle(),
+```
+
+and routing
+
+```
+# app/config/routing.yml
+
+# songbird_nestable_page:
+#     resource: "@SongbirdNestablePageBundle/Controller/"
+#    type:     annotation
+#    prefix:   /
+
+{your-initial}_nestable_page:
+    resource: "@{your-initial}NestablePageBundle/Controller/"
+    type:     annotation
+    prefix:   /
+```
+
+let us check that the routes are working. Let's say my initial is bpeh
+
+```
+app/console debug:router | grep bpeh
+bpeh_page                GET      ANY    ANY  /bpeh_page/                                        
+bpeh_page_list           GET      ANY    ANY  /bpeh_page/list                                    
+bpeh_page_reorder        POST     ANY    ANY  /bpeh_page/reorder
+...
+```
+
+We can now install the assets.
+
+```
+-> ./scripts/assetsinstall
+```
+
+Now go your new page list url and do a quick test. In my case,
+
+```
+http://songbird.app/bpeh_page/list
+```
+
+Looks like it is working. How can we be sure? Remember our functional tests?
+
+```
+-> phpunit -c app vendor/{your-name}/nestable-page-bundle/
+...
+Time: 29.04 seconds, Memory: 88.50Mb
+
+OK (5 tests, 14 assertions)
+```
+
+This is a sign of relieve... Everything is working. Remember to commit your code before moving to the next chapter. Up your nestablepagebundle tags to 0.2.0 or something else since there were major changes.
+
+## Making the Bundle Extensible
+
+When this bundle is initialised in AppKernel.php, running "app/console doctrine:schema:create will create the tables. This is not desirable. We want the child class to create the tables instead and inherit the properties of the parent entities. The war is not over. There is still a lot to be done!!
+
+Let us clean up the AppKernel and Route.
+
+```
+# app/AppKernel.php
+...
+// new {your-inital}NestablePageBundle{your-initial}NestablePageBundle(),
+...
+```
+
+and in routing.yml
+
+```
+# app/config/routing.yml
+
+# {your-initial}_nestable_page:
+# resource: "@{your-initial}NestablePageBundle/Controller/"
+# type:     annotation
+# prefix:   /
+```
+
+and refocus our attention to the NestablePageBundle:
+
+```
+-> cd vendor/{your-initial}/NestablePageBundle
+```
+
+First of all, we need to make The 2 entities extensible. Using [inheritance mapping](http://doctrine-orm.readthedocs.org/projects/doctrine-orm/en/latest/reference/inheritance-mapping.html), We will move the entities to the Model directory so that they won't be initialised by orm auto mapping. We will make the entities abstract and top level in a single-table strategy. Then, we create mapped super classes in the entity dir for each Page and pageMeta entity. The entities from AppBundle will extend from the mapped super classes. 
+
+I'll be using my initial (bpeh) from now onwards to make life easier when referencing paths.
+
+```
+# vendor/bpeh/nestable-page-bundle/Model/PageBase.php
+
+namespace Bpeh\NestablePageBundle\Model;
+
 use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Page
  *
  * @ORM\Table()
- * @ORM\Entity(repositoryClass="Songbird\NestablePageBundle\Entity\PageRepository")
+ * @ORM\Entity(repositoryClass="Bpeh\NestablePageBundle\Entity\PageRepository")
  * @ORM\HasLifecycleCallbacks()
+ * @ORM\InheritanceType("SINGLE_TABLE")
+ * @ORM\DiscriminatorColumn(name="discr", type="string")
+ * @ORM\DiscriminatorMap({"pagebase" = "PageBase", "page" = "Bpeh\NestablePageBundle\Entity\Page"})
  */
-class Page
+abstract class PageBase
 {
-...
+    /**
+     * @var integer
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    protected $id;
+
     /**
      * @var string
      *
      * @ORM\Column(name="slug", type="string", length=255, unique=true)
      */
-    private $slug;
-
-    /**
-     * @ORM\ManyToOne(targetEntity="Page", inversedBy="children")
-     * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="CASCADE")}
-     * @ORM\OrderBy({"sequence" = "ASC"})
-     */
-    private $parent;
+    protected $slug;
 
     /**
      * @var boolean
      *
      * @ORM\Column(name="isPublished", type="boolean", nullable=true)
      */
-    private $isPublished;
+    protected $isPublished;
 
     /**
      * @var integer
      *
      * @ORM\Column(name="sequence", type="integer", nullable=true)
      */
-    private $sequence;
+    protected $sequence;
 
     /**
-     * @ORM\OneToMany(targetEntity="Page", mappedBy="parent")
+     * @var \DateTime
+     *
+     * @ORM\Column(name="modified", type="datetime")
+     */
+    protected $modified;
+
+    /**
+     * @var \DateTime
+     *
+     * @ORM\Column(name="created", type="datetime")
+     */
+    protected $created;
+
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Bpeh\NestablePageBundle\Model\PageBase", inversedBy="children")
+     * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", onDelete="CASCADE")}
      * @ORM\OrderBy({"sequence" = "ASC"})
      */
-    private $children;
+    protected $parent;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Bpeh\NestablePageBundle\Model\PageBase", mappedBy="parent")
+     * @ORM\OrderBy({"sequence" = "ASC"})
+     */
+    protected $children;
    
     /**
-     * @ORM\OneToMany(targetEntity="Songbird\NestablePageBundle\Entity\PageMeta", mappedBy="page", cascade={"persist"})
+     * @ORM\OneToMany(targetEntity="Bpeh\NestablePageBundle\Model\PageMetaBase", mappedBy="page", cascade={"persist"}))
      */
-    private $pageMetas;
+    protected $pageMetas;
     
-    ...
-    
+    /**
+     * Get id
+     *
+     * @return integer 
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Set slug
+     *
+     * @param string $slug
+     * @return Page
+     */
+    public function setSlug($slug)
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
+    /**
+     * Get slug
+     *
+     * @return string 
+     */
+    public function getSlug()
+    {
+        return $this->slug;
+    }
+
+    /**
+     * Set isPublished
+     *
+     * @param boolean $isPublished
+     * @return Page
+     */
+    public function setIsPublished($isPublished)
+    {
+        $this->isPublished = $isPublished;
+
+        return $this;
+    }
+
+    /**
+     * Get isPublished
+     *
+     * @return boolean 
+     */
+    public function getIsPublished()
+    {
+        return $this->isPublished;
+    }
+
+    /**
+     * Set sequence
+     *
+     * @param integer $sequence
+     * @return Page
+     */
+    public function setSequence($sequence)
+    {
+        $this->sequence = $sequence;
+
+        return $this;
+    }
+
+    /**
+     * Get sequence
+     *
+     * @return integer 
+     */
+    public function getSequence()
+    {
+        return $this->sequence;
+    }
+
+    /**
+     * Set modified
+     *
+     * @param \DateTime $modified
+     * @return Page
+     */
+    public function setModified($modified)
+    {
+        $this->modified = $modified;
+
+        return $this;
+    }
+
+    /**
+     * Get modified
+     *
+     * @return \DateTime 
+     */
+    public function getModified()
+    {
+        return $this->modified;
+    }
+
+    /**
+     * Set created
+     *
+     * @param \DateTime $created
+     * @return Page
+     */
+    public function setCreated($created)
+    {
+        $this->created = $created;
+
+        return $this;
+    }
+
+    /**
+     * Get created
+     *
+     * @return \DateTime 
+     */
+    public function getCreated()
+    {
+        return $this->created;
+    }
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $this->children = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->pageMetas = new \Doctrine\Common\Collections\ArrayCollection();
+    }
+
     /**
      * @ORM\PrePersist
      */
@@ -196,41 +525,194 @@ class Page
     }
 
     /**
-     * convert obj to string
-     * 
+     * Set parent
+     *
+     * @param \Bpeh\NestablePageBundle\Model\PageBase $parent
+     * @return Page
+     */
+    public function setParent(\Bpeh\NestablePageBundle\Model\PageBase $parent = null)
+    {
+        $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * Get parent
+     *
+     * @return \Bpeh\NestablePageBundle\Model\PageBase 
+     */
+    public function getParent()
+    {
+        return $this->parent;
+    }
+
+    /**
+     * Add children
+     *
+     * @param \Bpeh\NestablePageBundle\Model\PageBase $children
+     * @return Page
+     */
+    public function addChild(\Bpeh\NestablePageBundle\Model\PageBase $children)
+    {
+        $this->children[] = $children;
+
+        return $this;
+    }
+
+    /**
+     * Remove children
+     *
+     * @param \Bpeh\NestablePageBundle\Model\Page $children
+     */
+    public function removeChild(\Bpeh\NestablePageBundle\Model\PageBase $children)
+    {
+        $this->children->removeElement($children);
+    }
+
+    /**
+     * Get children
+     *
+     * @return \Doctrine\Common\Collections\Collection 
+     */
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
+    /**
+     * Add pageMetas
+     *
+     * @param \Bpeh\NestablePageBundle\Model\PageMetaBase $pageMetas
+     * @return Page
+     */
+    public function addPageMeta(\Bpeh\NestablePageBundle\Model\PageMetaBase $pageMetas)
+    {
+        $this->pageMetas[] = $pageMetas;
+
+        return $this;
+    }
+
+    /**
+     * Remove pageMetas
+     *
+     * @param \Bpeh\NestablePageBundle\Model\PageMetaBase $pageMetas
+     */
+    public function removePageMeta(\Bpeh\NestablePageBundle\Model\PageMetaBase $pageMetas)
+    {
+        $this->pageMetas->removeElement($pageMetas);
+    }
+
+    /**
+     * Get pageMetas
+     *
+     * @return \Doctrine\Common\Collections\Collection 
+     */
+    public function getPageMetas()
+    {
+        return $this->pageMetas;
+    }
+    
+    /**
+     * convert object to string
      * @return string
      */
-    public function __toString() {
+    public function __toString()
+    {
         return $this->slug;
     }
-...
-```
-
-and
+}
 
 ```
-# src/Songbird/NestablePageBundle/Entity/PageMeta.php
-...
+Note that we have changed all variables to protected to allow inheritance. The references to PageBase has also been changed.
+
+Page.php now inherits from PageBase.php
+
+```
+# vendor/bpeh/nestable-page-bundle/Entity/Page.php
+
+namespace Bpeh\NestablePageBundle\Entity;
+use Doctrine\ORM\Mapping as ORM;
+use Bpeh\NestablePageBundle\Model\PageBase;
+
+/** @ORM\MappedSuperclass */
+class Page extends PageBase
+{
+}
+```
+
+We will do the same for PageMetaBase.php
+
+```
+# src/vendor/nestable-page-bundle/Model/PageMetaBase.php
+
+<?php
+
+namespace Bpeh\NestablePageBundle\Model;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * PageMeta
+ *
+ * @ORM\Table()
+ * @ORM\Entity
+ * @ORM\InheritanceType("SINGLE_TABLE")
+ * @ORM\DiscriminatorColumn(name="discr", type="string")
+ * @ORM\DiscriminatorMap({"pagemetabase" = "PageMetaBase", "pagemeta" = "Bpeh\NestablePageBundle\Entity\PageMeta"})
+ */
+abstract class PageMetaBase
+{
     /**
-     * @ORM\ManyToOne(targetEntity="Songbird\NestablePageBundle\Entity\Page", inversedBy="pageMetas")
-     * @ORM\JoinColumn(name="page_id", referencedColumnName="id", onDelete="CASCADE")}
+     * @var integer
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
      */
-    private $page;
-    ...
+    protected $id;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="page_title", type="string", length=255)
+     */
+    protected $page_title;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="menu_title", type="string", length=255)
+     */
+    protected $menu_title;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="locale", type="string", length=4)
+     */
+    protected $locale;
+
     /**
      * @var string
      *
      * @ORM\Column(name="short_description", type="text", nullable=true)
      */
-    private $short_description;
+    protected $short_description;
 
     /**
      * @var string
      *
      * @ORM\Column(name="content", type="text", nullable=true)
      */
-    private $content;
-    ...
+    protected $content;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Bpeh\NestablePageBundle\Model\PageBase", inversedBy="pageMetas")
+     * @ORM\JoinColumn(name="page_id", referencedColumnName="id", onDelete="CASCADE")}
+     */
+    protected $page;
+
     /**
      * constructor
      */
@@ -239,1255 +721,901 @@ and
         // default values
         $this->locale = 'en';
     }
-    ...
+
+    /**
+     * Get id
+     *
+     * @return integer 
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Set page_title
+     *
+     * @param string $pageTitle
+     * @return PageMeta
+     */
+    public function setPageTitle($pageTitle)
+    {
+        $this->page_title = $pageTitle;
+
+        return $this;
+    }
+
+    /**
+     * Get page_title
+     *
+     * @return string 
+     */
+    public function getPageTitle()
+    {
+        return $this->page_title;
+    }
+
+    /**
+     * Set menu_title
+     *
+     * @param string $menuTitle
+     * @return PageMeta
+     */
+    public function setMenuTitle($menuTitle)
+    {
+        $this->menu_title = $menuTitle;
+
+        return $this;
+    }
+
+    /**
+     * Get menu_title
+     *
+     * @return string 
+     */
+    public function getMenuTitle()
+    {
+        return $this->menu_title;
+    }
+
+    /**
+     * Set locale
+     *
+     * @param string $locale
+     * @return PageMeta
+     */
+    public function setLocale($locale)
+    {
+        $this->locale = $locale;
+
+        return $this;
+    }
+
+    /**
+     * Get locale
+     *
+     * @return string 
+     */
+    public function getLocale()
+    {
+        return $this->locale;
+    }
+
+    /**
+     * Set short_description
+     *
+     * @param string $shortDescription
+     * @return PageMeta
+     */
+    public function setShortDescription($shortDescription)
+    {
+        $this->short_description = $shortDescription;
+
+        return $this;
+    }
+
+    /**
+     * Get short_description
+     *
+     * @return string 
+     */
+    public function getShortDescription()
+    {
+        return $this->short_description;
+    }
+
+    /**
+     * Set content
+     *
+     * @param string $content
+     * @return PageMeta
+     */
+    public function setContent($content)
+    {
+        $this->content = $content;
+
+        return $this;
+    }
+
+    /**
+     * Get content
+     *
+     * @return string 
+     */
+    public function getContent()
+    {
+        return $this->content;
+    }
+
+    /**
+     * Set page
+     *
+     * @param \Bpeh\NestablePageBundle\Model\PageBase $page
+     * @return PageMeta
+     */
+    public function setPage(\Bpeh\NestablePageBundle\Model\PageBase $page = null)
+    {
+        $this->page = $page;
+
+        return $this;
+    }
+
+    /**
+     * Get page
+     *
+     * @return \Bpeh\NestablePageBundle\Model\PageBase
+     */
+    public function getPage()
+    {
+        return $this->page;
+    }
+
+    
+}
 ```
 
-There were some new [doctrine association annotations](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/association-mapping.html) used here, notably @ManyToOne and @OneToMany. Establishing the right associations can save lots of time when managing relational database. For PageMeta.php, we set the default locale to "en" if none is set.
-
-We can now auto generate the stubs for the 2 entities:
+and for the child PageMeta.php
 
 ```
--> app/console generate:doctrine:entities SongbirdNestablePageBundle --no-backup
-Generating entities for bundle "SongbirdNestablePageBundle"
-  > generating Songbird\NestablePageBundle\Entity\Page
-  > generating Songbird\NestablePageBundle\Entity\PageMeta
+# src/nestable-page-bundle/Entity/PageMeta.php
+
+namespace Bpeh\NestablePageBundle\Entity;
+use Doctrine\ORM\Mapping as ORM;
+use Bpeh\NestablePageBundle\Model\PageMetaBase;
+
+/** @ORM\MappedSuperclass */
+class PageMeta extends PageMetaBase
+{
+	
+}
 ```
 
-This command help us to generate the getters and setters for the new variables that we have added. For the page entity for example, you should see new functions like setParent() and getParent() being added - another huge time saver.
-
-We will also create a helper to help us find the page meta entries based on locale. 
+We also need user to specify which child entities and form type (if they are extending the parent form type).
 
 ```
-# src/Songbird/NestablePageBundle/Entity/PageRepository.php
+# vendor/bpeh/nestable-page-bundle/DependencyInjection/Configuration.php
 
-namespace Songbird\NestablePageBundle\Repository;
+namespace Bpeh\NestablePageBundle\DependencyInjection;
+
+use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 /**
- * PageRepository
+ * This is the class that validates and merges configuration from your app/config files
  *
- * This class was generated by the Doctrine ORM. Add your own custom
- * repository methods below.
+ * To learn more see {@link http://symfony.com/doc/current/cookbook/bundles/extension.html#cookbook-bundles-extension-config-class}
  */
-class PageRepository extends EntityRepository
+class Configuration implements ConfigurationInterface
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function getConfigTreeBuilder()
+    {
+        $treeBuilder = new TreeBuilder();
+        $rootNode = $treeBuilder->root('bpeh_nestable_page');
+
+        // Here you should define the parameters that are allowed to
+        // configure your bundle. See the documentation linked above for
+        // more information on that topic.
+        $rootNode
+            ->children()
+                ->scalarNode('page_entity')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Entity\Page')->end()
+                ->scalarNode('pagemeta_entity')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Entity\PageMeta')->end()
+                ->scalarNode('page_type')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Form\PageType')->end()
+                ->scalarNode('pagemeta_type')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Form\PageMetaType')->end()
+            ->end()
+        ;
+        return $treeBuilder;
+    }
+}
+```
+
+and 
+
+```
+# vendor/bpeh/nestable-page-bundle/DependencyInjection/BpehNestablePageExtension.php
+namespace Bpeh\NestablePageBundle\DependencyInjection;
+
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\HttpKernel\DependencyInjection\Extension;
+use Symfony\Component\DependencyInjection\Loader;
+
+/**
+ * This is the class that loads and manages your bundle configuration
+ *
+ * To learn more see {@link http://symfony.com/doc/current/cookbook/bundles/extension.html}
+ */
+class BpehNestablePageExtension extends Extension
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        $configuration = new Configuration();
+        $config = $this->processConfiguration($configuration, $configs);
+
+        $container->setParameter( 'bpeh_nestable_page.page_entity', $config[ 'page_entity' ]);
+        $container->setParameter( 'bpeh_nestable_page.pagemeta_entity', $config[ 'pagemeta_entity' ]);
+        $container->setParameter( 'bpeh_nestable_page.page_type', $config[ 'page_type' ]);
+        $container->setParameter( 'bpeh_nestable_page.pagemeta_type', $config[ 'pagemeta_type' ]);
+
+        $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader->load('services.xml');
+    }
+}
+```
+
+Now in config.yml, anyone can define the page and pagemeta entities themselves.
+
+We also need to initialise some variables when the controllers are loaded. We will do that via the event listener.
+
+```
+# vendor/bpeh/nestable-page-bundle/Resources/config/services.xml
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="bpeh_nestable_page.init" class="Bpeh\NestablePageBundle\EventListener\ControllerListener">
+            <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController"/>
+        </service>
+    </services>
+</container>
+```
+
+and in the controller listener class
+
+```
+# vendor/bpeh/nestable-page-bundle/EventListener/ControllerListener.php
+
+namespace Bpeh\NestablePageBundle\EventListener;
+
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+use Bpeh\NestablePageBundle\PageTestBundle\Controller\PageController;
+use Bpeh\NestablePageBundle\PageTestBundle\Controller\PageMetaController;
+
+class ControllerListener
 {
 
-    public function findPageMetaByLocale($slug, $locale) {
-
-        $query = $this->createQueryBuilder('p')
-            ->select('p', 'pm')
-            ->Join('p.pageMetas','pm')
-            ->where('p.isPublished = :isPublished')
-            ->andWhere('pm.locale = :locale')
-            ->andWhere('p.slug = :slug')
-            ->setParameter('isPublished', '1')
-            ->setParameter('locale', $locale)
-            ->setParameter('slug', $slug)
-            ->getQuery();
-
-        return $query->getOneOrNullResult();
-
-    }
-
-    public function findParent() {
-
-        $query = $this->createQueryBuilder('p')
-            ->select('p')
-            ->where('p.isPublished = :isPublished')
-            ->andWhere('p.parent is null')
-            ->setParameter('isPublished', '1')
-            ->orderBy('p.sequence', 'asc')
-            ->getQuery();
-
-        return $query->getResult();
-
-    }
-}
-``` 
-
-reset the app now and verify that the 2 new tables, ie page and page_meta being created in the songbird db.
-
-```
--> ./scripts/resetapp
-```
-
-We are going to use a variant of [nestable.js](https://github.com/BeFiveINFO/Nestable) to create our draggable menu. Let us create the js and css directories.
-
-```
--> mkdir -p src/Songbird/NestablePageBundle/Resources/public/{js,css}
-```
-
-Download jquery.nestable.js and put it under src/Songbird/NestablePageBundle/Resources/public/js/jquery.nestable.js
-
-```
--> cd src/Songbird/NestablePageBundle/Resources/public/js
--> wget http://code.jquery.com/jquery-1.11.3.min.js
--> wget https://raw.githubusercontent.com/BeFiveINFO/Nestable/master/jquery.nestable.js
-```
-
-Now let us create the css
-
-```
-# src/Songbird/NestablePageBundle/Resources/public/css/styles.css
-.dd { position: relative; display: block; margin: 0; padding: 0; max-width: 600px; list-style: none; font-siz
-e: 13px; line-height: 20px; }
-
-.dd-list { display: block; position: relative; margin: 0; padding: 0; list-style: none; }
-.dd-list .dd-list { padding-left: 30px; }
-.dd-collapsed .dd-list { display: none; }
-
-.dd-item,
-.dd-empty,
-.dd-placeholder { display: block; position: relative; margin: 0; padding: 0; min-height: 20px; font-size: 13p
-x; line-height: 20px; }
-
-.dd-handle { display: block; height: 30px; margin: 5px 0; padding: 5px 10px; color: #333; text-decoration: no
-ne; font-weight: bold; border: 1px solid #ccc;
-    background: #fafafa;
-    background: -webkit-linear-gradient(top, #fafafa 0%, #eee 100%);
-    background:    -moz-linear-gradient(top, #fafafa 0%, #eee 100%);
-    background:         linear-gradient(top, #fafafa 0%, #eee 100%);
-    -webkit-border-radius: 3px;
-            border-radius: 3px;
-    box-sizing: border-box; -moz-box-sizing: border-box;
-}
-.dd-handle:hover { color: #2ea8e5; background: #fff; }
-.dd-item > button { display: block; position: relative; cursor: pointer; float: left; width: 25px; height: 20px; margin: 5px 0; padding: 0; text-indent: 100%; white-space: nowrap; overflow: hidden; border: 0; background: transparent; font-size: 12px; line-height: 1; text-align: center; font-weight: bold; }
-.dd-item > button:before { content: '+'; display: block; position: absolute; width: 100%; text-align: center; text-indent: 0; }
-.dd-item > button[data-action="collapse"]:before { content: '-'; }
-
-.dd-placeholder,
-.dd-empty { margin: 5px 0; padding: 0; min-height: 30px; background: #f2fbff; border: 1px dashed #b6bcbf; box-sizing: border-box; -moz-box-sizing: border-box; }
-.dd-empty { border: 1px dashed #bbb; min-height: 100px; background-color: #e5e5e5;
-    background-image: -webkit-linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff),
-                      -webkit-linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff);
-    background-image:    -moz-linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff),
-                         -moz-linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff);
-    background-image:         linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff),
-                              linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff);
-    background-size: 60px 60px;
-    background-position: 0 0, 30px 30px;
-}
-
-.dd-dragel { position: absolute; pointer-events: none; z-index: 9999; }
-.dd-dragel > .dd-item .dd-handle { margin-top: 0; }
-.dd-dragel .dd-handle {
-    -webkit-box-shadow: 2px 4px 6px 0 rgba(0,0,0,.1);
-            box-shadow: 2px 4px 6px 0 rgba(0,0,0,.1);
-}
-
-```
-
-Let us now create the translation files.
-
-The english version:
-
-```
-# src/Songbird/NestablePageBundle/Resources/translations/SongbirdNestablePageBundle.en.xlf
-<?xml version="1.0"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-    <file source-language="en" datatype="plaintext" original="file.ext">
-        <body>
-            <trans-unit id="1">
-                <source>menu.page_management</source>
-                <target>Page Management</target>
-            </trans-unit>
-            <trans-unit id="2">
-                <source>flash_reorder_instructions</source>
-                <target>click and drag to reorder menu</target>
-            </trans-unit>
-            <trans-unit id="3">
-                <source>flash_reorder_edit_success</source>
-                <target>menu has been reordered successfully</target>
-            </trans-unit>
-        </body>
-    </file>
-</xliff>
-```
-
-and the french version:
-
-```
-# src/Songbird/NestablePageBundle/Resources/translations/SongbirdNestablePageBundle.fr.xlf
-<?xml version="1.0"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-    <file source-language="en" datatype="plaintext" original="file.ext">
-        <body>
-            <trans-unit id="1">
-                <source>menu.page_management</source>
-                <target>Gestion de la page</target>
-            </trans-unit>
-            <trans-unit id="2">
-                <source>flash_reorder_instructions</source>
-                <target>cliquer et faire glisser pour réorganiser le menu</target>
-            </trans-unit>
-            <trans-unit id="3">
-                <source>flash_reorder_edit_success</source>
-                <target>menu a été réorganisé avec succès</target>
-            </trans-unit>
-        </body>
-    </file>
-</xliff>
-```
-
-We will now generate CRUD for the 2 entities in a quick way:
-
-```
--> app/console g:doctrine:crud --entity=SongbirdNestablePageBundle:Page --route-prefix=songbird_page --with-write -n
--> app/console g:doctrine:crud --entity=SongbirdNestablePageBundle:PageMeta --route-prefix=songbird_pagemeta --with-write -n
-```
-
-We added the route-prefix to make sure our path is unique so that it can be reused with minimal changes.
-
-## Create Sample Data
-
-Let us populate sample data to work with. Say we want 3 parent menu, Homepage, "About Us" and "Contact Us" and a couple of submenus.
-
-```
-# src/Songbird/NestablePageBundle/DataFixtures/ORM/LoadPageData.php
-
-namespace Songbird\NestablePageBundle\DataFixtures\ORM;
-
-use Doctrine\Common\DataFixtures\AbstractFixture;
-use Doctrine\Common\Persistence\ObjectManager;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Songbird\NestablePageBundle\Entity\Page;
-use Songbird\NestablePageBundle\Entity\PageMeta;
-
-class LoadPageData extends AbstractFixture implements ContainerAwareInterface
-{
-    
-    /**
-     * @var ContainerInterface
-     */
-    private $container;
-
-    /**
-     * {@inheritDoc}
-     */
-    public function setContainer(ContainerInterface $container = null)
+    public function onKernelController(FilterControllerEvent $event)
     {
-        $this->container = $container;
+        $controller = $event->getController();
+
+        /*
+         * controller must come in an array
+         */
+        if (!is_array($controller)) {
+            return;
+        }
+        
+        if ($controller[0] instanceof PageController || $controller[0] instanceof PageMetaController) {
+            $controller[0]->init();
+        }
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function load(ObjectManager $manager)
-    {
-
-        $homepage = new Page();
-        $homepage->setSlug('home');
-        $homepage->setIsPublished(1);
-        $homepage->setSequence(0);
-        // there is no relationship with the user entity atm
-        // $homepage->setUser($this->getReference('admin_user'));
-        $manager->persist($homepage);
-
-        $homemetaEN = new PageMeta();
-        $homemetaEN->setPage($homepage);
-        $homemetaEN->setMenuTitle('Home');
-        $homemetaEN->setPageTitle('Welcome to SongBird CMS Demo');
-        $homemetaEN->setShortDescription('Welcome to SongBird CMS Demo');
-        $homemetaEN->setContent('<p>SongBird is a simple CMS built with popular bundles like FOSUserBundle and SonataAdminBundle.
-            The CMS is meant to showcase Rapid Application Development with Symfony.</p>');
-        $manager->persist($homemetaEN);
-
-        $homemetaFR = new PageMeta();
-        $homemetaFR->setPage($homepage);
-        $homemetaFR->setMenuTitle('Accueil');
-        $homemetaFR->setPageTitle('Bienvenue a SongBird CMS Démo');
-        $homemetaFR->setShortDescription('Bienvenue a SongBird CMS Démo');
-        $homemetaFR->setLocale('fr');
-        $homemetaFR->setContent('<p>SongBird est un simple CMS construit avec des faisceaux populaires comme FOSUserBundle et SonataAdminBundle.
-            Le CMS est destinée à mettre en valeur Rapid Application Development avec Symfony .</p>');
-        $manager->persist($homemetaFR);
-
-        $aboutpage = new Page();
-        $aboutpage->setSlug('about');
-        $aboutpage->setIsPublished(1);
-        $aboutpage->setSequence(1);
-        $manager->persist($aboutpage);
-
-        $aboutmetaEN = new PageMeta();
-        $aboutmetaEN->setPage($aboutpage);
-        $aboutmetaEN->setMenuTitle('About');
-        $aboutmetaEN->setPageTitle('About SongBird');
-        $aboutmetaEN->setShortDescription('What is Songbird?');
-        $aboutmetaEN->setContent('<p>SongBird is a simple CMS (Content Management System) consisting the following features:</p>
-        <ul>
-        <li>Admin Panel and Dashboard – A password protected administration area for administrators and users.</li>
-        <li>User Management System – For administrators to manage the users of the site.</li>
-        <li>Multi-lingual Capability – No CMS is complete without this.</li>
-        <li>Page Management System – For managing the front-end pages of the site.</li>
-        <li>Media Management System – For administrators and users to manage files and images.</li>
-        <li>Frontend – The frontend of the website.</li>
-        </ul>');
-        $manager->persist($aboutmetaEN);
-
-        $aboutmetaFR = new PageMeta();
-        $aboutmetaFR->setPage($aboutpage);
-        $aboutmetaFR->setLocale('fr');
-        $aboutmetaFR->setMenuTitle('Sur');
-        $aboutmetaFR->setPageTitle('Sur SongBird');
-        $aboutmetaFR->setShortDescription('Qu\'est-ce que SongBird?');
-        $aboutmetaFR->setContent('<p>SongBird est un simple CMS ( Content Management System ) comprenant les caractéristiques suivantes:</p>
-        <ul>
-        <li>Panneau d\'administration et Dashboard - Un mot de passe protégé espace d\'administration pour les administrateurs et les utilisateurs.</li>
-        <li>Système de gestion de l\'utilisateur - Pour les administrateurs de gérer les utilisateurs du site.</li>
-        <li>Capacité multilingue - Pas de CMS est complète sans cela.</li>
-        <li>Système de Management de la page - Pour gérer les pages du site frontaux.</li>
-        <li>Système de Gestion des médias - Pour les administrateurs et les utilisateurs de gérer des fichiers et des images.</li>
-        <li>Frontend - L\'interface du site.</li>
-        </ul>');
-        $manager->persist($aboutmetaFR);
-
-
-        $whypage = new Page();
-        $whypage->setSlug('why_songbird');
-        $whypage->setIsPublished(1);
-        $whypage->setSequence(0);
-        $whypage->setParent($aboutpage);
-        $manager->persist($whypage);
-
-        $whymetaEN = new PageMeta();
-        $whymetaEN->setPage($whypage);
-        $whymetaEN->setMenuTitle('Why Songbird');
-        $whymetaEN->setPageTitle('Why Songbird?');
-        $whymetaEN->setShortDescription('Why Another CMS?');
-        $whymetaEN->setContent('<p>Learning a modern day framework is not an easy task. Songbird CMS does not aim to replace any existing CMS out there. 
-        To put it simply, it is a play ground for people who wants to learn Symfony by building a CMS from scratch. 
-        Creating a semi-complex application like a CMS will give the coder insights in building bigger 
-        things with a RAD framework like Symfony.</p>');
-        $manager->persist($whymetaEN);
-
-        $whymetaFR = new PageMeta();
-        $whymetaFR->setPage($whypage);
-        $whymetaFR->setMenuTitle('pourquoi SongBird');
-        $whymetaFR->setPageTitle('pourquoi SongBird?');
-        $whymetaFR->setShortDescription('Pourquoi un autre CMS');
-        $whymetaFR->setContent('<p>Apprendre un cadre moderne est pas une tâche facile . Songbird CMS ne vise pas à remplacer tout CMS existant là-bas.
-        Pour dire les choses simplement , il est un terrain de jeu pour les gens qui veulent apprendre symfony en construisant un CMS à partir de zéro.
-        Création d\'une application semi- complexe comme un CMS donnera les idées de codeur dans la construction de plus
-        les choses avec un cadre RAD comme Symfony</p>');
-        $whymetaFR->setLocale('fr');
-        $manager->persist($whymetaFR);
-
-        $planpage = new Page();
-        $planpage->setSlug('documentation');
-        $planpage->setIsPublished(1);
-        $planpage->setSequence(1);
-        $planpage->setParent($aboutpage);
-        $manager->persist($planpage);
-
-        $planmetaEn = new PageMeta();
-        $planmetaEn->setPage($planpage);
-        $planmetaEn->setMenuTitle('Where do I start');
-        $planmetaEn->setPageTitle('Where do I start?');
-        $planmetaEn->setShortDescription('Where Do I Start?');
-        $planmetaEn->setContent('<p>I recommend reading the online documentation at <a href="http://practicalsymfony.com">practicalsymfony.com</a></p>
-            <p>git clone the repo. Read and Code at the same time. I believe that is the most effective way to learn.</p>');
-        $manager->persist($planmetaEn);
-
-        $planmetaFR = new PageMeta();
-        $planmetaFR->setPage($planpage);
-        $planmetaFR->setLocale('fr');
-        $planmetaFR->setMenuTitle('Où est-ce que je commence');
-        $planmetaFR->setPageTitle('Où est-ce que je commence?');
-        $planmetaFR->setShortDescription('Où est-ce que je commence?');
-        $planmetaFR->setContent('<p>Je recommande la lecture de la documentation en ligne à <a href="http://practicalsymfony.com">practicalsymfony.com</a></p>
-            <p>git clone the repo. Lire et code en même temps . Je crois que la façon la plus efficace d\'apprendre.</p>');
-        $manager->persist($planmetaFR);
-
-        $contactpage = new Page();
-        $contactpage->setSlug('contact_us');
-        $contactpage->setIsPublished(1);
-        $contactpage->setSequence(2);
-        $manager->persist($contactpage);
-
-        $contactmetaEN = new PageMeta();
-        $contactmetaEN->setPage($contactpage);
-        $contactmetaEN->setPageTitle('Contact Us');
-        $contactmetaEN->setMenuTitle('Contact');
-        $contactmetaEN->setShortDescription('Contact');
-        $contactmetaEN->setContent('<p>I hope Songbird can be beneficial to anyone who aspires to learn Symfony.</p>
-            <p>This project is hosted in <a href="https://github.com/bernardpeh/songbird" target="_blank">github</a>.</p>
-            <p>To make this CMS a better learning platform for everyone, feel free to update the code and create a pull request in github.</p>');
-        $manager->persist($contactmetaEN);
-
-        $contactmetaFR = new PageMeta();
-        $contactmetaFR->setPage($contactpage);
-        $contactmetaFR->setLocale('fr');
-        $contactmetaFR->setPageTitle('Contactez nous');
-        $contactmetaFR->setMenuTitle('Contact');
-        $contactmetaFR->setShortDescription('Contact');
-        $contactmetaFR->setContent('<p>Je l\'espère Songbird peut être bénéfique pour toute personne qui aspire à apprendre symfony.</p>
-            <p>Ce projet est hébergé dans <a href="https://github.com/bernardpeh/songbird" target="_blank">github</a>.</p>
-            <p>Pour faire ce CMS une meilleure plateforme d\'apprentissage pour tout le monde , vous pouvez mettre à jour le code et créer une demande de traction dans github.</p>');
-        $manager->persist($contactmetaFR);
-
-        // now save all
-        $manager->flush();
-    }
-
 }
 ```
 
-reset the app to load the fixtures and check that the entries have been added to the db.
+The Page Controller can now use the parameters as defined in config.yml to load the entities and form types.
 
 ```
--> ./scripts/resetapp
-```
+# vendor/bpeh/nestable-page-bundle/Controller/PageController.php
 
-Now go to the page url and you should see the default crud template
-
-```
-http://songbird.app/songbird_page/
-```
-
-Everything is looking plain at the moment, let us integrate nestablejs.
-
-## Integrating NestableJS
-
-How do we integrate NestableJS to our bundle? The secret will be in the Page Controller.
-
-```
-# src/Songbird/NestablePageBundle/Controller/PageController.php
-
-namespace Songbird\NestablePageBundle\Controller;
+namespace Bpeh\NestablePageBundle\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Songbird\NestablePageBundle\Entity\Page;
-use Songbird\NestablePageBundle\Form\PageType;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Bpeh\NestablePageBundle\Entity\Page;
 
 /**
  * Page controller.
  *
- * @Route("/songbird_page")
+ * @Route("/bpeh_page")
  */
 class PageController extends Controller
 {
 
+    private $entity;
+
+    private $page_type;
+
+    public function init()
+    {
+        $this->entity = $this->container->getParameter('bpeh_nestable_page.page_entity');
+        $this->page_type = $this->container->getParameter('bpeh_nestable_page.page_type');
+    }
+    
     /**
      * Lists all Page entities.
      *
-     * @Route("/", name="songbird_page")
+     * @Route("/", name="bpeh_page")
      * @Method("GET")
      * @Template()
      */
     public function indexAction()
     {
-        return $this->redirect($this->generateUrl('songbird_page_list'));
+        return $this->redirect($this->generateUrl('bpeh_page_list'));
     }
 
-    /**
+        /**
      * Lists all nested page
      *
-     * @Route("/list", name="songbird_page_list")
+     * @Route("/list", name="bpeh_page_list")
      * @Method("GET")
+     * @Template()
      */
     public function listAction()
     {
         $em = $this->getDoctrine()->getManager();
-        $rootMenuItems = $em->getRepository('SongbirdNestablePageBundle:Page')->findParent();
+        $rootMenuItems = $em->getRepository($this->entity)->findParent();
 
-        return $this->render('SongbirdNestablePageBundle:Page:list.html.twig', array(
+        return array(
             'tree' => $rootMenuItems,
-        ));
+        );
     }
 
-	/**
-	 * reorder pages
-	 *
-	 * @Route("/reorder", name="songbird_page_reorder")
-	 * @Method("POST")
-	 */
-	public function reorderAction(Request $request)
-	{
-		$em = $this->getDoctrine()->getManager();
-		// id of affected element
-		$id = $request->get('id');
-		// parent Id
-		$parentId = ($request->get('parentId') == '') ? null : $request->get('parentId');
-		// new sequence of this element. 0 means first element.
-		$position = $request->get('position');
+    /**
+     * reorder pages
+     *
+     * @Route("/reorder", name="bpeh_page_reorder")
+     * @Method("POST")
+     * @Template()
+     */
+    public function reorderAction()
+    {
+        $em = $this->getDoctrine()->getManager();
+        // id of affected element
+        $id = $this->get('request')->get('id');
+        // parent Id
+        $parentId = ($this->get('request')->get('parentId') == '') ? null : $this->get('request')->get('parentId');
+        // new sequence of this element. 0 means first element.
+        $position = $this->get('request')->get('position');
 
-		$result = $em->getRepository('SongbirdNestablePageBundle:Page')->reorderElement($id, $parentId, $position);
+        $result = $em->getRepository($this->entity)->reorderElement($id, $parentId, $position); 
 
-		return new JsonResponse(
-			array('message' => $this->get('translator')->trans($result[0], array(), 'SongbirdNestablePageBundle')
-			, 'success' => $result[1])
-		);
-	}
+        return new JsonResponse(
+            array('message' => $this->get('translator')->trans($result[0], array(), 'BpehNestablePageBundle')
+, 'success' => $result[1])
+        );
+
+    }
 
     /**
      * Creates a new Page entity.
      *
-     * @Route("/new", name="songbird_page_new")
-     * @Method({"GET", "POST"})
+     * @Route("/", name="bpeh_page_create")
+     * @Method("POST")
+     * @Template("BpehNestablePageBundle:Page:new.html.twig")
      */
-    public function newAction(Request $request)
+    public function createAction(Request $request)
     {
-        $page = new Page();
-        $form = $this->createForm('Songbird\NestablePageBundle\Form\PageType', $page);
+        
+        $entity = new $this->entity();
+        $form = $this->createCreateForm($entity);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isValid()) {
             $em = $this->getDoctrine()->getManager();
-            $em->persist($page);
+            $em->persist($entity);
             $em->flush();
 
-            return $this->redirectToRoute('songbird_page_show', array('id' => $page->getId()));
+            return $this->redirect($this->generateUrl('bpeh_page_show', array('id' => $entity->getId())));
         }
 
-        return $this->render('page/new.html.twig', array(
-            'page' => $page,
-            'form' => $form->createView(),
+        return array(
+            'entity' => $entity,
+            'form'   => $form->createView(),
+        );
+    }
+
+    /**
+     * Creates a form to create a Page entity.
+     *
+     * @param Page $entity The entity
+     *
+     * @return \Symfony\Component\Form\Form The form
+     */
+    private function createCreateForm(Page $entity)
+    {
+        $form = $this->createForm(new $this->page_type(), $entity, array(
+            'action' => $this->generateUrl('bpeh_page_create'),
+            'method' => 'POST',
         ));
+
+        $form->add('submit', 'submit', array('label' => 'Create'));
+
+        return $form;
+    }
+
+    /**
+     * Displays a form to create a new Page entity.
+     *
+     * @Route("/new", name="bpeh_page_new")
+     * @Method("GET")
+     * @Template()
+     */
+    public function newAction()
+    {
+
+        $entity = new $this->entity();
+        $form   = $this->createCreateForm($entity);
+
+        return array(
+            'entity' => $entity,
+            'form'   => $form->createView(),
+        );
     }
 
     /**
      * Finds and displays a Page entity.
      *
-     * @Route("/{id}", name="songbird_page_show")
+     * @Route("/{id}", name="bpeh_page_show")
      * @Method("GET")
+     * @Template()
      */
-    public function showAction(Request $request, Page $page)
+    public function showAction($id)
     {
-	    $em = $this->getDoctrine()->getManager();
+        $em = $this->getDoctrine()->getManager();
 
-	    $pageMeta = $em->getRepository('SongbirdNestablePageBundle:PageMeta')->findPageMetaByLocale($page,$request->getLocale());
+        $entity = $em->getRepository($this->entity)->find($id);
 
-    	$deleteForm = $this->createDeleteForm($page);
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find Page entity.');
+        }
 
-        return $this->render('page/show.html.twig', array(
-            'page' => $page,
-	        'pageMeta' => $pageMeta,
+        $deleteForm = $this->createDeleteForm($id);
+
+        return array(
+            'entity'      => $entity,
             'delete_form' => $deleteForm->createView(),
-        ));
+        );
     }
 
-	/**
-	 * Displays a form to edit an existing Page entity.
-	 *
-	 * @Route("/{id}/edit", name="songbird_page_edit")
-	 * @Method({"GET", "POST"})
-	 */
-	public function editAction(Request $request, Page $page)
-	{
-		$deleteForm = $this->createDeleteForm($page);
-		$editForm = $this->createForm('Songbird\NestablePageBundle\Form\PageType', $page);
-		$editForm->handleRequest($request);
+    /**
+     * Displays a form to edit an existing Page entity.
+     *
+     * @Route("/{id}/edit", name="bpeh_page_edit")
+     * @Method("GET")
+     * @Template()
+     */
+    public function editAction($id)
+    {
+        $em = $this->getDoctrine()->getManager();
 
-		if ($editForm->isSubmitted() && $editForm->isValid()) {
-			$em = $this->getDoctrine()->getManager();
-			$em->persist($page);
-			$em->flush();
+        $entity = $em->getRepository($this->entity)->find($id);
 
-			return $this->redirectToRoute('songbird_page_edit', array('id' => $page->getId()));
-		}
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find Page entity.');
+        }
 
-		return $this->render('page/edit.html.twig', array(
-			'page' => $page,
-			'edit_form' => $editForm->createView(),
-			'delete_form' => $deleteForm->createView(),
-		));
-	}
+        $editForm = $this->createEditForm($entity);
+        $deleteForm = $this->createDeleteForm($id);
 
+        return array(
+            'entity'      => $entity,
+            'edit_form'   => $editForm->createView(),
+            'delete_form' => $deleteForm->createView(),
+        );
+    }
+
+    /**
+    * Creates a form to edit a Page entity.
+    *
+    * @param Page $entity The entity
+    *
+    * @return \Symfony\Component\Form\Form The form
+    */
+    private function createEditForm(Page $entity)
+    {
+        $form = $this->createForm(new $this->page_type(), $entity, array(
+            'action' => $this->generateUrl('bpeh_page_update', array('id' => $entity->getId())),
+            'method' => 'PUT',
+        ));
+
+        $form->add('submit', 'submit', array('label' => 'Update'));
+
+        return $form;
+    }
+    /**
+     * Edits an existing Page entity.
+     *
+     * @Route("/{id}", name="bpeh_page_update")
+     * @Method("PUT")
+     * @Template("BpehNestablePageBundle:Page:edit.html.twig")
+     */
+    public function updateAction(Request $request, $id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $entity = $em->getRepository($this->entity)->find($id);
+
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find Page entity.');
+        }
+
+        $deleteForm = $this->createDeleteForm($id);
+        $editForm = $this->createEditForm($entity);
+        $editForm->handleRequest($request);
+
+        if ($editForm->isValid()) {
+            $em->flush();
+
+            return $this->redirect($this->generateUrl('bpeh_page_edit', array('id' => $id)));
+        }
+
+        return array(
+            'entity'      => $entity,
+            'edit_form'   => $editForm->createView(),
+            'delete_form' => $deleteForm->createView(),
+        );
+    }
     /**
      * Deletes a Page entity.
      *
-     * @Route("/{id}", name="songbird_page_delete")
+     * @Route("/{id}", name="bpeh_page_delete")
      * @Method("DELETE")
      */
-    public function deleteAction(Request $request, Page $page)
+    public function deleteAction(Request $request, $id)
     {
-        $form = $this->createDeleteForm($page);
+        $form = $this->createDeleteForm($id);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isValid()) {
             $em = $this->getDoctrine()->getManager();
-            $em->remove($page);
+            $entity = $em->getRepository($this->entity)->find($id);
+
+            if (!$entity) {
+                throw $this->createNotFoundException('Unable to find Page entity.');
+            }
+
+            $em->remove($entity);
             $em->flush();
         }
 
-        return $this->redirectToRoute('songbird_page_index');
+        return $this->redirect($this->generateUrl('bpeh_page'));
     }
 
     /**
-     * Creates a form to delete a Page entity.
+     * Creates a form to delete a Page entity by id.
      *
-     * @param Page $page The Page entity
+     * @param mixed $id The entity id
      *
      * @return \Symfony\Component\Form\Form The form
      */
-    private function createDeleteForm(Page $page)
+    private function createDeleteForm($id)
     {
         return $this->createFormBuilder()
-            ->setAction($this->generateUrl('songbird_page_delete', array('id' => $page->getId())))
+            ->setAction($this->generateUrl('bpeh_page_delete', array('id' => $id)))
             ->setMethod('DELETE')
+            ->add('submit', 'submit', array('label' => 'Delete'))
             ->getForm()
         ;
     }
 }
 ```
 
-We have added 2 extra methods, listAction and reorderAction. As the controller should have minimum logic, we have moved the bulk of reorderAction logic to the model.
+Likewise for PageMeta Controller
 
 ```
-# src/Songbird/NestablePageBundle/Entity/PageRepository.php
-...
-    /**
-     * reorder element based on user input
-     * @param  int $id       id of element dragged
-     * @param  int $parentId parent id
-     * @param  int $position new position relative to parent id. 0 is first position
-     * @return array          array([string] message, [boolean] success)
-     */
-    public function reorderElement($id, $parentId, $position)
-    {
-        // step 1: get all siblings based on old location. update the seq
-        $old_item = $this->findOneById($id);
-        
-        if ($old_item === null) {
-            $old_parent_id = '';
-        }
-        else {
-            $old_parent_id = ($old_item->getParent() === null) ? '' : $old_item->getParent()->getId();
-        }
-        
-        
-        // if old parent and new parent is the same, user moving in same level.
-        // dont need to update old parent
-        if ($old_parent_id != $parentId) {
-            $old_children = $this->findBy(
-                array('parent' => $old_parent_id),
-                array('sequence' => 'ASC')
-                );
-            $seq = 0;
+# vendor/bpeh/nestable-page-bundle/Controller/PageMetaController.php
 
-            foreach ($old_children as $oc) {
-                $or = $this->findOneById($oc->getId());
-                if ($old_item->getSequence() != $or->getSequence()) {
-                    $or->setSequence($seq);
-                    $this->getEntityManager()->persist($or);
-                    $seq++;
-                }
-            }
-        }
-        
-        $new_children = $this->findBy(
-            array('parent' => $parentId),
-            array('sequence' => 'ASC')
-            );
-        $seq = 0;
-        
-        $ir = $this->findOneById($id);
+namespace Bpeh\NestablePageBundle\Controller;
 
-
-        if (!is_null($parentId)) {
-            $parent = $this->findOneById($parentId);
-            if ($ir !== null) {
-                $ir->setParent($parent);
-            }
-        }
-        else {
-            if ($ir !== null) {
-                $ir->setParent(); 
-            }
-        }
-        foreach ($new_children as $nc) {
-            // if the id is the same, it means user moves in same level
-
-            if ($old_parent_id == $parentId) {
-                // if in same level, we just need to swap position
-                // get id of element with the current position then swap it
-                $nr = $this->findBy(
-                    array('sequence' => $position, 'parent' => $parentId)
-                    );
-
-                $nr[0]->setSequence($ir->getSequence());
-                $this->getEntityManager()->persist($nr[0]);
-                $ir->setSequence($position);
-                $this->getEntityManager()->persist($ir);
-                break;
-            }
-            // user drag from one level to the next, it is a new addition
-            else {
-
-                if ($position == $seq) {
-                    $ir->setSequence($seq);
-                    $this->getEntityManager()->persist($ir);
-                    $seq++;
-                }
-
-                $nr = $this->findOneById($nc->getId());
-                $nr->setSequence($seq);
-                $this->getEntityManager()->persist($nr);
-                
-            }
-            
-            $seq++;
-        }
-
-        // if its the last entry and user moved to new level
-        if ($old_parent_id != $parentId && $position == count($new_children)) {
-            $ir->setSequence($seq);
-            $this->getEntityManager()->persist($ir);
-        }
-
-        $message = '';
-        $success = true;
-
-        // step 3: run a loop, insert the new element and update the seq
-        try {
-            $this->getEntityManager()->flush();
-            $this->getEntityManager()->clear(); // prevent doctrine from caching     
-            $message = 'flash_reorder_edit_success';
-        }
-        catch (\Exception $e) {
-            // $message = $e->getMessage();
-            $message = 'Cannot reorder element.';
-            $success = false;
-        }
-
-        return array($message, $success);
-    }
-...
-``` 
-
-We need a custom query to get the pagemeta based on locale.
-
-```
-# src/Songbird/NestablePageBundle/Entity/PageMetaRepository.php
-
-namespace Songbird\NestablePageBundle\Repository;
-
-use Songbird\NestablePageBundle\Entity\Page;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Bpeh\NestablePageBundle\Form\PageMetaType;
+use Bpeh\NestablePageBundle\Entity\PageMeta;
 
 /**
- * PageMetaRepository
+ * PageMeta controller.
  *
- * This class was generated by the Doctrine ORM. Add your own custom
- * repository methods below.
+ * @Route("/bpeh_pagemeta")
  */
-class PageMetaRepository extends \Doctrine\ORM\EntityRepository
+class PageMetaController extends Controller
 {
-	/**
-	 * @param Page $page
-	 * @param $locale
-	 *
-	 * @return PageMeta
-	 */
-	 public function findPageMetaByLocale(Page $page, $locale) {
 
-		$query = $this->createQueryBuilder('pm')
-		              ->where('pm.locale = :locale')
-		              ->andWhere('pm.page = :page')
-		              ->setParameter('locale', $locale)
-		              ->setParameter('page', $page)
-		              ->getQuery();
+    private $entity;
 
-		return $query->getOneOrNullResult();
+    private $pagemeta_type;
 
-	}
-}
-```
-
-We then remove the created and modified date from the form as these fields should not be editable.
-
-```
-# src/Songbird/NestablePageBundle/Form/PageType.php
-
-namespace Songbird\NestablePageBundle\Form;
-
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
-
-class PageType extends AbstractType
-{
-    /**
-     * @param FormBuilderInterface $builder
-     * @param array $options
-     */
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function init()
     {
-        $builder
-            ->add('slug')
-            ->add('isPublished')
-            ->add('sequence')
-            ->add('parent')
+        $this->entity = $this->container->getParameter('bpeh_nestable_page.pagemeta_entity');
+        $this->pagemeta_type = $this->container->getParameter('bpeh_nestable_page.pagemeta_type');
+    }
+
+    /**
+     * Lists all PageMeta entities.
+     *
+     * @Route("/page/{id}", name="bpeh_pagemeta")
+     * @Method("GET")
+     * @Template()
+     */
+    public function indexAction($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $entities = $em->getRepository($this->entity)->findByPage($id);
+
+        return array(
+            'entities' => $entities,
+            'pageId' => $id
+        );
+    }
+    /**
+     * Creates a new PageMeta entity.
+     *
+     * @Route("/pagemeta", name="bpeh_pagemeta_create")
+     * @Method("POST")
+     * @Template("BpehNestablePageBundle:PageMeta:new.html.twig")
+     */
+    public function createAction(Request $request)
+    {
+
+        $entity = new $this->entity();
+        $form = $this->createCreateForm($entity);
+        $form->handleRequest($request);
+
+        if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($entity);
+            $em->flush();
+
+            return $this->redirect($this->generateUrl('bpeh_pagemeta_show', array('id' => $entity->getId())));
+        }
+
+        return array(
+            'entity' => $entity,
+            'form'   => $form->createView(),
+        );
+    }
+
+    /**
+     * Creates a form to create a PageMeta entity.
+     *
+     * @param PageMeta $entity The entity
+     *
+     * @return \Symfony\Component\Form\Form The form
+     */
+    private function createCreateForm(PageMeta $entity)
+    {
+        $form = $this->createForm(new $this->pagemeta_type(), $entity, array(
+            'action' => $this->generateUrl('bpeh_pagemeta_create'),
+            'method' => 'POST',
+        ));
+
+        $form->add('submit', 'submit', array('label' => 'Create'));
+
+        return $form;
+    }
+
+    /**
+     * Displays a form to create a new PageMeta entity.
+     *
+     * @Route("/pagemeta/new", name="bpeh_pagemeta_new")
+     * @Method("GET")
+     * @Template()
+     */
+    public function newAction()
+    {
+
+        $entity = new $this->entity();
+        $form   = $this->createCreateForm($entity);
+
+        return array(
+            'entity' => $entity,
+            'form'   => $form->createView(),
+        );
+    }
+
+    /**
+     * Finds and displays a PageMeta entity.
+     *
+     * @Route("/pagemeta/{id}", name="bpeh_pagemeta_show")
+     * @Method("GET")
+     * @Template()
+     */
+    public function showAction($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $entity = $em->getRepository($this->entity)->find($id);
+
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find PageMeta entity.');
+        }
+
+        $deleteForm = $this->createDeleteForm($id);
+
+        return array(
+            'entity'      => $entity,
+            'delete_form' => $deleteForm->createView(),
+        );
+    }
+
+    /**
+     * Displays a form to edit an existing PageMeta entity.
+     *
+     * @Route("/pagemeta/{id}/edit", name="bpeh_pagemeta_edit")
+     * @Method("GET")
+     * @Template()
+     */
+    public function editAction($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $entity = $em->getRepository($this->entity)->find($id);
+
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find PageMeta entity.');
+        }
+
+        $editForm = $this->createEditForm($entity);
+        $deleteForm = $this->createDeleteForm($id);
+
+        return array(
+            'entity'      => $entity,
+            'edit_form'   => $editForm->createView(),
+            'delete_form' => $deleteForm->createView(),
+        );
+    }
+
+    /**
+    * Creates a form to edit a PageMeta entity.
+    *
+    * @param PageMeta $entity The entity
+    *
+    * @return \Symfony\Component\Form\Form The form
+    */
+    private function createEditForm(PageMeta $entity)
+    {
+        $form = $this->createForm(new $this->pagemeta_type(), $entity, array(
+            'action' => $this->generateUrl('bpeh_pagemeta_update', array('id' => $entity->getId())),
+            'method' => 'PUT',
+        ));
+
+        $form->add('submit', 'submit', array('label' => 'Update'));
+
+        return $form;
+    }
+    /**
+     * Edits an existing PageMeta entity.
+     *
+     * @Route("/pagemeta/{id}", name="bpeh_pagemeta_update")
+     * @Method("PUT")
+     * @Template("BpehNestablePageBundle:PageMeta:edit.html.twig")
+     */
+    public function updateAction(Request $request, $id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $entity = $em->getRepository($this->entity)->find($id);
+
+        if (!$entity) {
+            throw $this->createNotFoundException('Unable to find PageMeta entity.');
+        }
+
+        $deleteForm = $this->createDeleteForm($id);
+        $editForm = $this->createEditForm($entity);
+        $editForm->handleRequest($request);
+
+        if ($editForm->isValid()) {
+            $em->flush();
+
+            return $this->redirect($this->generateUrl('bpeh_pagemeta_edit', array('id' => $id)));
+        }
+
+        return array(
+            'entity'      => $entity,
+            'edit_form'   => $editForm->createView(),
+            'delete_form' => $deleteForm->createView(),
+        );
+    }
+    /**
+     * Deletes a PageMeta entity.
+     *
+     * @Route("/pagemeta/{id}", name="bpeh_pagemeta_delete")
+     * @Method("DELETE")
+     */
+    public function deleteAction(Request $request, $id)
+    {
+        $form = $this->createDeleteForm($id);
+        $form->handleRequest($request);
+
+        if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $entity = $em->getRepository($this->entity)->find($id);
+            $pageId = $entity->getPage()->getId();
+
+            if (!$entity) {
+                throw $this->createNotFoundException('Unable to find PageMeta entity.');
+            }
+
+            $em->remove($entity);
+            $em->flush();
+        }
+
+        return $this->redirect($this->generateUrl('bpeh_pagemeta', array('id' => $pageId)));
+    }
+
+    /**
+     * Creates a form to delete a PageMeta entity by id.
+     *
+     * @param mixed $id The entity id
+     *
+     * @return \Symfony\Component\Form\Form The form
+     */
+    private function createDeleteForm($id)
+    {
+        return $this->createFormBuilder()
+            ->setAction($this->generateUrl('bpeh_pagemeta_delete', array('id' => $id)))
+            ->setMethod('DELETE')
+            ->add('submit', 'submit', array('label' => 'Delete'))
+            ->getForm()
         ;
     }
-    
-    /**
-     * @param OptionsResolver $resolver
-     */
-    public function configureOptions(OptionsResolver $resolver)
-    {
-        $resolver->setDefaults(array(
-            'data_class' => 'Songbird\NestablePageBundle\Entity\Page'
-        ));
-    }
 }
 ```
 
-and we will leave the PageMetaController.php as default.
+Once you are happy with it, give it a new tag and commit your changes again.
 
-Now, we need to make changes to the view to include nestablejs.
-
-```
-# src/Songbird/NestablePageBundle/Resources/views/Page/list.html.twig
-{% extends '::base.html.twig' %}
-
-{% block stylesheets %}
-	{{ parent() }}
-	<link rel="stylesheet" href="{{ asset('bundles/songbirdnestablepage/css/styles.css ') }}">
-{% endblock %}
-
-{% block body -%}
-	<div class="alert alert-dismissable">
-		{{ 'flash_reorder_instructions' | trans({}, 'SongbirdNestablePageBundle') }}
-	</div>
-
-	{% block main %}
-	    <button type="button" onclick="$('.dd').nestable('expandAll')">Expand All</button>
-	    <button type="button" onclick="$('.dd').nestable('collapseAll')">Collapse All</button>
-	    <div id="nestable" class="dd">
-	        <ol class="dd-list">
-	            {% include "SongbirdNestablePageBundle:Page:tree.html.twig" with { 'tree':tree } %}
-	        </ol>
-	    </div>
-	{% endblock %}
-        <ul class="record_actions">
-            <li>
-                <a href="{{ path('songbird_page_new') }}">
-                    Create New Page
-                </a>
-            </li>
-            <li>
-                <a href="{{ path('songbird_pagemeta_new') }}">
-                    Create New PageMeta
-                </a>
-            </li>
-        </ul>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('bundles/songbirdnestablepage/js/jquery-1.11.3.min.js') }}"></script>
-    <script src="{{ asset('bundles/songbirdnestablepage/js/jquery.nestable.js') }}"></script>
-    <script>
-
-    $(function() {
-
-    	var before = null, after = null;
-
-    	$('.dd').nestable({ 
-    		afterInit: function ( event ) { }
-    	});
-
-        $('.dd').nestable('collapseAll');
-        before = JSON.stringify($('.dd').nestable('serialize'));
-        $('.dd').on('dragEnd', function(event, item, source, destination, position) {
-
-        	id = item.attr('data-id');
-        	parentId = item.closest('li').parent().closest('li').attr('data-id');
-
-        	// if parent id is null of if parent id and id is the same, it is the top level. 
-        	parentId = (parentId == id || typeof(parentId)  === "undefined") ?  '' : parentId; 
-
-        	after = JSON.stringify($('.dd').nestable('serialize'));
-        	
-	        if (before != after) {
-	            $.ajax({
-	                type: "POST",
-	                url: "{{ path('songbird_page_reorder') }}",
-	                data: {id: id, parentId: parentId, position: position},
-	                success: function (data, dataType) {
-	                	if (data.success) {
-	                		$('.alert').addClass('alert-success');
-	                	}
-	                	else {
-	                		$('.alert').addClass('alert-danger');
-	                	}
-	                	$('.alert').html(data.message);
-	                	$('.alert').fadeTo( 0 , 1, function() {});
-	                	$('.alert').fadeTo( 4000 , 0, function() {});
-	                },
-
-	                error: function (XMLHttpRequest, textStatus, errorThrown) {
-	                    console.log(XMLHttpRequest);
-	                }
-	            });
-	            before = after;
-	        }
-	    });
-    });
-    </script>
-{% endblock %}
-```
-
-and tree.html.twig
-
-```
-# src/Songbird/NestablePageBundle/Resources/views/Page/tree.html.twig
-{% for v in tree %}
-    <li class='dd-item' data-id='{{ v.getId() }}'>
-        <div class='dd-handle'>
-            <a class="dd-nodrag" href="{{ path('songbird_page_show', {id: v.getId()}) }}">{{ v.getSlug() }}</a>
-        </div>
-
-        {% set children = v.getChildren()|length %}
-        {% if children > 0 %}
-            <ol class='dd-list'>
-                {% include "SongbirdNestablePageBundle:Page:tree.html.twig" with { 'tree':v.getChildren() } %}
-            </ol>
-        {% endif %}
-    </li>
-{% endfor %}
-```
-
-We need to update the show.html.twig to allow user to view pagemeta.
-
-```
-# app/Resources/views/pagemeta/show.html.twig
-
-...
-<ul>
-        <li>
-            <a href="{{ path('songbird_page_index') }}">Back to the list</a>
-        </li>
-        <li>
-            <a href="{{ path('songbird_page_edit', { 'id': page.id }) }}">Edit Page</a>
-        </li>
-        <li>
-            <a href="{{ path('songbird_pagemeta_show', { 'id': pageMeta.id }) }}">View PageMeta</a>
-        </li>
-        <li>
-            <a href="{{ path('songbird_pagemeta_edit', { 'id': pageMeta.id }) }}">Edit PageMeta</a>
-        </li>
-        <li>
-            {{ form_start(delete_form) }}
-                <input type="submit" value="Delete">
-            {{ form_end(delete_form) }}
-        </li>
-</ul>
-```
-
-The rest of the view templates can use the defaults. Ready to test the bundle?
-
-```
--> ./scripts/resetapp
--> ./scripts/assetsinstall
-```
-
-![nestable menu](images/nestablebundle_menu.png)
-
-## Create Functional Tests
-
-Sticking to the industrial standard, we are going to use PHPUnit rather than codeception. The main reason for doing that is to remove dependency on codeception. The only downside is that we could not simulate real browser interaction with the app. There are workarounds though.
-
-Install [phpunit](https://phpunit.de/manual/current/en/installation.html).
-
-Then, let us create the functional tests based on the user stories.
-
-phpunit uses the phpunit.xml.dist under the *app* dir. To run the test, simply run this command in the app dir
-
-```
--> cd app
--> phpunit 
-```
-
-or if you are in the installation dir and wants to run testListPages function within PageControllerTest.php for example,
-
-```
--> phpunit -c app --filter testListPages src/Songbird/NestablePageBundle/Tests/Controller/PageControllerTest.php
-```
-
-Let us write the test scenarios as per defined earlier:
-
-```
-# src/Songbird/NestablePageBundle/Tests/Controller/PageControllerTest.php
-
-namespace Songbird\NestablePageBundle\Tests\Controller;
-
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Console\Input\StringInput;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
-
-class PageControllerTest extends WebTestCase
-{
-
-	protected static $application;
-
-	protected function setUp()
-	{
-		self::getApplication()->run(new StringInput('doctrine:database:drop --force'));
-		self::getApplication()->run(new StringInput('doctrine:database:create'));
-		self::getApplication()->run(new StringInput('doctrine:schema:create'));
-		self::getApplication()->run(new StringInput('doctrine:fixtures:load -n'));
-	}
-
-	protected static function getApplication()
-	{
-		if (null === self::$application) {
-			$client = static::createClient();
-
-			self::$application = new Application($client->getKernel());
-			self::$application->setAutoExit(false);
-		}
-
-		return self::$application;
-	}
-
-	/**
-	 * scenario 17.11
-	 *
-	 * Test list action
-	 */
-	public function testListPages()
-	{
-		$client = static::createClient();
-
-		$crawler = $client->request('GET', '/songbird_page/list');
-		// i should see why_songbird text
-		$this->assertContains(
-			'why_songbird',
-			$client->getResponse()->getContent()
-		);
-		// there should be 3 parent menus
-		$nodes = $crawler->filterXPath('//div[@id="nestable"]/ol');
-		$this->assertEquals(count($nodes->children()), 3);
-
-		// there should be 2 entries under the about menu
-		$nodes = $crawler->filterXPath('//li[@data-id="2"]/ol');
-		$this->assertEquals(count($nodes->children()), 2);
-	}
-
-	/**
-	 * scenario 17.12
-	 *
-	 * Test show action
-	 */
-	public function testShowContactUsPage()
-	{
-		$client = static::createClient();
-		// go to main listing page
-		$crawler = $client->request('GET', '/songbird_page/list');
-		// click on contact_us link
-		$crawler = $client->click($crawler->selectLink('contact_us')->link());
-
-		// i should see "contact_us"
-		$this->assertContains(
-			'contact_us',
-			$client->getResponse()->getContent()
-		);
-
-		// i should see "Created"
-		$this->assertContains(
-			'Created',
-			$client->getResponse()->getContent()
-		);
-	}
-
-	/**
-	 * scenario 17.13
-	 *
-	 * We simulate ajax submission by reordering menu
-	 */
-	public function testReorderHomePage()
-	{
-		$client = static::createClient();
-
-		// home is dragged under about and in the second position
-		$crawler = $client->request(
-			'POST',
-			'/songbird_page/reorder',
-			array(
-				'id' => 1,
-				'parentId' => 2,
-				'position' => 1
-			),
-			array(),
-			array('HTTP_X-Requested-With' => 'XMLHttpRequest')
-		);
-
-		// i should get a success message in the returned content
-		$this->assertContains(
-			'menu has been reordered successfully',
-			$client->getResponse()->getContent()
-		);
-
-		// go back to page list again
-		$crawler = $client->request('GET', '/songbird_page/list');
-		// there should be 2 parent menus
-		$nodes = $crawler->filterXPath('//div[@id="nestable"]/ol');
-		$this->assertEquals(count($nodes->children()), 2);
-		// there should 3 items under the about menu
-		$nodes = $crawler->filterXPath('//li[@data-id="2"]/ol');
-		$this->assertEquals(count($nodes->children()), 3);
-	}
-
-	/**
-	 * scenario 17.14
-	 *
-	 * Test edit action
-	 */
-	public function testEditHomePage()
-	{
-		$client = static::createClient();
-
-		$crawler = $client->request('GET', '/songbird_page/1/edit');
-
-		$form = $crawler->selectButton('Edit')->form(array(
-			'page[slug]'  => 'home1',
-		));
-
-		$client->submit($form);
-
-		// go back to the list again and i should see the slug updated
-		$crawler = $client->request('GET', '/songbird_page/list');
-		$this->assertContains(
-			'home1',
-			$client->getResponse()->getContent()
-		);
-	}
-
-	/**
-	 * scenario 17.15
-	 *
-	 * Test new and delete action
-	 */
-	public function testCreateDeleteTestPage()
-	{
-		$client = static::createClient();
-
-		$crawler = $client->request('GET', '/songbird_page/new');
-
-		$form = $crawler->selectButton('Create')->form(array(
-			'page[slug]'  => 'test_page',
-			'page[isPublished]'  => true,
-			'page[sequence]'  => 1,
-			'page[parent]'  => 2,
-		));
-
-		$client->submit($form);
-
-		// go back to the list again and i should see the slug updated
-		$crawler = $client->request('GET', '/songbird_page/list');
-		$this->assertContains(
-			'test_page',
-			$client->getResponse()->getContent()
-		);
-
-		$crawler = $client->click($crawler->selectLink('Create New PageMeta')->link());
-		// at create new pagemeta page. new test_page is id 6
-		$form = $crawler->selectButton('Create')->form(array(
-			'page_meta[page_title]'  => 'test page title',
-			'page_meta[menu_title]'  => 'test menu title',
-			'page_meta[short_description]'  => 'short content',
-			'page_meta[content]'  => 'long content',
-			'page_meta[page]'  => 6,
-		));
-
-		$crawler = $client->submit($form);
-
-		// follow redirect to show pagemeta
-		$crawler = $client->followRedirect();
-
-		$this->assertContains(
-			'short content',
-			$client->getResponse()->getContent()
-		);
-
-		// at show pagemeta, click delete
-		$form = $crawler->selectButton('Delete')->form();
-		$crawler = $client->submit($form);
-
-		// go back to the pagemeta list again and i should NOT see the test_page anymore
-		$crawler = $client->request('GET', '/songbird_pagemeta');
-
-		$this->assertNotContains(
-			'test page title',
-			$client->getResponse()->getContent()
-		);
-	}
-
-	/**
-	 * scenario 17.16
-	 */
-	public function testDeleteContactUsPage()
-	{
-		$client = static::createClient();
-		// now if we remove contact_us page, ie id 5, all its page meta should be deleted
-		$crawler = $client->request('GET', '/songbird_page/5');
-		$form = $crawler->selectButton('Delete')->form();
-		$crawler = $client->submit($form);
-		$crawler = $client->followRedirect();
-
-		$this->assertNotContains(
-			'contact_us',
-			$client->getResponse()->getContent()
-		);
-
-		// we now connect to do and make sure the related pagemetas are no longer in the pagemeta table.
-		$res = $client->getContainer()->get('doctrine')->getRepository('SongbirdNestablePageBundle:PageMeta')->findByPage(5);
-		$this->assertEquals(0, count($res));
-	}
-}
-```
-
-As we are testing both page and pagemeta controller at the same time, we can remove the pagemeta controller test.
-
-```
--> rm src/Songbird/NestablePageBundle/Tests/Controller/PageMetaControllerTest.php
-```
-
-lets run the test again and make sure everything is ok
-
-```
--> phpunit -c app src/Songbird/NestablePageBundle
-Creating database schema...
-Database schema created successfully!
-  > purging database
-  > loading Songbird\NestablepageBundle\DataFixtures\ORM\LoadPageData
-  > loading [1] AppBundle\DataFixtures\ORM\LoadUserData
-  > loading [2] AppBundle\DataFixtures\ORM\LoadMediaData
-...
-Time: 30.71 seconds, Memory: 70.75Mb
-
-OK (6 tests, 14 assertions)
-```
-
-Remember to commit all the code before moving on.
+The bundle is now ready to be extended. To see it in action, I've created a [demo bundle](https://github.com/bernardpeh/NestablePageBundle) and you can install the demo bundle and test it for yourself.
 
 ## Summary
 
-In this chapter, we have created our own page bundle. We have customised the listing page and created a draggable menu using the jquery nestable menu. Data is submitted to the backend via ajax and updated dynamically.
+In this chapter, we have created a new repo for the NestablePageBundle. We have updated composer to pull the bundle from the repo and auto-loaded it according to the PSR-4 standard. We learned the hard way of creating a non-extensible bundle with the wrong namespace and then mass renaming it again. Making the entities extensible was a massive job and required a lot of refactoring in our code.
 
-Next Chapter: [Chapter 18: Making Your Bundle Reusable](https://github.com/bernardpeh/songbird/tree/chapter_18)
+We have done so much to make NestablePageBundle as decoupled as possible. Was it worth the effort? Definitely!
 
-Previous Chapter: [Chapter 16: Improving Performance and Troubleshooting](https://github.com/bernardpeh/songbird/tree/chapter_16)
+Next Chapter: [Chapter 19: The Page Manager Part 2](https://github.com/bernardpeh/songbird/tree/chapter_19)
+
+Previous Chapter: [Chapter 17: The Page Manager Part 1](https://github.com/bernardpeh/songbird/tree/chapter_17)
 
 ## Stuck? Checkout my code
 
 ```
--> git checkout -b chapter_17 origin/chapter_17
+-> git checkout -b chapter_18 origin/chapter_18
 -> git clean -fd
 ```
 
 ## Exercises
 
-* Are there any benefits of creating a page bundle that has no dependency on Symfony at all? How would you do it? (Optional)
-* [KnpmenuBundle](https://github.com/KnpLabs/KnpMenuBundle) is a popular bundle for handling menus. How would you integrate it with SongbirdNestableMenu? (Optional)
+* Delete the whole vendor directory and try doing a composer update. Did anything break?
+* Update the functional test.
 
 ## References
-* [Nestable js](https://github.com/BeFiveINFO/Nestable)
-* [Symfony Testing](http://symfony.com/doc/current/book/testing.html)
-* [Doctrine Association Mapping](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/association-mapping.html)
+
+* [Short guide to licenses](http://www.smashingmagazine.com/2010/03/a-short-guide-to-open-source-and-similar-licenses)
+* [Software licenses at a glance](http://tldrlegal.com)
+* [Composer Schema](https://getcomposer.org/doc/04-schema.md)
+* [Composer versioning](https://getcomposer.org/doc/articles/versions.md)
