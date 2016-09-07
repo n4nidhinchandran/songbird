@@ -1,7 +1,7 @@
 my_test_page:
     resource: "@PageTestBundle/Controller/"
     type:     annotation
-    prefix:   /pagetest
+    prefix:   /
 
 app:
     resource: "@AppBundle/Controller/"
