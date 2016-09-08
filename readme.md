@@ -1615,6 +1615,7 @@ Previous Chapter: [Chapter 17: The Page Manager Part 1](https://github.com/berna
 
 ## References
 
+* [Define relationship between abstract classes and interfaces](http://symfony.com/doc/current/doctrine/resolve_target_entity.html)
 * [Short guide to licenses](http://www.smashingmagazine.com/2010/03/a-short-guide-to-open-source-and-similar-licenses)
 * [Software licenses at a glance](http://tldrlegal.com)
 * [Composer Schema](https://getcomposer.org/doc/04-schema.md)
