@@ -2,7 +2,7 @@
 
 We have created a page bundle in the previous chapter. It's not perfect but let's say we want to share it with everyone. How do we do that? Be warned, we need lots of refactoring in the code to make it sharable.
 
-This is a long chapter. It goes through the process of creating a resuable bundle by trial and error. I think it is a good process to go through because it makes you pause and think. If you already know the process and want to skip through, simple clone the [NestablePageBundle from github](https://github.com/bernardpeh/NestablePageBundle) and follow the installation instructions in the readme file. Then, jump over to the next chapter.
+This is a long chapter. Its is a good process to go through because it makes you pause and think. If you already know the process and want to skip through, simple clone the [NestablePageBundle from github](https://github.com/bernardpeh/NestablePageBundle) and follow the installation instructions in the readme file. Then, jump over to the next chapter.
 
 ## Objectives
 
@@ -221,12 +221,12 @@ and routing
 #    prefix:   /
 
 {your-initial}_nestable_page:
-    resource: "@{your-initial}NestablePageBundle/Controller/"
+    resource: "@{your-initial}/NestablePageBundle/Controller/"
     type:     annotation
     prefix:   /
 ```
 
-let us check that the routes are working. Let's say my initial is bpeh
+lLet's say my initial is bpeh, let us check that the routes are working.
 
 ```
 app/console debug:router | grep bpeh
@@ -245,7 +245,7 @@ We can now install the assets.
 Now go your new page list url and do a quick test. In my case,
 
 ```
-http://songbird.app/bpeh_page/list
+http://songbird.app/app_dev.php/bpeh_page/list
 ```
 
 Looks like it is working. How can we be sure? Remember our functional tests?
@@ -262,7 +262,7 @@ This is a sign of relieve... Everything is working. Remember to commit your code
 
 ## Making the Bundle Extensible
 
-When this bundle is initialised in AppKernel.php, running "app/console doctrine:schema:create will create the tables. This is not desirable. We want the child class to create the tables instead and inherit the properties of the parent entities. The war is not over. There is still a lot to be done!!
+When this bundle is initialised in AppKernel.php, running "app/console doctrine:schema:create will create the default tables. We should be able to extend this bundle and modify the entity name and methods easily. The war is not over. There is still a lot to be done!!
 
 Let us clean up the AppKernel and Route.
 
@@ -290,7 +290,7 @@ and refocus our attention to the NestablePageBundle:
 -> cd vendor/{your-initial}/NestablePageBundle
 ```
 
-First of all, we need to make The 2 entities extensible. Using [inheritance mapping](http://doctrine-orm.readthedocs.org/projects/doctrine-orm/en/latest/reference/inheritance-mapping.html), We will move the entities to the Model directory so that they won't be initialised by orm auto mapping. We will make the entities abstract and top level in a single-table strategy. Then, we create mapped super classes in the entity dir for each Page and pageMeta entity. The entities from AppBundle will extend from the mapped super classes. 
+First of all, we need to make The 2 entities extensible. Using [inheritance mapping](http://doctrine-orm.readthedocs.org/projects/doctrine-orm/en/latest/reference/inheritance-mapping.html), We will move the entities to the Model directory. We will make the entities abstract and top level in a single-table strategy. Then, we create mapped super classes in the entity dir for each Page and pageMeta entity. The entities from AppBundle will extend from the mapped super classes. 
 
 I'll be using my initial (bpeh) from now onwards to make life easier when referencing paths.
 
@@ -304,9 +304,6 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * Page
  *
- * @ORM\Table()
- * @ORM\Entity(repositoryClass="Bpeh\NestablePageBundle\Entity\PageRepository")
- * @ORM\HasLifecycleCallbacks()
  * @ORM\InheritanceType("SINGLE_TABLE")
  * @ORM\DiscriminatorColumn(name="discr", type="string")
  * @ORM\DiscriminatorMap({"pagebase" = "PageBase", "page" = "Bpeh\NestablePageBundle\Entity\Page"})
@@ -632,12 +629,36 @@ Page.php now inherits from PageBase.php
 # vendor/bpeh/nestable-page-bundle/Entity/Page.php
 
 namespace Bpeh\NestablePageBundle\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 use Bpeh\NestablePageBundle\Model\PageBase;
 
-/** @ORM\MappedSuperclass */
+/**
+ * @ORM\MappedSuperclass
+ * @ORM\Table(name="page")
+ * @ORM\Entity(repositoryClass="Bpeh\NestablePageBundle\Entity\PageRepository")
+ * @ORM\HasLifecycleCallbacks()
+ */
 class Page extends PageBase
 {
+	/**
+	 * @var integer
+	 *
+	 * @ORM\Column(name="id", type="integer")
+	 * @ORM\Id
+	 * @ORM\GeneratedValue(strategy="AUTO")
+	 */
+	protected $id;
+
+	/**
+	 * Get id
+	 *
+	 * @return integer
+	 */
+	public function getId()
+	{
+		return $this->id;
+	}
 }
 ```
 
@@ -646,8 +667,6 @@ We will do the same for PageMetaBase.php
 ```
 # src/vendor/nestable-page-bundle/Model/PageMetaBase.php
 
-<?php
-
 namespace Bpeh\NestablePageBundle\Model;
 
 use Doctrine\ORM\Mapping as ORM;
@@ -655,8 +674,6 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * PageMeta
  *
- * @ORM\Table()
- * @ORM\Entity
  * @ORM\InheritanceType("SINGLE_TABLE")
  * @ORM\DiscriminatorColumn(name="discr", type="string")
  * @ORM\DiscriminatorMap({"pagemetabase" = "PageMetaBase", "pagemeta" = "Bpeh\NestablePageBundle\Entity\PageMeta"})
@@ -869,7 +886,6 @@ abstract class PageMetaBase
     {
         return $this->page;
     }
-
     
 }
 ```
@@ -880,13 +896,35 @@ and for the child PageMeta.php
 # src/nestable-page-bundle/Entity/PageMeta.php
 
 namespace Bpeh\NestablePageBundle\Entity;
+
 use Doctrine\ORM\Mapping as ORM;
 use Bpeh\NestablePageBundle\Model\PageMetaBase;
 
-/** @ORM\MappedSuperclass */
+/**
+ * @ORM\MappedSuperclass
+ * @ORM\Table(name="pagemeta")
+ * @ORM\Entity(repositoryClass="Bpeh\NestablePageBundle\Entity\PageMetaRepository")
+ */
 class PageMeta extends PageMetaBase
 {
-	
+	/**
+	 * @var integer
+	 *
+	 * @ORM\Column(name="id", type="integer")
+	 * @ORM\Id
+	 * @ORM\GeneratedValue(strategy="AUTO")
+	 */
+	protected $id;
+
+	/**
+	 * Get id
+	 *
+	 * @return integer
+	 */
+	public function getId()
+	{
+		return $this->id;
+	}
 }
 ```
 
@@ -914,33 +952,34 @@ class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('bpeh_nestable_page');
-
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for
         // more information on that topic.
         $rootNode
             ->children()
-                ->scalarNode('page_entity')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Entity\Page')->end()
-                ->scalarNode('pagemeta_entity')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Entity\PageMeta')->end()
-                ->scalarNode('page_type')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Form\PageType')->end()
-                ->scalarNode('pagemeta_type')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Form\PageMetaType')->end()
+                ->scalarNode('page_entity')->defaultValue('Bpeh\NestablePageBundle\Entity\Page')->end()
+                ->scalarNode('pagemeta_entity')->defaultValue('Bpeh\NestablePageBundle\Entity\PageMeta')->end()
+                ->scalarNode('page_form_type')->defaultValue('Bpeh\NestablePageBundle\Form\PageType')->end()
+                ->scalarNode('pagemeta_form_type')->defaultValue('Bpeh\NestablePageBundle\Form\PageMetaType')->end()
             ->end()
         ;
         return $treeBuilder;
     }
 }
+
 ```
 
 and 
 
 ```
 # vendor/bpeh/nestable-page-bundle/DependencyInjection/BpehNestablePageExtension.php
+
 namespace Bpeh\NestablePageBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
-use Symfony\Component\DependencyInjection\Loader;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 /**
  * This is the class that loads and manages your bundle configuration
@@ -959,11 +998,11 @@ class BpehNestablePageExtension extends Extension
 
         $container->setParameter( 'bpeh_nestable_page.page_entity', $config[ 'page_entity' ]);
         $container->setParameter( 'bpeh_nestable_page.pagemeta_entity', $config[ 'pagemeta_entity' ]);
-        $container->setParameter( 'bpeh_nestable_page.page_type', $config[ 'page_type' ]);
-        $container->setParameter( 'bpeh_nestable_page.pagemeta_type', $config[ 'pagemeta_type' ]);
+        $container->setParameter( 'bpeh_nestable_page.page_form_type', $config[ 'page_form_type' ]);
+        $container->setParameter( 'bpeh_nestable_page.pagemeta_form_type', $config[ 'pagemeta_form_type' ]);
 
-        $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        $loader->load('services.xml');
+	    $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+	    $loader->load('services.yml');
     }
 }
 ```
@@ -973,17 +1012,15 @@ Now in config.yml, anyone can define the page and pagemeta entities themselves.
 We also need to initialise some variables when the controllers are loaded. We will do that via the event listener.
 
 ```
-# vendor/bpeh/nestable-page-bundle/Resources/config/services.xml
+# vendor/bpeh/nestable-page-bundle/Resources/config/services.yml
 
-<container xmlns="http://symfony.com/schema/dic/services"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
-    <services>
-        <service id="bpeh_nestable_page.init" class="Bpeh\NestablePageBundle\EventListener\ControllerListener">
-            <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController"/>
-        </service>
-    </services>
-</container>
+services:
+
+  bpeh_nestable_page.init:
+    class: Bpeh\NestablePageBundle\EventListener\ControllerListener
+    tags:
+      - { name: kernel.event_listener, event: kernel.controller, method: onKernelController}
+
 ```
 
 and in the controller listener class
@@ -995,8 +1032,8 @@ namespace Bpeh\NestablePageBundle\EventListener;
 
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
-use Bpeh\NestablePageBundle\PageTestBundle\Controller\PageController;
-use Bpeh\NestablePageBundle\PageTestBundle\Controller\PageMetaController;
+use Bpeh\NestablePageBundle\Controller\PageController;
+use Bpeh\NestablePageBundle\Controller\PageMetaController;
 
 class ControllerListener
 {
@@ -1017,6 +1054,7 @@ class ControllerListener
         }
     }
 }
+
 ```
 
 The Page Controller can now use the parameters as defined in config.yml to load the entities and form types.
@@ -1026,13 +1064,13 @@ The Page Controller can now use the parameters as defined in config.yml to load 
 
 namespace Bpeh\NestablePageBundle\Controller;
 
+use Bpeh\NestablePageBundle\Entity\Page;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Bpeh\NestablePageBundle\Entity\Page;
 
 /**
  * Page controller.
@@ -1044,36 +1082,46 @@ class PageController extends Controller
 
     private $entity;
 
-    private $page_type;
+	private $entity_meta;
+
+    private $page_form_type;
+
+	private $page_meta_form_type;
 
     public function init()
     {
-        $this->entity = $this->container->getParameter('bpeh_nestable_page.page_entity');
-        $this->page_type = $this->container->getParameter('bpeh_nestable_page.page_type');
-    }
-    
-    /**
-     * Lists all Page entities.
-     *
-     * @Route("/", name="bpeh_page")
-     * @Method("GET")
-     * @Template()
-     */
-    public function indexAction()
-    {
-        return $this->redirect($this->generateUrl('bpeh_page_list'));
+    	$this->entity = $this->container->getParameter('bpeh_nestable_page.page_entity');
+	    $this->entity_meta = $this->container->getParameter('bpeh_nestable_page.pagemeta_entity');
+        $this->page_form_type = $this->container->getParameter('bpeh_nestable_page.page_form_type');
+	    $this->page_meta_form_type = $this->container->getParameter('bpeh_nestable_page.pagemeta_form_type');
     }
 
-        /**
-     * Lists all nested page
-     *
-     * @Route("/list", name="bpeh_page_list")
-     * @Method("GET")
-     * @Template()
-     */
+	/**
+	 * Lists all Page entities.
+	 *
+	 * @Route("/", name="bpeh_page")
+	 * @Method("GET")
+	 * @Template()
+	 *
+	 * @return \Symfony\Component\HttpFoundation\RedirectResponse
+	 */
+    public function indexAction()
+    {
+	    return $this->redirect($this->generateUrl('bpeh_page_list'));
+    }
+
+	/**
+	 * Lists all nested page
+	 *
+	 * @Route("/list", name="bpeh_page_list")
+	 * @Method("GET")
+	 * @Template()
+	 *
+	 * @return array
+	 */
     public function listAction()
     {
-        $em = $this->getDoctrine()->getManager();
+    	$em = $this->getDoctrine()->getManager();
         $rootMenuItems = $em->getRepository($this->entity)->findParent();
 
         return array(
@@ -1081,243 +1129,169 @@ class PageController extends Controller
         );
     }
 
-    /**
-     * reorder pages
-     *
-     * @Route("/reorder", name="bpeh_page_reorder")
-     * @Method("POST")
-     * @Template()
-     */
-    public function reorderAction()
+	/**
+	 * reorder pages
+	 *
+	 * @Route("/reorder", name="bpeh_page_reorder")
+	 * @Method("POST")
+	 * @Template()
+	 *
+	 * @param Request $request
+	 *
+	 * @return JsonResponse
+	 */
+    public function reorderAction(Request $request)
     {
-        $em = $this->getDoctrine()->getManager();
-        // id of affected element
-        $id = $this->get('request')->get('id');
-        // parent Id
-        $parentId = ($this->get('request')->get('parentId') == '') ? null : $this->get('request')->get('parentId');
-        // new sequence of this element. 0 means first element.
-        $position = $this->get('request')->get('position');
+	    $em = $this->getDoctrine()->getManager();
+	    // id of affected element
+	    $id = $request->get('id');
+	    // parent Id
+	    $parentId = ($request->get('parentId') == '') ? null : $request->get('parentId');
+	    // new sequence of this element. 0 means first element.
+	    $position = $request->get('position');
 
-        $result = $em->getRepository($this->entity)->reorderElement($id, $parentId, $position); 
+	    $result = $em->getRepository($this->entity)->reorderElement($id, $parentId, $position);
 
-        return new JsonResponse(
-            array('message' => $this->get('translator')->trans($result[0], array(), 'BpehNestablePageBundle')
-, 'success' => $result[1])
-        );
+	    return new JsonResponse(
+		    array('message' => $this->get('translator')->trans($result[0], array(), 'BpehNestablePageBundle')
+		    , 'success' => $result[1])
+	    );
 
     }
 
-    /**
-     * Creates a new Page entity.
-     *
-     * @Route("/", name="bpeh_page_create")
-     * @Method("POST")
-     * @Template("BpehNestablePageBundle:Page:new.html.twig")
-     */
-    public function createAction(Request $request)
+	/**
+	 * Creates a new Page entity.
+	 *
+	 * @Route("/new", name="bpeh_page_new")
+	 * @Method({"GET", "POST"})
+	 * @Template()
+	 *
+	 * @param Request $request
+	 *
+	 * @return array|\Symfony\Component\HttpFoundation\RedirectResponse
+	 */
+    public function newAction(Request $request)
     {
-        
-        $entity = new $this->entity();
-        $form = $this->createCreateForm($entity);
-        $form->handleRequest($request);
+	    $page = new $this->entity();
+	    $form = $this->createForm($this->page_form_type, $page);
+	    $form->handleRequest($request);
 
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($entity);
-            $em->flush();
+	    if ($form->isSubmitted() && $form->isValid()) {
+		    $em = $this->getDoctrine()->getManager();
+		    $em->persist($page);
+		    $em->flush();
 
-            return $this->redirect($this->generateUrl('bpeh_page_show', array('id' => $entity->getId())));
-        }
+		    return $this->redirectToRoute('bpeh_page_show', array('id' => $page->getId()));
+	    }
 
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
+	    return array(
+		    'page' => $page,
+		    'form' => $form->createView(),
+	    );
     }
 
-    /**
-     * Creates a form to create a Page entity.
-     *
-     * @param Page $entity The entity
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createCreateForm(Page $entity)
-    {
-        $form = $this->createForm(new $this->page_type(), $entity, array(
-            'action' => $this->generateUrl('bpeh_page_create'),
-            'method' => 'POST',
-        ));
+	/**
+	 * Finds and displays a Page entity.
+	 *
+	 * @Route("/{id}", name="bpeh_page_show")
+	 * @Method("GET")
+	 * @Template()
+	 *
+	 * @param Request $request
+	 *
+	 * @return array
+	 */
+	public function showAction(Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
 
-        $form->add('submit', 'submit', array('label' => 'Create'));
+		$page = $em->getRepository($this->entity)->find($request->get('id'));
 
-        return $form;
-    }
+		$pageMeta = $em->getRepository($this->entity_meta)->findPageMetaByLocale($page,$request->getLocale());
 
-    /**
-     * Displays a form to create a new Page entity.
-     *
-     * @Route("/new", name="bpeh_page_new")
-     * @Method("GET")
-     * @Template()
-     */
-    public function newAction()
-    {
+		$deleteForm = $this->createDeleteForm($page);
 
-        $entity = new $this->entity();
-        $form   = $this->createCreateForm($entity);
+		return array(
+			'page' => $page,
+			'pageMeta' => $pageMeta,
+			'delete_form' => $deleteForm->createView(),
+		);
+	}
 
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
-    }
+	/**
+	 * Displays a form to edit an existing Page entity.
+	 *
+	 * @Route("/{id}/edit", name="bpeh_page_edit")
+	 * @Method({"GET", "POST"})
+	 * @Template()
+	 *
+	 * @param Request $request
+	 *
+	 * @return array|\Symfony\Component\HttpFoundation\RedirectResponse
+	 */
+	public function editAction(Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
+		$page = $em->getRepository($this->entity)->find($request->get('id'));
+		$deleteForm = $this->createDeleteForm($page);
+		$editForm = $this->createForm($this->page_form_type, $page);
+		$editForm->handleRequest($request);
 
-    /**
-     * Finds and displays a Page entity.
-     *
-     * @Route("/{id}", name="bpeh_page_show")
-     * @Method("GET")
-     * @Template()
-     */
-    public function showAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
+		if ($editForm->isSubmitted() && $editForm->isValid()) {
+			$em = $this->getDoctrine()->getManager();
+			$em->persist($page);
+			$em->flush();
 
-        $entity = $em->getRepository($this->entity)->find($id);
+			return $this->redirectToRoute('bpeh_page_edit', array('id' => $page->getId()));
+		}
 
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Page entity.');
-        }
+		return array(
+			'page' => $page,
+			'edit_form' => $editForm->createView(),
+			'delete_form' => $deleteForm->createView(),
+		);
+	}
 
-        $deleteForm = $this->createDeleteForm($id);
+	/**
+	 * Deletes a Page entity.
+	 *
+	 * @Route("/{id}", name="bpeh_page_delete")
+	 * @Method("DELETE")
+	 *
+	 * @param Request $request
+	 *
+	 * @return \Symfony\Component\HttpFoundation\RedirectResponse
+	 */
+	public function deleteAction(Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
+		$page = $em->getRepository($this->entity)->find($request->get('id'));
+		$form = $this->createDeleteForm($page);
+		$form->handleRequest($request);
 
-        return array(
-            'entity'      => $entity,
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
+		if ($form->isSubmitted() && $form->isValid()) {
+			$em = $this->getDoctrine()->getManager();
+			$em->remove($page);
+			$em->flush();
+		}
 
-    /**
-     * Displays a form to edit an existing Page entity.
-     *
-     * @Route("/{id}/edit", name="bpeh_page_edit")
-     * @Method("GET")
-     * @Template()
-     */
-    public function editAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
+		return $this->redirectToRoute('bpeh_page_list');
+	}
 
-        $entity = $em->getRepository($this->entity)->find($id);
+	/**
+	 * Creates a form to delete a Page entity.
+	 *
+	 * @return \Symfony\Component\Form\Form The form
+	 */
+	private function createDeleteForm(Page $page)
+	{
+		return $this->createFormBuilder()
+		            ->setAction($this->generateUrl('bpeh_page_delete', array('id' => $page->getId())))
+		            ->setMethod('DELETE')
+		            ->getForm()
+			;
+	}
 
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Page entity.');
-        }
-
-        $editForm = $this->createEditForm($entity);
-        $deleteForm = $this->createDeleteForm($id);
-
-        return array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-
-    /**
-    * Creates a form to edit a Page entity.
-    *
-    * @param Page $entity The entity
-    *
-    * @return \Symfony\Component\Form\Form The form
-    */
-    private function createEditForm(Page $entity)
-    {
-        $form = $this->createForm(new $this->page_type(), $entity, array(
-            'action' => $this->generateUrl('bpeh_page_update', array('id' => $entity->getId())),
-            'method' => 'PUT',
-        ));
-
-        $form->add('submit', 'submit', array('label' => 'Update'));
-
-        return $form;
-    }
-    /**
-     * Edits an existing Page entity.
-     *
-     * @Route("/{id}", name="bpeh_page_update")
-     * @Method("PUT")
-     * @Template("BpehNestablePageBundle:Page:edit.html.twig")
-     */
-    public function updateAction(Request $request, $id)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository($this->entity)->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Page entity.');
-        }
-
-        $deleteForm = $this->createDeleteForm($id);
-        $editForm = $this->createEditForm($entity);
-        $editForm->handleRequest($request);
-
-        if ($editForm->isValid()) {
-            $em->flush();
-
-            return $this->redirect($this->generateUrl('bpeh_page_edit', array('id' => $id)));
-        }
-
-        return array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-    /**
-     * Deletes a Page entity.
-     *
-     * @Route("/{id}", name="bpeh_page_delete")
-     * @Method("DELETE")
-     */
-    public function deleteAction(Request $request, $id)
-    {
-        $form = $this->createDeleteForm($id);
-        $form->handleRequest($request);
-
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $entity = $em->getRepository($this->entity)->find($id);
-
-            if (!$entity) {
-                throw $this->createNotFoundException('Unable to find Page entity.');
-            }
-
-            $em->remove($entity);
-            $em->flush();
-        }
-
-        return $this->redirect($this->generateUrl('bpeh_page'));
-    }
-
-    /**
-     * Creates a form to delete a Page entity by id.
-     *
-     * @param mixed $id The entity id
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createDeleteForm($id)
-    {
-        return $this->createFormBuilder()
-            ->setAction($this->generateUrl('bpeh_page_delete', array('id' => $id)))
-            ->setMethod('DELETE')
-            ->add('submit', 'submit', array('label' => 'Delete'))
-            ->getForm()
-        ;
-    }
 }
 ```
 
@@ -1333,7 +1307,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Bpeh\NestablePageBundle\Form\PageMetaType;
 use Bpeh\NestablePageBundle\Entity\PageMeta;
 
 /**
@@ -1344,248 +1317,233 @@ use Bpeh\NestablePageBundle\Entity\PageMeta;
 class PageMetaController extends Controller
 {
 
-    private $entity;
+	private $entity;
 
-    private $pagemeta_type;
+	private $entity_meta;
 
-    public function init()
-    {
-        $this->entity = $this->container->getParameter('bpeh_nestable_page.pagemeta_entity');
-        $this->pagemeta_type = $this->container->getParameter('bpeh_nestable_page.pagemeta_type');
-    }
+	private $page_form_type;
 
-    /**
-     * Lists all PageMeta entities.
-     *
-     * @Route("/page/{id}", name="bpeh_pagemeta")
-     * @Method("GET")
-     * @Template()
-     */
-    public function indexAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
+	private $page_meta_form_type;
 
-        $entities = $em->getRepository($this->entity)->findByPage($id);
+	public function init()
+	{
+		$this->entity = $this->container->getParameter('bpeh_nestable_page.page_entity');
+		$this->entity_meta = $this->container->getParameter('bpeh_nestable_page.pagemeta_entity');
+		$this->page_form_type = $this->container->getParameter('bpeh_nestable_page.page_form_type');
+		$this->page_meta_form_type = $this->container->getParameter('bpeh_nestable_page.pagemeta_form_type');
+	}
 
-        return array(
-            'entities' => $entities,
-            'pageId' => $id
-        );
-    }
-    /**
-     * Creates a new PageMeta entity.
-     *
-     * @Route("/pagemeta", name="bpeh_pagemeta_create")
-     * @Method("POST")
-     * @Template("BpehNestablePageBundle:PageMeta:new.html.twig")
-     */
-    public function createAction(Request $request)
-    {
+	/**
+	 * Lists all PageMeta entities.
+	 *
+	 * @Route("/", name="bpeh_pagemeta_index")
+	 * @Method("GET")
+	 * @Template()
+	 */
+	public function indexAction()
+	{
+		$em = $this->getDoctrine()->getManager();
 
-        $entity = new $this->entity();
-        $form = $this->createCreateForm($entity);
-        $form->handleRequest($request);
+		$pageMetas = $em->getRepository($this->entity_meta)->findAll();
 
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($entity);
-            $em->flush();
+		return array(
+			'pageMetas' => $pageMetas,
+		);
+	}
 
-            return $this->redirect($this->generateUrl('bpeh_pagemeta_show', array('id' => $entity->getId())));
-        }
+	/**
+	 * Creates a new PageMeta entity.
+	 *
+	 * @Route("/new", name="bpeh_pagemeta_new")
+	 * @Method({"GET", "POST"})
+	 * @Template()
+	 */
+	public function newAction(Request $request)
+	{
+		$pageMeta = new $this->entity_meta();
+		$form = $this->createForm($this->page_meta_form_type, $pageMeta);
+		$form->handleRequest($request);
 
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
-    }
+		if ($form->isSubmitted() && $form->isValid()) {
+			$em = $this->getDoctrine()->getManager();
 
-    /**
-     * Creates a form to create a PageMeta entity.
-     *
-     * @param PageMeta $entity The entity
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createCreateForm(PageMeta $entity)
-    {
-        $form = $this->createForm(new $this->pagemeta_type(), $entity, array(
-            'action' => $this->generateUrl('bpeh_pagemeta_create'),
-            'method' => 'POST',
-        ));
+			if ( $em->getRepository( $this->entity_meta )->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale() ) ) {
+				$this->get('session')->getFlashBag()->add( 'error', $this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
+			} else {
+				$em->persist( $pageMeta );
+				$em->flush();
+				return $this->redirectToRoute( 'bpeh_pagemeta_show', array( 'id' => $pageMeta->getId() ) );
+			}
+		}
 
-        $form->add('submit', 'submit', array('label' => 'Create'));
+		return array(
+			'pageMeta' => $pageMeta,
+			'form' => $form->createView(),
+		);
+	}
 
-        return $form;
-    }
+	/**
+	 * Finds and displays a PageMeta entity.
+	 *
+	 * @Route("/{id}", name="bpeh_pagemeta_show")
+	 * @Method("GET")
+	 * @Template()
+	 */
+	public function showAction(Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
 
-    /**
-     * Displays a form to create a new PageMeta entity.
-     *
-     * @Route("/pagemeta/new", name="bpeh_pagemeta_new")
-     * @Method("GET")
-     * @Template()
-     */
-    public function newAction()
-    {
+		$pageMeta = $em->getRepository($this->entity_meta)->find($request->get('id'));
 
-        $entity = new $this->entity();
-        $form   = $this->createCreateForm($entity);
+		$deleteForm = $this->createDeleteForm($pageMeta);
 
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
-    }
+		return array(
+			'pageMeta' => $pageMeta,
+			'delete_form' => $deleteForm->createView(),
+		);
+	}
 
-    /**
-     * Finds and displays a PageMeta entity.
-     *
-     * @Route("/pagemeta/{id}", name="bpeh_pagemeta_show")
-     * @Method("GET")
-     * @Template()
-     */
-    public function showAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
+	/**
+	 * Displays a form to edit an existing PageMeta entity.
+	 *
+	 * @Route("/{id}/edit", name="bpeh_pagemeta_edit")
+	 * @Method({"GET", "POST"})
+	 * @Template()
+	 */
+	public function editAction(Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
+		$pageMeta = $em->getRepository($this->entity_meta)->find($request->get('id'));
+		$origId = $pageMeta->getPage()->getId();
+		$origLocale = $pageMeta->getLocale();
 
-        $entity = $em->getRepository($this->entity)->find($id);
+		$deleteForm = $this->createDeleteForm($pageMeta);
+		$editForm = $this->createForm($this->page_meta_form_type, $pageMeta);
+		$editForm->handleRequest($request);
 
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find PageMeta entity.');
-        }
+		if ($editForm->isSubmitted() && $editForm->isValid()) {
 
-        $deleteForm = $this->createDeleteForm($id);
+			$error = false;
 
-        return array(
-            'entity'      => $entity,
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
+			// if page and local is the same, dont need to check locale count
+			if ($origLocale == $pageMeta->getLocale() && $origId == $pageMeta->getPage()->getId()) {
+				// all good
+			}
+			elseif ( $em->getRepository( $this->entity_meta )->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale(), true ) ) {
+				$this->get('session')->getFlashBag()->add( 'error', $this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
+				$error = true;
+			}
 
-    /**
-     * Displays a form to edit an existing PageMeta entity.
-     *
-     * @Route("/pagemeta/{id}/edit", name="bpeh_pagemeta_edit")
-     * @Method("GET")
-     * @Template()
-     */
-    public function editAction($id)
-    {
-        $em = $this->getDoctrine()->getManager();
+			// if everything is successful
+			if (!$error) {
+				$em->persist( $pageMeta );
+				$em->flush();
+				return $this->redirectToRoute( 'bpeh_pagemeta_edit', array( 'id' => $pageMeta->getId() ) );
+			}
+		}
 
-        $entity = $em->getRepository($this->entity)->find($id);
+		return array(
+			'pageMeta' => $pageMeta,
+			'edit_form' => $editForm->createView(),
+			'delete_form' => $deleteForm->createView(),
+		);
+	}
 
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find PageMeta entity.');
-        }
+	/**
+	 * Deletes a PageMeta entity.
+	 *
+	 * @Route("/{id}", name="bpeh_pagemeta_delete")
+	 * @Method("DELETE")
+	 */
+	public function deleteAction(Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
+		$pageMeta = $em->getRepository($this->entity_meta)->find($request->get('id'));
+		$form = $this->createDeleteForm($pageMeta);
+		$form->handleRequest($request);
 
-        $editForm = $this->createEditForm($entity);
-        $deleteForm = $this->createDeleteForm($id);
+		if ($form->isSubmitted() && $form->isValid()) {
+			$em = $this->getDoctrine()->getManager();
+			$em->remove($pageMeta);
+			$em->flush();
+		}
 
-        return array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
+		return $this->redirectToRoute('bpeh_pagemeta_index');
+	}
 
-    /**
-    * Creates a form to edit a PageMeta entity.
-    *
-    * @param PageMeta $entity The entity
-    *
-    * @return \Symfony\Component\Form\Form The form
-    */
-    private function createEditForm(PageMeta $entity)
-    {
-        $form = $this->createForm(new $this->pagemeta_type(), $entity, array(
-            'action' => $this->generateUrl('bpeh_pagemeta_update', array('id' => $entity->getId())),
-            'method' => 'PUT',
-        ));
-
-        $form->add('submit', 'submit', array('label' => 'Update'));
-
-        return $form;
-    }
-    /**
-     * Edits an existing PageMeta entity.
-     *
-     * @Route("/pagemeta/{id}", name="bpeh_pagemeta_update")
-     * @Method("PUT")
-     * @Template("BpehNestablePageBundle:PageMeta:edit.html.twig")
-     */
-    public function updateAction(Request $request, $id)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository($this->entity)->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find PageMeta entity.');
-        }
-
-        $deleteForm = $this->createDeleteForm($id);
-        $editForm = $this->createEditForm($entity);
-        $editForm->handleRequest($request);
-
-        if ($editForm->isValid()) {
-            $em->flush();
-
-            return $this->redirect($this->generateUrl('bpeh_pagemeta_edit', array('id' => $id)));
-        }
-
-        return array(
-            'entity'      => $entity,
-            'edit_form'   => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-    /**
-     * Deletes a PageMeta entity.
-     *
-     * @Route("/pagemeta/{id}", name="bpeh_pagemeta_delete")
-     * @Method("DELETE")
-     */
-    public function deleteAction(Request $request, $id)
-    {
-        $form = $this->createDeleteForm($id);
-        $form->handleRequest($request);
-
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $entity = $em->getRepository($this->entity)->find($id);
-            $pageId = $entity->getPage()->getId();
-
-            if (!$entity) {
-                throw $this->createNotFoundException('Unable to find PageMeta entity.');
-            }
-
-            $em->remove($entity);
-            $em->flush();
-        }
-
-        return $this->redirect($this->generateUrl('bpeh_pagemeta', array('id' => $pageId)));
-    }
-
-    /**
-     * Creates a form to delete a PageMeta entity by id.
-     *
-     * @param mixed $id The entity id
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createDeleteForm($id)
-    {
-        return $this->createFormBuilder()
-            ->setAction($this->generateUrl('bpeh_pagemeta_delete', array('id' => $id)))
-            ->setMethod('DELETE')
-            ->add('submit', 'submit', array('label' => 'Delete'))
-            ->getForm()
-        ;
-    }
+	/**
+	 * Creates a form to delete a PageMeta entity.
+	 *
+	 * @param PageMeta $pageMetum The PageMeta entity
+	 *
+	 * @return \Symfony\Component\Form\Form The form
+	 */
+	private function createDeleteForm(PageMeta $pageMeta)
+	{
+		return $this->createFormBuilder()
+		            ->setAction($this->generateUrl('bpeh_pagemeta_delete', array('id' => $pageMeta->getId())))
+		            ->setMethod('DELETE')
+		            ->getForm()
+			;
+	}
 }
 ```
+
+We also need to refactor PageMetaRepository because findPageMetaByLocale can now return either an object or scalar value.
+
+```
+# vendor/bpeh/nestable-page-bundle/Entity/PageMetaRepository.php
+
+namespace Bpeh\NestablePageBundle\Entity;
+
+use Bpeh\NestablePageBundle\Entity\Page;
+
+/**
+ * PageMetaRepository
+ *
+ * This class was generated by the Doctrine ORM. Add your own custom
+ * repository methods below.
+ */
+class PageMetaRepository extends \Doctrine\ORM\EntityRepository {
+
+	/**
+	 * find page locale and return object or counter
+	 *
+	 * @param \Bpeh\NestablePageBundle\Entity\Page $page
+	 * @param $locale
+	 * @param bool $count
+	 *
+	 * @return mixed
+	 */
+	public function findPageMetaByLocale( Page $page, $locale, $count = false ) {
+
+		$qb = $this->createQueryBuilder( 'pm' );
+
+		if ( $count ) {
+			$qb->select( 'count(pm.id)' );
+		}
+
+		$query = $qb->where( 'pm.locale = :locale' )
+	      ->andWhere( 'pm.page = :page' )
+	      ->setParameter( 'locale', $locale )
+	      ->setParameter( 'page', $page )
+	      ->getQuery();
+
+		if ( $count ) {
+			return $query->getSingleScalarResult();
+		}
+
+		return $query->getOneOrNullResult();
+
+	}
+}
+```
+
+There are other stuff to be done
+
+* Create the translations.
+* Move all the related views from app/resources/views to vendor/bpeh/nestable-page-bundle/views
+* Update functional tests.
 
 Once you are happy with it, give it a new tag and commit your changes again.
 
