@@ -10,7 +10,7 @@ This is a long chapter. Its is a good process to go through because it makes you
 > * Updating Application composer.json
 > * Renaming SongbirdNestablePageBundle
 > * Making the Bundle Extensible
-
+> * Extending BpehNestablePageBundle
 
 ## Pre-setup
 
@@ -635,9 +635,6 @@ use Bpeh\NestablePageBundle\Model\PageBase;
 
 /**
  * @ORM\MappedSuperclass
- * @ORM\Table(name="page")
- * @ORM\Entity(repositoryClass="Bpeh\NestablePageBundle\Entity\PageRepository")
- * @ORM\HasLifecycleCallbacks()
  */
 class Page extends PageBase
 {
@@ -902,8 +899,6 @@ use Bpeh\NestablePageBundle\Model\PageMetaBase;
 
 /**
  * @ORM\MappedSuperclass
- * @ORM\Table(name="pagemeta")
- * @ORM\Entity(repositoryClass="Bpeh\NestablePageBundle\Entity\PageMetaRepository")
  */
 class PageMeta extends PageMetaBase
 {
@@ -928,7 +923,7 @@ class PageMeta extends PageMetaBase
 }
 ```
 
-We also need user to specify which child entities and form type (if they are extending the parent form type).
+To make our bundle flexible, we also need to allow user to specify their own child entities, form type and templates to use.
 
 ```
 # vendor/bpeh/nestable-page-bundle/DependencyInjection/Configuration.php
@@ -957,10 +952,18 @@ class Configuration implements ConfigurationInterface
         // more information on that topic.
         $rootNode
             ->children()
-                ->scalarNode('page_entity')->defaultValue('Bpeh\NestablePageBundle\Entity\Page')->end()
-                ->scalarNode('pagemeta_entity')->defaultValue('Bpeh\NestablePageBundle\Entity\PageMeta')->end()
-                ->scalarNode('page_form_type')->defaultValue('Bpeh\NestablePageBundle\Form\PageType')->end()
-                ->scalarNode('pagemeta_form_type')->defaultValue('Bpeh\NestablePageBundle\Form\PageMetaType')->end()
+                ->scalarNode('page_entity')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Entity\Page')->end()
+                ->scalarNode('pagemeta_entity')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Entity\PageMeta')->end()
+                ->scalarNode('page_form_type')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Form\PageType')->end()
+                ->scalarNode('pagemeta_form_type')->defaultValue('Bpeh\NestablePageBundle\PageTestBundle\Form\PageMetaType')->end()
+	            ->scalarNode('page_view_list')->defaultValue('BpehNestablePageBundle:Page:list.html.twig')->end()
+		        ->scalarNode('page_view_edit')->defaultValue('BpehNestablePageBundle:Page:edit.html.twig')->end()
+		        ->scalarNode('page_view_show')->defaultValue('BpehNestablePageBundle:Page:show.html.twig')->end()
+		        ->scalarNode('page_view_new')->defaultValue('BpehNestablePageBundle:Page:new.html.twig')->end()
+		        ->scalarNode('pagemeta_view_new')->defaultValue('BpehNestablePageBundle:PageMeta:new.html.twig')->end()
+		        ->scalarNode('pagemeta_view_edit')->defaultValue('BpehNestablePageBundle:PageMeta:edit.html.twig')->end()
+		        ->scalarNode('pagemeta_view_index')->defaultValue('BpehNestablePageBundle:PageMeta:index.html.twig')->end()
+		        ->scalarNode('pagemeta_view_show')->defaultValue('BpehNestablePageBundle:PageMeta:show.html.twig')->end()
             ->end()
         ;
         return $treeBuilder;
@@ -969,7 +972,7 @@ class Configuration implements ConfigurationInterface
 
 ```
 
-and 
+and the extension
 
 ```
 # vendor/bpeh/nestable-page-bundle/DependencyInjection/BpehNestablePageExtension.php
@@ -1000,16 +1003,24 @@ class BpehNestablePageExtension extends Extension
         $container->setParameter( 'bpeh_nestable_page.pagemeta_entity', $config[ 'pagemeta_entity' ]);
         $container->setParameter( 'bpeh_nestable_page.page_form_type', $config[ 'page_form_type' ]);
         $container->setParameter( 'bpeh_nestable_page.pagemeta_form_type', $config[ 'pagemeta_form_type' ]);
-
+	    $container->setParameter( 'bpeh_nestable_page.page_view_list', $config[ 'page_view_list' ]);
+	    $container->setParameter( 'bpeh_nestable_page.page_view_new', $config[ 'page_view_new' ]);
+	    $container->setParameter( 'bpeh_nestable_page.page_view_edit', $config[ 'page_view_edit' ]);
+	    $container->setParameter( 'bpeh_nestable_page.page_view_show', $config[ 'page_view_show' ]);
+	    $container->setParameter( 'bpeh_nestable_page.pagemeta_view_index', $config[ 'pagemeta_view_index' ]);
+	    $container->setParameter( 'bpeh_nestable_page.pagemeta_view_edit', $config[ 'pagemeta_view_edit' ]);
+	    $container->setParameter( 'bpeh_nestable_page.pagemeta_view_new', $config[ 'pagemeta_view_new' ]);
+	    $container->setParameter( 'bpeh_nestable_page.pagemeta_view_show', $config[ 'pagemeta_view_show' ]);
 	    $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
 	    $loader->load('services.yml');
     }
 }
+
 ```
 
 Now in config.yml, anyone can define the page and pagemeta entities themselves.
 
-We also need to initialise some variables when the controllers are loaded. We will do that via the event listener.
+We also need to initialise the new config parameters when the controllers are loaded. We will do that via the controller event listener.
 
 ```
 # vendor/bpeh/nestable-page-bundle/Resources/config/services.yml
@@ -1069,7 +1080,6 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -1086,14 +1096,23 @@ class PageController extends Controller
 
     private $page_form_type;
 
-	private $page_meta_form_type;
+	private $page_view_list;
+
+	private $page_view_new;
+
+	private $page_view_edit;
+
+	private $page_view_show;
 
     public function init()
     {
     	$this->entity = $this->container->getParameter('bpeh_nestable_page.page_entity');
 	    $this->entity_meta = $this->container->getParameter('bpeh_nestable_page.pagemeta_entity');
         $this->page_form_type = $this->container->getParameter('bpeh_nestable_page.page_form_type');
-	    $this->page_meta_form_type = $this->container->getParameter('bpeh_nestable_page.pagemeta_form_type');
+	    $this->page_view_list = $this->container->getparameter('bpeh_nestable_page.page_view_list');
+	    $this->page_view_new = $this->container->getparameter('bpeh_nestable_page.page_view_new');
+	    $this->page_view_edit = $this->container->getparameter('bpeh_nestable_page.page_view_edit');
+	    $this->page_view_show = $this->container->getparameter('bpeh_nestable_page.page_view_show');
     }
 
 	/**
@@ -1101,7 +1120,6 @@ class PageController extends Controller
 	 *
 	 * @Route("/", name="bpeh_page")
 	 * @Method("GET")
-	 * @Template()
 	 *
 	 * @return \Symfony\Component\HttpFoundation\RedirectResponse
 	 */
@@ -1115,7 +1133,6 @@ class PageController extends Controller
 	 *
 	 * @Route("/list", name="bpeh_page_list")
 	 * @Method("GET")
-	 * @Template()
 	 *
 	 * @return array
 	 */
@@ -1124,9 +1141,9 @@ class PageController extends Controller
     	$em = $this->getDoctrine()->getManager();
         $rootMenuItems = $em->getRepository($this->entity)->findParent();
 
-        return array(
+        return $this->render($this->page_view_list, array(
             'tree' => $rootMenuItems,
-        );
+        ));
     }
 
 	/**
@@ -1134,7 +1151,6 @@ class PageController extends Controller
 	 *
 	 * @Route("/reorder", name="bpeh_page_reorder")
 	 * @Method("POST")
-	 * @Template()
 	 *
 	 * @param Request $request
 	 *
@@ -1184,10 +1200,10 @@ class PageController extends Controller
 		    return $this->redirectToRoute('bpeh_page_show', array('id' => $page->getId()));
 	    }
 
-	    return array(
+	    return $this->render($this->page_view_new, array(
 		    'page' => $page,
 		    'form' => $form->createView(),
-	    );
+	    ));
     }
 
 	/**
@@ -1195,7 +1211,6 @@ class PageController extends Controller
 	 *
 	 * @Route("/{id}", name="bpeh_page_show")
 	 * @Method("GET")
-	 * @Template()
 	 *
 	 * @param Request $request
 	 *
@@ -1211,11 +1226,12 @@ class PageController extends Controller
 
 		$deleteForm = $this->createDeleteForm($page);
 
-		return array(
+		return $this->render($this->page_view_show, array(
 			'page' => $page,
 			'pageMeta' => $pageMeta,
 			'delete_form' => $deleteForm->createView(),
-		);
+		));
+
 	}
 
 	/**
@@ -1223,7 +1239,6 @@ class PageController extends Controller
 	 *
 	 * @Route("/{id}/edit", name="bpeh_page_edit")
 	 * @Method({"GET", "POST"})
-	 * @Template()
 	 *
 	 * @param Request $request
 	 *
@@ -1245,11 +1260,12 @@ class PageController extends Controller
 			return $this->redirectToRoute('bpeh_page_edit', array('id' => $page->getId()));
 		}
 
-		return array(
+		return $this->render($this->page_view_edit, array(
 			'page' => $page,
 			'edit_form' => $editForm->createView(),
 			'delete_form' => $deleteForm->createView(),
-		);
+		));
+
 	}
 
 	/**
@@ -1306,7 +1322,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Bpeh\NestablePageBundle\Entity\PageMeta;
 
 /**
@@ -1321,16 +1336,25 @@ class PageMetaController extends Controller
 
 	private $entity_meta;
 
-	private $page_form_type;
-
 	private $page_meta_form_type;
+
+	private $pagemeta_view_index;
+
+	private $pagemeta_view_new;
+
+	private $pagemeta_view_edit;
+
+	private $pagemeta_view_show;
 
 	public function init()
 	{
 		$this->entity = $this->container->getParameter('bpeh_nestable_page.page_entity');
 		$this->entity_meta = $this->container->getParameter('bpeh_nestable_page.pagemeta_entity');
-		$this->page_form_type = $this->container->getParameter('bpeh_nestable_page.page_form_type');
 		$this->page_meta_form_type = $this->container->getParameter('bpeh_nestable_page.pagemeta_form_type');
+		$this->pagemeta_view_index = $this->container->getparameter('bpeh_nestable_page.pagemeta_view_index');
+		$this->pagemeta_view_new = $this->container->getparameter('bpeh_nestable_page.pagemeta_view_new');
+		$this->pagemeta_view_edit = $this->container->getparameter('bpeh_nestable_page.pagemeta_view_edit');
+		$this->pagemeta_view_show = $this->container->getparameter('bpeh_nestable_page.pagemeta_view_show');
 	}
 
 	/**
@@ -1338,7 +1362,6 @@ class PageMetaController extends Controller
 	 *
 	 * @Route("/", name="bpeh_pagemeta_index")
 	 * @Method("GET")
-	 * @Template()
 	 */
 	public function indexAction()
 	{
@@ -1346,9 +1369,10 @@ class PageMetaController extends Controller
 
 		$pageMetas = $em->getRepository($this->entity_meta)->findAll();
 
-		return array(
+		return $this->render($this->pagemeta_view_index, array(
 			'pageMetas' => $pageMetas,
-		);
+		));
+
 	}
 
 	/**
@@ -1356,7 +1380,6 @@ class PageMetaController extends Controller
 	 *
 	 * @Route("/new", name="bpeh_pagemeta_new")
 	 * @Method({"GET", "POST"})
-	 * @Template()
 	 */
 	public function newAction(Request $request)
 	{
@@ -1376,10 +1399,11 @@ class PageMetaController extends Controller
 			}
 		}
 
-		return array(
+		return $this->render($this->pagemeta_view_new, array(
 			'pageMeta' => $pageMeta,
 			'form' => $form->createView(),
-		);
+		));
+
 	}
 
 	/**
@@ -1387,7 +1411,6 @@ class PageMetaController extends Controller
 	 *
 	 * @Route("/{id}", name="bpeh_pagemeta_show")
 	 * @Method("GET")
-	 * @Template()
 	 */
 	public function showAction(Request $request)
 	{
@@ -1397,10 +1420,10 @@ class PageMetaController extends Controller
 
 		$deleteForm = $this->createDeleteForm($pageMeta);
 
-		return array(
+		return $this->render($this->pagemeta_view_show, array(
 			'pageMeta' => $pageMeta,
 			'delete_form' => $deleteForm->createView(),
-		);
+		));
 	}
 
 	/**
@@ -1408,7 +1431,6 @@ class PageMetaController extends Controller
 	 *
 	 * @Route("/{id}/edit", name="bpeh_pagemeta_edit")
 	 * @Method({"GET", "POST"})
-	 * @Template()
 	 */
 	public function editAction(Request $request)
 	{
@@ -1442,11 +1464,11 @@ class PageMetaController extends Controller
 			}
 		}
 
-		return array(
+		return $this->render($this->pagemeta_view_edit, array(
 			'pageMeta' => $pageMeta,
 			'edit_form' => $editForm->createView(),
 			'delete_form' => $deleteForm->createView(),
-		);
+		));
 	}
 
 	/**
@@ -1547,13 +1569,349 @@ There are other stuff to be done
 
 Once you are happy with it, give it a new tag and commit your changes again.
 
-The bundle is now ready to be extended. To see it in action, I've created a [demo bundle](https://github.com/bernardpeh/NestablePageBundle) and you can install the demo bundle and test it for yourself.
+The bundle is now ready to be extended. 
+
+
+## Extending BpehNestablePageBundle
+
+I've created a [demo bundle](https://github.com/bernardpeh/NestablePageBundle) and you can install the demo bundle and test it for yourself.
+
+Let us extend BpehNestablePageBundle by copying that bundle.
+
+```
+-> cd src/AppBundle
+-> cp ../../vendor/bpeh/nestable-page-bundle/PageTestBundle/PageTestBundle.php .
+# let us name it page bundle
+-> mv PageTestBundle.php Page.php
+-> cp ../../vendor/bpeh/nestable-page-bundle/PageTestBundle/Controller/*.php Controller/
+-> cp ../../vendor/bpeh/nestable-page-bundle/PageTestBundle/Entity/*.php Entity/
+# let us move the pagerepository.php to the right dir
+-> mv Entity/PageRepository.php Repository/
+-> mv Entity/PageMetaRepository.php Repository/
+-> cp -a ../../vendor/bpeh/nestable-page-bundle/PageTestBundle/Form .
+-> cp ../../vendor/bpeh/nestable-page-bundle/PageTestBundle/DataFixtures/ORM/LoadPageData.php DataFixtures/ORM/
+```
+
+Let us call this bundle PageBundle to keep it simple.
+
+```
+# src/AppBundle/Page.php
+
+namespace AppBundle;
+
+use Symfony\Component\HttpKernel\Bundle\Bundle;
+
+class Page extends Bundle
+{
+	// use a child bundle
+	public function getParent()
+	{
+		return 'BpehNestablePageBundle';
+	}
+}
+```
+
+Let us configure the Entities
+
+```
+# src/AppBundle/Entity/Page.php
+
+namespace AppBundle\Entity;
+
+use Bpeh\NestablePageBundle\Entity\Page as BasePage;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * PageMeta
+ *
+ * @ORM\Table(name="page")
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\PageRepository")
+ * @ORM\HasLifecycleCallbacks()
+ */
+class Page extends BasePage
+{
+    /**
+     * @var integer
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    protected $id;
+
+    /**
+     * Get id
+     *
+     * @return integer 
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+}
+```
+
+and PageMeta.php
+
+```
+# src/AppBundle/Entity/PageMeta.php
+
+namespace AppBundle\Entity;
+
+use Bpeh\NestablePageBundle\Entity\PageMeta as BasePageMeta;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * PageMeta
+ *
+ * @ORM\Table(name="pagemeta")
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\PageMetaRepository")
+ */
+class PageMeta extends BasePageMeta
+{
+    /**
+     * @var integer
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    protected $id;
+
+    /**
+     * Get id
+     *
+     * @return integer 
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+}
+```
+
+Let us update the PageRepository.php
+
+```
+# src/AppBundle/Repository/PageRepository.php
+
+namespace AppBundle\Repository;
+
+use Bpeh\NestablePageBundle\Entity\PageRepository as BasePageRepository;
+
+/**
+ * PageRepository
+ *
+ */
+class PageRepository extends BasePageRepository
+{
+
+}
+```
+
+and PageMetaRepository.php
+
+```
+# src/AppBundle/Repository/PageRepository.php
+
+namespace AppBundle\Repository;
+
+use Bpeh\NestablePageBundle\Entity\PageMetaRepository as BasePageMetaRepository;
+
+/**
+ * PageRepository
+ *
+ */
+class PageMetaRepository extends BasePageMetaRepository
+{
+
+}
+```
+
+Let us update the PageController to have a route which is easier to use
+
+```
+# src/AppBundle/Controller/PageController.php
+
+namespace AppBundle\Controller;
+
+use Bpeh\NestablePageBundle\Controller\PageController as BaseController;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+
+/**
+ * Page controller.
+ * @Route("/page")
+ */
+class PageController extends BaseController
+{
+   
+}
+
+```
+
+Now PageMetaController.php
+
+```
+# src/AppBundle/Controller/PageMetaController.php
+namespace AppBundle\Controller;
+
+use Bpeh\NestablePageBundle\Controller\PageMetaController as BaseController;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+
+/**
+ * PageMeta controller.
+ * @Route("/pagemeta")
+ */
+class PageMetaController extends BaseController
+{
+   
+}
+
+```
+
+Its time to update the basic forms
+
+```
+# src/AppBundle/Form/PageType.php
+
+namespace AppBundle\Form;
+
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Bpeh\NestablePageBundle\Form\PageType as BasePageType;
+
+class PageType extends BasePageType
+{
+
+	/**
+	 * @param FormBuilderInterface $builder
+	 * @param array $options
+	 */
+	public function buildForm(FormBuilderInterface $builder, array $options)
+	{
+		parent::buildForm($builder,$options);
+	}
+
+	/**
+	 * @param OptionsResolver $resolver
+	 */
+	public function configureOptions(OptionsResolver $resolver)
+	{
+		$resolver->setDefaults(array(
+			'data_class' => 'AppBundle\Entity\Page',
+		));
+	}
+}
+```
+
+and PageMetaType.php
+
+```
+# src/AppBundle/Form/PageMetaType.php
+
+
+namespace AppBundle\Form;
+
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\FormBuilderInterface;
+use Bpeh\NestablePageBundle\Form\PageMetaType as BasePageMetaType;
+
+class PageMetaType extends BasePageMetaType
+{
+
+	/**
+	 * @param FormBuilderInterface $builder
+	 * @param array $options
+	 */
+	public function buildForm(FormBuilderInterface $builder, array $options)
+	{
+		parent::buildForm($builder,$options);
+	}
+
+	/**
+	 * @param OptionsResolver $resolver
+	 */
+	public function configureOptions(OptionsResolver $resolver)
+	{
+		$resolver->setDefaults(array(
+			'data_class' => 'AppBundle\Entity\PageMeta'
+		));
+	}
+}
+```
+
+Let us confirm the new routes are working...
+
+```
+-> app/console debug:router | grep page
+     bpeh_page                        GET        ANY      ANY    /page/                             
+     bpeh_page_list                   GET        ANY      ANY    /page/list                         
+     bpeh_page_reorder                POST       ANY      ANY    /page/reorder                      
+     bpeh_page_new                    GET|POST   ANY      ANY    /page/new                          
+     bpeh_page_show                   GET        ANY      ANY    /page/{id}                         
+     bpeh_page_edit                   GET|POST   ANY      ANY    /page/{id}/edit                    
+     bpeh_page_delete                 DELETE     ANY      ANY    /page/{id}                         
+     bpeh_pagemeta_index              GET        ANY      ANY    /pagemeta/                         
+     bpeh_pagemeta_new                GET|POST   ANY      ANY    /pagemeta/new                      
+     bpeh_pagemeta_show               GET        ANY      ANY    /pagemeta/{id}                     
+     bpeh_pagemeta_edit               GET|POST   ANY      ANY    /pagemeta/{id}/edit                
+     bpeh_pagemeta_delete             DELETE     ANY      ANY    /pagemeta/{id}       
+```
+
+Looks good. Its time to update config.yml
+
+```
+...
+    orm:
+        auto_generate_proxy_classes: "%kernel.debug%"
+        naming_strategy: doctrine.orm.naming_strategy.underscore
+        auto_mapping: true
+        resolve_target_entities:
+            Bpeh\NestablePageBundle\Model\PageBase: AppBundle\Entity\Page
+            Bpeh\NestablePageBundle\Model\PageMetaBase: AppBundle\Entity\PageMeta
+...
+# Nestable Page Configuration
+bpeh_nestable_page:
+    page_entity: AppBundle\Entity\Page
+    pagemeta_entity: AppBundle\Entity\PageMeta
+    page_form_type: AppBundle\Form\PageType
+    pagemeta_form_type: AppBundle\Form\PageMetaType
+    # Customise the template if you want.
+    # page_view_list: YourBundle:list.html.twig
+    # page_view_new: YourBundle:new.html.twig
+    # page_view_edit: YourBundle:edit.html.twig
+    # page_view_show: YourBundle:show.html.twig
+    # pagemeta_view_index: YourBundle:index.html.twig
+    # pagemeta_view_new: YourBundle:new.html.twig
+    # pagemeta_view_edit: YourBundle:edit.html.twig
+    # pagemeta_view_show: YourBundle:show.html.twig
+```
+
+Finally, init the new bundle in AppKernel.php
+
+```
+# app/AppKernel.php
+
+...
+    new Bpeh\NestablePageBundle\BpehNestablePageBundle(),
+    new AppBundle\Page()
+...
+```
+
+If everything is working, the new url should be working.
+
+```
+songbird.app/app_dev.php/page
+```
+
 
 ## Summary
 
 In this chapter, we have created a new repo for the NestablePageBundle. We have updated composer to pull the bundle from the repo and auto-loaded it according to the PSR-4 standard. We learned the hard way of creating a non-extensible bundle with the wrong namespace and then mass renaming it again. Making the entities extensible was a massive job and required a lot of refactoring in our code.
 
-We have done so much to make NestablePageBundle as decoupled as possible. Was it worth the effort? Definitely!
+We have done so much to make NestablePageBundle as decoupled as possible. Still the was still a lot of room for improvements. Was it worth the effort? Definitely!
 
 Next Chapter: [Chapter 19: The Page Manager Part 2](https://github.com/bernardpeh/songbird/tree/chapter_19)
 
