@@ -19,6 +19,7 @@ easy_admin:
                   - pageMetas
             show:
                 fields:
+                  - id
                   - slug
                   - isPublished
                   - sequence
@@ -28,6 +29,7 @@ easy_admin:
                   - pageMetas
             list:
                 fields:
+                  - id
                   - slug
                   - isPublished
                   - sequence
