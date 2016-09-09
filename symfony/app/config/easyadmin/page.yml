@@ -1,0 +1,35 @@
+easy_admin:
+    entities:
+        Page:
+            class: AppBundle\Entity\Page
+            label: admin.link.page_management
+            # for new page
+            new:
+                fields:
+                  - slug
+                  - isPublished
+                  - sequence
+                  - parent
+            edit:
+                fields:
+                  - slug
+                  - isPublished
+                  - sequence
+                  - parent
+                  - pageMetas
+            show:
+                fields:
+                  - slug
+                  - isPublished
+                  - sequence
+                  - parent
+                  - modified
+                  - created
+                  - pageMetas
+            list:
+                fields:
+                  - slug
+                  - isPublished
+                  - sequence
+                  - parent
+                  - modified
