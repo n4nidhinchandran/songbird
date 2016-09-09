@@ -1180,7 +1180,6 @@ class PageController extends Controller
 	 *
 	 * @Route("/new", name="bpeh_page_new")
 	 * @Method({"GET", "POST"})
-	 * @Template()
 	 *
 	 * @param Request $request
 	 *
