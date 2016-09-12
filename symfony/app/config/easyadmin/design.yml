@@ -4,3 +4,7 @@ easy_admin:
         assets:
             css:
               - /bundles/app/css/style.css
+        menu:
+          - { entity: 'User', icon: 'user' }
+          - { entity: 'Page', icon: 'file' }
+          - { entity: 'UserLog', icon: 'database' }

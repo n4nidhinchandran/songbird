@@ -1,7 +1,9 @@
 admin.link.user_management: Gestion des utilisateurs
+admin.link.page_management: Gestion de la page
 admin.link.user_log: Connexion utilisateur
 User: Utilisateur
 ID: ID
+Page: Page
 Image: Image
 Username: Nom d'utilisateur
 Email: Email
@@ -22,3 +24,14 @@ Action: Action
 Current url: Url actuelle
 Referrer: Référer
 Data: Données
+Slug: Limace
+Is published: est publié
+Sequence: Séquence
+Parent: Parent
+Page metas: Page Metas
+PageMeta: PageMeta
+Page title: Titre de la page
+Menu title: Titre de menu
+Locale: Lieu
+Short description: brève description
+Content: Contenu

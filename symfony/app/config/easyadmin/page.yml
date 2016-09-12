@@ -28,6 +28,7 @@ easy_admin:
                   - created
                   - pageMetas
             list:
+                actions: ['show', 'edit', 'delete']
                 fields:
                   - id
                   - slug
@@ -35,3 +36,13 @@ easy_admin:
                   - sequence
                   - parent
                   - modified
+        PageMeta:
+            class: AppBundle\Entity\PageMeta
+            new:
+              fields:
+                - page_title
+                - menu_title
+                - locale
+                - { property: 'short_description', type: 'ckeditor' }
+                - { property: 'content', type: 'ckeditor' }
+                - page

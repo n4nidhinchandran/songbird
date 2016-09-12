@@ -24,7 +24,8 @@ class AppKernel extends Kernel
 	        new AppBundle\User(),
             new Vich\UploaderBundle\VichUploaderBundle(),
 	        new Bpeh\NestablePageBundle\BpehNestablePageBundle(),
-            new AppBundle\Page()
+            new AppBundle\Page(),
+	        new Ivory\CKEditorBundle\IvoryCKEditorBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'), true)) {

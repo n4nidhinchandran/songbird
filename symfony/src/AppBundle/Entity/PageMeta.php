@@ -32,4 +32,8 @@ class PageMeta extends BasePageMeta
         return $this->id;
     }
 
+	public function __toString()
+	{
+		return $this->getLocale().': '.$this->getMenuTitle();
+	}
 }

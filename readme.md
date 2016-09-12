@@ -9,7 +9,7 @@ In this chapter, we are going to integrate NestablePageBundle with EasyAdminBund
 > * Integration with EasyAdminBundle
 > * Install CKEditor
 > * Create Custom Locale Selector Form Type
-> * Update BDD Tests
+> * Update BDD Tests (Optional)
 
 ## Pre-setup
 
@@ -69,7 +69,7 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 
 ## Create Custom Locale Selector Form Type
 
-If you are looking at the pagemeta page, say http://songbird.dev/app_dev.php/admin/app/page/1/edit for example, you should have noticed by now that Sonata loads all languages by default under the locale type input. What if we want to load only the languages that we defined in the config file (ie, english and french). It is a good idea to create our own select form type.
+If you are looking at the pagemeta page, say http://songbird.app/app_dev.php/admin/?entity=PageMeta&action=new for example, you should have noticed by now that user can enter anything under the locale textbox. What if we want to load only the languages that we defined in the config file (ie, english and french)? It is a good idea to create our own select form type.
 
 ```
 # src/AppBundle/Form/LocaleType.php
@@ -122,7 +122,7 @@ We then need to define the class in the service.xml
 
 Go to any pagemeta edit page (ie http://songbird.dev/app_dev.php/admin/app/page/1/edit for example) and you should see the locale dropdown updated to only 2 enties.
 
-## Update BDD Tests
+## Update BDD Tests (Optional)
 
 Let us create the cest files,
 
@@ -159,3 +159,5 @@ Previous Chapter: [Chapter 18: Making Your Bundle Reusable](https://github.com/b
 ## References
 
 * [Create custom form type](http://symfony.com/doc/current/cookbook/form/create_custom_field_type.html)
+* [EasyAdmin Templating](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/book/3-list-search-show-configuration.md)
+* [Adding Wysiwyg Editor](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/tutorials/wysiwyg-editor.md)

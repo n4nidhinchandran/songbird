@@ -1,7 +1,9 @@
 admin.link.user_management: User Management
+admin.link.page_management: Page Management
 admin.link.user_log: User Log
 User: User
 ID: ID
+Page: Page
 Image: Image
 Username: Username
 Email: Email
@@ -22,3 +24,14 @@ Action: Action
 Current url: Current url
 Referrer: Referrer
 Data: Data
+Slug: Slug
+Is published: Is Published
+Sequence: Sequence
+Parent: Parent
+Page metas: Page Metas
+PageMeta: PageMeta
+Page title: Page Title
+Menu title: Menu Title
+Locale: Locale
+Short description: Short Description
+Content: Content
