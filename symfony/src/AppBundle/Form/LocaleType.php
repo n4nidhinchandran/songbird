@@ -4,8 +4,9 @@ namespace AppBundle\Form;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 
-class AppLocaleType extends AbstractType
+class LocaleType extends AbstractType
 {
     private $localeChoices;
 
@@ -25,11 +26,7 @@ class AppLocaleType extends AbstractType
 
     public function getParent()
     {
-        return 'choice';
+        return ChoiceType::class;
     }
 
-    public function getName()
-    {
-        return 'app_locale';
-    }
 }

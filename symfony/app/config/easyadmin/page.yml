@@ -42,8 +42,9 @@ easy_admin:
               fields:
                 - page_title
                 - menu_title
-                - { property: 'locale', type: 'app_locale' }
+                - { property: 'locale', type: 'AppBundle\Form\LocaleType' }
                 - { type: 'divider' }
+                - { property: 'featuredImageFile', type: 'vich_image' }
                 - { property: 'short_description', type: 'ckeditor' }
                 - { property: 'content', type: 'ckeditor' }
                 - page

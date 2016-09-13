@@ -127,8 +127,8 @@ Go to any pagemeta new or edit page (ie http://songbird.app/app_dev.php/admin/?e
 Let us create the cest files,
 
 ```
--> bin/codecept generate:cest -c src/AppBundle acceptance As_An_Admin/IWantToManagePages
--> bin/codecept generate:cest -c src/AppBundle acceptance As_Test1_User/IDontWantToManagePages
+-> ./vendor/bin/codecept generate:cest -c src/AppBundle acceptance As_An_Admin/IWantToManagePages
+-> ./vendor/bin/codecept generate:cest -c src/AppBundle acceptance As_Test1_User/IDontWantToManagePages
 ```
 
 Create the test cases from the scenarios above and make sure all your tests passes before moving on.

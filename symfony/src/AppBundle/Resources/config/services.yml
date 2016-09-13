@@ -15,8 +15,8 @@ services:
       - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 17 }
 
   app.form.type.locale:
-    class: AppBundle\Form\AppLocaleType
+    class: AppBundle\Form\LocaleType
     arguments:
       - '%supported_lang%'
     tags:
-      - { name: form.type, alias: app_locale }
+      - { name: form.type }
