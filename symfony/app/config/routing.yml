@@ -1,24 +1,33 @@
-app:
-    resource: "@AppBundle/Controller/"
-    type:     annotation
+admin:
+  resource: "@AppBundle/Controller/AdminController.php"
+  type:     annotation
+
+locale:
+  resource: "@AppBundle/Controller/LocaleController.php"
+  type:     annotation
+
+bpeh_page_reorder:
+  path: /admin/reorder
+  defaults:
+    _controller: BpehNestablePageBundle:Page:reorder
 
 # FOS user bundle default routing
 fos_user_security:
-    resource: "@FOSUserBundle/Resources/config/routing/security.xml"
+  resource: "@FOSUserBundle/Resources/config/routing/security.xml"
 
 #fos_user_profile:
 #    resource: "@FOSUserBundle/Resources/config/routing/profile.xml"
 #    prefix: /profile
 
 fos_user_resetting:
-    resource: "@FOSUserBundle/Resources/config/routing/resetting.xml"
-    prefix: /resetting
+  resource: "@FOSUserBundle/Resources/config/routing/resetting.xml"
+  prefix: /resetting
 
 #fos_user_change_password:
 #    resource: "@FOSUserBundle/Resources/config/routing/change_password.xml"
 #    prefix: /profile
 
 easy_admin_bundle:
-    resource: "@AppBundle/Controller/AdminController.php"
-    type:     annotation
-    prefix:   /%admin_path%
+  resource: "@AppBundle/Controller/AdminController.php"
+  type:     annotation
+  prefix:   /%admin_path%

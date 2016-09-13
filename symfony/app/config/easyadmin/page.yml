@@ -38,11 +38,12 @@ easy_admin:
                   - modified
         PageMeta:
             class: AppBundle\Entity\PageMeta
-            new:
+            form:
               fields:
                 - page_title
                 - menu_title
-                - locale
+                - { property: 'locale', type: 'app_locale' }
+                - { type: 'divider' }
                 - { property: 'short_description', type: 'ckeditor' }
                 - { property: 'content', type: 'ckeditor' }
                 - page

@@ -84,25 +84,64 @@ class AdminController extends BaseAdminController
         ));
     }
 
-	protected function newPageMetaAction()
+	/**
+	 * @param PageMeta $pageMeta
+	 */
+	public function prePersistPageMetaEntity(PageMeta $pageMeta)
 	{
 
-		$entity = $this->createNewEntity();
-		$easyadmin['item'] = $entity;
-		$this->request->attributes->set('easyadmin', $easyadmin);
-		$fields = $this->entity['new']['fields'];
-		$newForm = $this->createNewForm($entity, $fields);
-		$newForm->handleRequest($this->request);
+		if ( $this->em->getRepository('AppBundle\Entity\PageMeta')->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale() ) ) {
+			throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
+		}
 
-		if ($newForm->isValid()) {
+	}
 
-			$em = $this->container->get('doctrine')->getManager();
-			if ( $em->getRepository( 'AppBundle\Entity\PageMeta' )->findPageMetaByLocale( $entity->getPage(), $entity->getLocale() ) ) {
-				// throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
+	protected function editPageMetaAction()
+	{
+		$this->dispatch(EasyAdminEvents::PRE_EDIT);
+
+		$id = $this->request->query->get('id');
+		$easyadmin = $this->request->attributes->get('easyadmin');
+		$entity = $easyadmin['item'];
+
+		// get id before submission
+		$pageMeta = $this->em->getRepository('AppBundle\Entity\PageMeta')->find($id);
+		$origId = $pageMeta->getPage()->getId();
+		$origLocale = $pageMeta->getLocale();
+
+		if ($this->request->isXmlHttpRequest() && $property = $this->request->query->get('property')) {
+			$newValue = 'true' === strtolower($this->request->query->get('newValue'));
+			$fieldsMetadata = $this->entity['list']['fields'];
+
+			if (!isset($fieldsMetadata[$property]) || 'toggle' !== $fieldsMetadata[$property]['dataType']) {
+				throw new \RuntimeException(sprintf('The type of the "%s" property is not "toggle".', $property));
 			}
 
-			$this->em->persist($entity);
+			$this->updateEntityProperty($entity, $property, $newValue);
+
+			return new Response((string) $newValue);
+		}
+
+		$fields = $this->entity['edit']['fields'];
+
+		$editForm = $this->createEditForm($entity, $fields);
+		$deleteForm = $this->createDeleteForm($this->entity['name'], $id);
+
+		$editForm->handleRequest($this->request);
+		if ($editForm->isValid()) {
+			$this->dispatch(EasyAdminEvents::PRE_UPDATE, array('entity' => $entity));
+
+			// if page and local is the same, dont need to check locale count
+			if ($origLocale == $entity->getLocale() && $origId == $entity->getPage()->getId()) {
+				// all good
+			}
+			elseif ( $this->em->getRepository('AppBundle\Entity\PageMeta')->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale(), true ) ) {
+				throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
+			}
+
 			$this->em->flush();
+
+			$this->dispatch(EasyAdminEvents::POST_UPDATE, array('entity' => $entity));
 
 			$refererUrl = $this->request->query->get('referer', '');
 
@@ -111,29 +150,14 @@ class AdminController extends BaseAdminController
 				: $this->redirect($this->generateUrl('easyadmin', array('action' => 'list', 'entity' => $this->entity['name'])));
 		}
 
-		return $this->render($this->entity['templates']['new'], array(
-			'form' => $newForm->createView(),
+		$this->dispatch(EasyAdminEvents::POST_EDIT);
+
+		return $this->render($this->entity['templates']['edit'], array(
+			'form' => $editForm->createView(),
 			'entity_fields' => $fields,
 			'entity' => $entity,
+			'delete_form' => $deleteForm->createView(),
 		));
-	}
-
-	public function prePersistPageMetaEntity(PageMeta $pageMeta)
-	{
-
-		// if page and local is the same, dont need to check locale count
-		if ($origLocale == $pageMeta->getLocale() && $origId == $pageMeta->getPage()->getId()) {
-			// all good
-		}
-		elseif ( $em->getRepository( $this->entity_meta )->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale(), true ) ) {
-			throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
-		}
-
-	}
-
-	public function preUpdatePageMetaEntity(PageMeta $pageMeta)
-	{
-		echo "update".print_r($entity);exit;
 	}
 
     /**

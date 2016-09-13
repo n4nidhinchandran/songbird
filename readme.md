@@ -111,7 +111,7 @@ class LocaleType extends AbstractType
 We then need to define the class in the service.xml
 
 ```
-# src/AppBundle/Resources/config/services.xml
+# src/AppBundle/Resources/config/services.yml
 ...
 <service id="app.form.type.locale" class="AppBundle\Form\LocaleType">
     <argument>%supported_lang%</argument>
@@ -120,7 +120,7 @@ We then need to define the class in the service.xml
 ...
 ```
 
-Go to any pagemeta edit page (ie http://songbird.dev/app_dev.php/admin/app/page/1/edit for example) and you should see the locale dropdown updated to only 2 enties.
+Go to any pagemeta new or edit page (ie http://songbird.app/app_dev.php/admin/?entity=PageMeta&action=new for example) and you should see the locale dropdown updated to only 2 enties.
 
 ## Update BDD Tests (Optional)
 
@@ -160,4 +160,5 @@ Previous Chapter: [Chapter 18: Making Your Bundle Reusable](https://github.com/b
 
 * [Create custom form type](http://symfony.com/doc/current/cookbook/form/create_custom_field_type.html)
 * [EasyAdmin Templating](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/book/3-list-search-show-configuration.md)
+* [CKEditor Bundle](https://github.com/egeloen/IvoryCKEditorBundle)
 * [Adding Wysiwyg Editor](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/tutorials/wysiwyg-editor.md)
