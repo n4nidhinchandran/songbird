@@ -24,7 +24,7 @@ class IWantToManageAllUsersCest
      */
     public function listAllProfiles(AcceptanceTester $I)
     {
-        $I->click('User Management');
+    	$I->click('User Management');
         $I->canSeeNumberOfElements('//table/tbody/tr',4);
         $I->seeNumberOfElements('//td[@data-label="Image"]',4);
     }

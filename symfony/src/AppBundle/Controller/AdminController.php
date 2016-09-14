@@ -96,6 +96,11 @@ class AdminController extends BaseAdminController
 
 	}
 
+	/**
+	 * edit pagemeta
+	 *
+	 * @return Response|\Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+	 */
 	protected function editPageMetaAction()
 	{
 		$this->dispatch(EasyAdminEvents::PRE_EDIT);
