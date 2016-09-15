@@ -1,0 +1,17 @@
+{% extends "AppBundle::base.html.twig" %}
+
+{% block title %}
+	{{ pagemeta.getPageTitle() }}
+{% endblock %}
+
+{% block content %}
+
+	{% if pagemeta is not null %}
+	<h1>{{ pagemeta.getShortDescription() | raw }}</h1>
+
+	{{ pagemeta.getContent() | raw }}
+
+	{% endif %}
+
+{% endblock %}
+

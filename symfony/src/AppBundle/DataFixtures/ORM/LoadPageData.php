@@ -44,7 +44,7 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         $homemetaEN->setMenuTitle('Home');
         $homemetaEN->setPageTitle('Welcome to SongBird CMS Demo');
         $homemetaEN->setShortDescription('Welcome to SongBird CMS Demo');
-        $homemetaEN->setContent('<p>SongBird is a simple CMS built with popular bundles like FOSUserBundle and SonataAdminBundle.
+        $homemetaEN->setContent('<p>SongBird is a simple CMS built with popular bundles like FOSUserBundle and EasyAdminBundle.
             The CMS is meant to showcase Rapid Application Development with Symfony.</p>');
         $manager->persist($homemetaEN);
 
@@ -54,7 +54,7 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         $homemetaFR->setPageTitle('Bienvenue a SongBird CMS Démo');
         $homemetaFR->setShortDescription('Bienvenue a SongBird CMS Démo');
         $homemetaFR->setLocale('fr');
-        $homemetaFR->setContent('<p>SongBird est un simple CMS construit avec des faisceaux populaires comme FOSUserBundle et SonataAdminBundle.
+        $homemetaFR->setContent('<p>SongBird est un simple CMS construit avec des faisceaux populaires comme FOSUserBundle et EasyAdminBundle.
             Le CMS est destinée à mettre en valeur Rapid Application Development avec Symfony .</p>');
         $manager->persist($homemetaFR);
 
@@ -75,7 +75,7 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         <li>User Management System – For administrators to manage the users of the site.</li>
         <li>Multi-lingual Capability – No CMS is complete without this.</li>
         <li>Page Management System – For managing the front-end pages of the site.</li>
-        <li>Media Management System – For administrators and users to manage files and images.</li>
+        <li>Logging System – For logging backend activities.</li>
         <li>Frontend – The frontend of the website.</li>
         </ul>');
         $manager->persist($aboutmetaEN);
@@ -92,7 +92,7 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         <li>Système de gestion de l\'utilisateur - Pour les administrateurs de gérer les utilisateurs du site.</li>
         <li>Capacité multilingue - Pas de CMS est complète sans cela.</li>
         <li>Système de Management de la page - Pour gérer les pages du site frontaux.</li>
-        <li>Système de Gestion des médias - Pour les administrateurs et les utilisateurs de gérer des fichiers et des images.</li>
+        <li>Système d\'enregistrement - Pour les activités journalisation backend.</li>
         <li>Frontend - L\'interface du site.</li>
         </ul>');
         $manager->persist($aboutmetaFR);

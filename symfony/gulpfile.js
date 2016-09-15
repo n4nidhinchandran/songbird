@@ -11,7 +11,8 @@ var exec = require('child_process').exec;
 // Minify JS
 gulp.task('js', function () {
     return gulp.src(['bower_components/jquery/dist/jquery.js',
-        'bower_components/bootstrap/dist/js/bootstrap.js'])
+        'bower_components/bootstrap/dist/js/bootstrap.js',
+        'bower_components/smartmenus/dist/jquery.smartmenus.js'])
         .pipe(concat('javascript.js'))
         .pipe(uglify())
         .pipe(sourcemaps.write('./'))
@@ -22,6 +23,8 @@ gulp.task('js', function () {
 gulp.task('css', function () {
     return gulp.src([
         'bower_components/bootstrap/dist/css/bootstrap.css',
+        'bower_components/smartmenus/dist/css/sm-core-css.css',
+        'bower_components/smartmenus/dist/css/sm-clean/sm-clean.css',
         'src/AppBundle/Resources/public/less/*.less',
         'src/AppBundle/Resources/public/sass/*.scss',
         'src/AppBundle/Resources/public/css/*.css'])

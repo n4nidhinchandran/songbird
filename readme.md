@@ -1,16 +1,16 @@
-# Chapter 19: The Page Manager Part 2
+# Chapter 20: The Front View
 
-In this chapter, we are going to integrate NestablePageBundle with EasyAdminBundle. We are also going to improve the cms by integrating a wysiwyg editor (ckeditor) and create a custom locale dropdown.
+Going to "http://songbird.app/" has nothing at the moment because we have so far been focusing on the the admin area and not touched the frontend. In this chapter, we will create an automatic route based on the slug and display the frontend view when the slug matches. Any route that matches "/" and "/home" will be using the index template while the rest of the pages will be using the view template.
 
+We will create a simple home and subpages using bootstrap and use [smartmenus javascript library](http://www.smartmenus.org/) to create the top menu which will render the the submenus as well.
+
+Lastly, we'll add a language toggle so that the page can render different languages easily. The menu and page content will be rendered based on the toggled language. To get the menu to display different languages, we will create a custom twig function (an extension called MenuLocaleTitle).
 
 ## Objectives
 
 > * Define User Stories
-> * Adding new image field to PageMeta Entity
-> * Installing of CKEditor
-> * Integration with EasyAdminBundle
-> * Creating Custom Locale Selector Form Type
-> * Update BDD Tests (Optional)
+> * Creating the Frontend
+> * Update BDD
 
 ## Pre-setup
 
@@ -20,217 +20,91 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 # check your branch
 -> git status
 # start branching now
--> git checkout -b my_chapter18
-```
-
-## Pre-setup
-
-Make sure we are in the right branch. Let us branch off from the previous chapter.
-
-```
-# check your branch
--> git status
-# start branching now
--> git checkout -b my_chapter19
+-> git checkout -b my_chapter20
 ```
 
 ## Define User Stories
 
-**19. Page Management**
+**20. Frontend**
 
 <table>
 <tr><td><strong>Story Id</strong></td><td><strong>As a</strong></td><td><strong>I</strong></td><td><strong>So that I</strong></td></tr>
-<tr><td>19.1</td><td>an admin</td><td>want to manage pages</td><td>update them anytime.</td></tr>
-<tr><td>19.2</td><td>test1 user</td><td>don't want to manage pages</td><td>don't breach security</td></tr>
+<tr><td>20.1</td><td>an test3 user</td><td>want to browse the frontend</td><td>I can get the information I want.</td></tr>
 </table>
 
-<strong>Story ID 19.1: As an admin, I want to manage pages, so that I can update them anytime.</strong>
+<strong>Story ID 20.1: As test3 user, I want to browse the frontend, so that I can get the information I want.</strong>
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>19.11</td><td>List Pages</td><td>I go to page list url</td><td>I can see 2 elements under the about slug</td></tr>
-<tr><td>19.12</td><td>Show Contact Us Page</td><td>I go to contact_us page</td><td>I should see the word "contact_us" and the word "Created"</td></tr>
-<tr><td>19.13</td><td>Reorder home</td><td>I drag and drop the home menu to under the about menu</td><td>I should see "reordered successfully message" in the response and see 3 items unter the about menu</td></tr>
-<tr><td>19.14</td><td>edit home page meta</td><td>I go to edit homepage url and update the menu title of "Home" to "Home1" and click update</td><td>I should see the ckeditor, locale dropdown with 2 entries only and the text "successfully updated" message upon clicking update</td></tr>
-<tr><td>19.15</td><td>Create and delete test page</td><td>go to page list and click "Add new page" and fill in details and click "Create" button, then go to newly created test page and create 2 new test meta. Delete one testmeta and then delete the whole test page</td><td>I should see the first pagemeta being created and deleted. Then see the second testmeta being deleted when the page is being deleted.</td></tr>
-<tr><td>19.16</td><td>Delete Contact Us Page</td><td>go to contact us page and click "delete"</td><td>I should see that the contact us page and its associate meta being deleted.</td></tr>
-<tr><td>19.17</td><td>Create new page with existing locale</td><td>go to page list and click "Add new pagemeta" and fill in details, select locale as en, page as home and click "Create" button</td><td>I should see an exception.</td></tr>
+<tr><td>20.11</td><td>Home page is working</td><td>I go to the / or /home</td><td>I can see the jumbotron class and the text "Welcome to SongBird CMS Demo"</td></tr>
+<tr><td>20.12</td><td>Menus are working</td><td>I mouseover the about menu</td><td>I should see 2 menus under the about menu</td></tr>
+<tr><td>20.13</td><td>Subpages are working</td><td>I click on contact memu</td><td>I should see the text "This project is hosted in"</td></tr>
+<tr><td>20.14</td><td>Login menu is working</td><td>I click on login memu</td><td>I should see 2 menu items only</td></tr>
+<tr><td>20.15</td><td>Internalisation is working on homepage</td><td>I change language to french</td><td>I should see all menu and homepage in french</td></tr>
 </table>
 
-<strong>Story ID 19.2: As test1 user, I don't want to manage pages, so that I dont breach security.</strong>
+## Creating the Frontend
 
-<table>
-<tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>19.21</td><td>List pages</td><td>I go to the page management url</td><td>I should get a access denied message</td></tr>
-<tr><td>19.22</td><td>show about us page</td><td>I go to show about us url</td><td>I should get a access denied message</td></tr>
-<tr><td>19.23</td><td>edit about us page</td><td>I go to edit about us url</td><td>I should get a access denied message</td></tr>
-</table>
-
-## Adding new image field to PageMeta Entity
-
-Let us add a new field called featuredImage to the PageMeta entity. We will configure Vich uploader to do the job.
+Let create a new frontend controller
 
 ```
-# src/AppBundle/Entity/PageMeta.php
+# src/AppBundle/Controller/FrontendController.php
 
-namespace AppBundle\Entity;
+namespace AppBundle\Controller;
 
-use Bpeh\NestablePageBundle\Entity\PageMeta as BasePageMeta;
-use Doctrine\ORM\Mapping as ORM;
-use Vich\UploaderBundle\Mapping\Annotation as Vich;
-use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Symfony\Component\HttpFoundation\Request;
 
-/**
- * PageMeta
- *
- * @ORM\Table(name="pagemeta")
- * @ORM\Entity(repositoryClass="AppBundle\Repository\PageMetaRepository")
- * @ORM\HasLifecycleCallbacks()
- * @Vich\Uploadable
- */
-class PageMeta extends BasePageMeta
+class FrontendController extends Controller
 {
-    /**
-     * @var integer
-     *
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
-    protected $id;
+	/**
+	 * @Route("/{slug}", name="app_frontend_index", requirements = {"slug" = "^((|home)$)"})
+	 * @Template()
+	 * @Method("GET")
+	 * @param Request $request
+	 *
+	 * @return array
+	 */
+	public function indexAction(Request $request)
+	{
+		$page = $this->getDoctrine()->getRepository('AppBundle:Page')->findOneBySlug($request->get('_route_params')['slug']);
+		$pagemeta = $this->getDoctrine()->getRepository('AppBundle:PageMeta')->findPageMetaByLocale($page, $request->getLocale());
+		$rootMenuItems = $this->getDoctrine()->getRepository('AppBundle:Page')->findParent();
 
-    /**
-     * Get id
-     *
-     * @return integer 
-     */
-    public function getId()
-    {
-        return $this->id;
-    }
+		return array(
+			'pagemeta' => $pagemeta,
+			'tree' => $rootMenuItems,
+		);
+	}
+
 
 	/**
-	 * @ORM\Column(type="string", length=255, nullable=true)
-	 * @var string
-	 */
-	private $featuredImage;
-
-	/**
-	 * @Vich\UploadableField(mapping="featured_image", fileNameProperty="featuredImage")
-	 * @var File
-	 */
-	private $featuredImageFile;
-
-	public function __toString()
+	* @Route("/{slug}", name="app_frontend_view")
+	* @Template()
+	* @Method("GET")
+	*/
+	public function pageAction(Request $request)
 	{
-		return $this->getLocale().': '.$this->getMenuTitle();
-	}
 
-	public function setFeaturedImageFile(File $image = null)
-	{
-		$this->featuredImageFile = $image;
+		$page = $this->getDoctrine()->getRepository('AppBundle:Page')->findOneBySlug($request->get('_route_params')['slug']);
+		$pagemeta = $this->getDoctrine()->getRepository('AppBundle:PageMeta')->findPageMetaByLocale($page, $request->getLocale());
+		$rootMenuItems = $this->getDoctrine()->getRepository('AppBundle:Page')->findParent();
 
-		if ($image) {
-			$this->setModified(new \DateTime());
-		}
-	}
-
-	public function getFeaturedImageFile()
-	{
-		return $this->featuredImageFile;
-	}
-
-	public function setFeaturedImage($image)
-	{
-		$this->featuredImage = $image;
-	}
-
-	public function getFeaturedImage()
-	{
-		return $this->featuredImage;
+		return array(
+			'pagemeta' => $pagemeta,
+			'tree' => $rootMenuItems,
+			);
 	}
 }
 ```
 
-Let us update config.yml
-
-```
-# app/config/config.yml
-parameters:
-    locale: en
-    supported_lang: [ 'en', 'fr']
-    admin_path: admin
-    app.profile_image.path: /uploads/profiles
-    app.featured_image.path: /uploads/featured_images
-...    
-vich_uploader:
-    db_driver: orm
-    mappings:
-        profile_images:
-            uri_prefix: '%app.profile_image.path%'
-            upload_destination: '%kernel.root_dir%/../web/uploads/profiles'
-            namer: vich_uploader.namer_uniqid
-        featured_image:
-            uri_prefix: '%app.featured_image.path%'
-            upload_destination: '%kernel.root_dir%/../web/uploads/featured_images'
-            namer: vich_uploader.namer_uniqid
-```
-
-## Installing of CKEditor
-
-We will now install CKEditor
-
-```
--> composer require egeloen/ckeditor-bundle
-```
-
-then enable the bundle
-
-```
-# app/AppKernel.php
-class AppKernel extends Kernel
-{
-    public function registerBundles()
-    {
-        return array(
-            // ...
-            new Ivory\CKEditorBundle\IvoryCKEditorBundle(),
-        );
-    }
-}
-```
-
-and we can now install the styles
-
-```
--> scripts/assetsinstall
-```
-
-## Integration with EasyAdminBundle
-
-There are still a lot of work to get BpehNestablePageBundle integrate properly with EasyAdminBundle. The reason is because the big difference in controller logic between the 2 bundles. 
- 
-Let us assume that we not going to use the PageController.php and PageMetaController.php except the reorder route
-
-The new routing.yml as follows:
+With the new routes added, we will move the frontend routes to the last priority, so routes like /login will be executed first.
 
 ```
 # app/config/routing.yml
-
-admin:
-  resource: "@AppBundle/Controller/AdminController.php"
-  type:     annotation
-
-locale:
-  resource: "@AppBundle/Controller/LocaleController.php"
-  type:     annotation
-
-bpeh_page_reorder:
-  path: /admin/reorder
-  defaults:
-    _controller: BpehNestablePageBundle:Page:reorder
-
-# FOS user bundle default routing
+...
 fos_user_security:
   resource: "@FOSUserBundle/Resources/config/routing/security.xml"
 
@@ -238,396 +112,520 @@ fos_user_resetting:
   resource: "@FOSUserBundle/Resources/config/routing/resetting.xml"
   prefix: /resetting
 
-easy_admin_bundle:
-  resource: "@AppBundle/Controller/AdminController.php"
+frontend:
+  resource: "@AppBundle/Controller/FrontendController.php"
   type:     annotation
-  prefix:   /%admin_path%
 ```
 
-We now need to add actions to the AdminController
+Let us update the frontend base view.
 
 ```
-# src/AppBundle/Controller/AdminController.php
+# src/AppBundle/Resources/Views/frontend.html.twig
 
-...
-    /**
-	 * Show Page List page
-	 * @return \Symfony\Component\HttpFoundation\Response
-	 */
-    public function listPageAction()
-    {
-		$rootMenuItems = $this->container->get('doctrine')->getRepository('AppBundle\Entity\Page')->findParent();
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}{% endblock %}</title>
+        {% block stylesheets %}
+           <link href="{{ asset('minified/css/styles.css') }}" rel="stylesheet" />
+        {% endblock %}
+</head>
+<body>
 
-		return $this->render('AppBundle:Page:list.html.twig', array(
-			'tree' => $rootMenuItems,
-		));
-	}
+{% set urlPrefix = (app.environment == 'dev') ? '/app_dev.php/' : '/' %}
 
-	/**
-	 * Redirect to Page listing page
-	 *
-	 * @return \Symfony\Component\HttpFoundation\RedirectResponse
-	 */
-	public function listPageMetaAction()
-	{
-		return $this->redirect($this->generateUrl('easyadmin', array('entity' => 'Page', 'action' => 'list')));
-	}
-	
-    /**
-     * @param PageMeta $pageMeta
-     */
-    public function prePersistPageMetaEntity(PageMeta $pageMeta)
-    {
+{% block body %}
 
-        if ( $this->em->getRepository('AppBundle\Entity\PageMeta')->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale() ) ) {
-            throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
-        }
+	<div class="container">
+        {% block topnav %}
+        <ul id="top_menu" class="sm sm-clean">
+            <li id="page_logo">
+                <a href="{{ urlPrefix }}" alt="songbird">
+                    <img src="{{ asset('bundles/app/images/logo_small.png') }}" alt="Songbird">
+                </a>
+            </li>
+            {% if tree is defined %}
+                {% include "AppBundle:Page:tree.html.twig" with { 'tree':tree } %}
+            {% endif %}
+            <li>
+            {% if is_granted("IS_AUTHENTICATED_REMEMBERED") %}
+                <a href="{{ path('fos_user_security_logout') }}">
+                    {{ 'layout.logout'|trans({}, 'FOSUserBundle') }}
+                </a>
+            {% else %}
+                <a href="{{ path('fos_user_security_login') }}">
+                    {{ 'layout.login'|trans({}, 'FOSUserBundle') }}
+                </a>
+            {% endif %}
+            </li>
+            <li id="frontend_lang_toggle">
+                <select id="lang" name="lang">
+                    {% for lang in supported_lang %}
+                        <option value="{{ lang }}">{{ lang }}</option>
+                    {% endfor %}
+                </select>
+            </li>
+        </ul>
 
-    }
-	/**
-	 * edit pagemeta
-	 * 
-	 * @return Response|\Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
-	 */
-    protected function editPageMetaAction()
-    {
-        $this->dispatch(EasyAdminEvents::PRE_EDIT);
+        {% endblock %}
 
-        $id = $this->request->query->get('id');
-        $easyadmin = $this->request->attributes->get('easyadmin');
-        $entity = $easyadmin['item'];
+        <div class="clearfix vspace"></div>
 
-        // get id before submission
-        $pageMeta = $this->em->getRepository('AppBundle\Entity\PageMeta')->find($id);
-        $origId = $pageMeta->getPage()->getId();
-        $origLocale = $pageMeta->getLocale();
+        {% block content %}{% endblock %}
 
-        if ($this->request->isXmlHttpRequest() && $property = $this->request->query->get('property')) {
-            $newValue = 'true' === strtolower($this->request->query->get('newValue'));
-            $fieldsMetadata = $this->entity['list']['fields'];
-
-            if (!isset($fieldsMetadata[$property]) || 'toggle' !== $fieldsMetadata[$property]['dataType']) {
-                throw new \RuntimeException(sprintf('The type of the "%s" property is not "toggle".', $property));
-            }
-
-            $this->updateEntityProperty($entity, $property, $newValue);
-
-            return new Response((string) $newValue);
-        }
-
-        $fields = $this->entity['edit']['fields'];
-
-        $editForm = $this->createEditForm($entity, $fields);
-        $deleteForm = $this->createDeleteForm($this->entity['name'], $id);
-
-        $editForm->handleRequest($this->request);
-        if ($editForm->isValid()) {
-            $this->dispatch(EasyAdminEvents::PRE_UPDATE, array('entity' => $entity));
-
-            // if page and local is the same, dont need to check locale count
-            if ($origLocale == $entity->getLocale() && $origId == $entity->getPage()->getId()) {
-                // all good
-            }
-            elseif ( $this->em->getRepository('AppBundle\Entity\PageMeta')->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale(), true ) ) {
-                throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
-            }
-
-            $this->em->flush();
-
-            $this->dispatch(EasyAdminEvents::POST_UPDATE, array('entity' => $entity));
-
-            $refererUrl = $this->request->query->get('referer', '');
-
-            return !empty($refererUrl)
-                ? $this->redirect(urldecode($refererUrl))
-                : $this->redirect($this->generateUrl('easyadmin', array('action' => 'list', 'entity' => $this->entity['name'])));
-        }
-
-        $this->dispatch(EasyAdminEvents::POST_EDIT);
-
-        return $this->render($this->entity['templates']['edit'], array(
-            'form' => $editForm->createView(),
-            'entity_fields' => $fields,
-            'entity' => $entity,
-            'delete_form' => $deleteForm->createView(),
-        ));
-    }
-```
-
-We then need to update the list views
-
-```
-# src/AppBundle/Resources/views/Page/list.html.twig
-
-{% extends '@EasyAdmin/default/list.html.twig' %}
-
-{% block head_stylesheets %}
-	{{ parent() }}
-	<link rel="stylesheet" href="{{ asset('bundles/bpehnestablepage/css/styles.css ') }}">
+        {% block footer %}
+        <hr />
+        <footer>
+                <p class="text-center">© Songbird {{ "now" | date("Y")}}</p>
+        </footer>
+        {% endblock %}
+    </div>
 {% endblock %}
 
-{% block head_javascript %}
-	{{ parent() }}
-	<script src="{{ asset('bundles/bpehnestablepage/js/jquery.nestable.js') }}"></script>
-	<script>
-
-		$(function() {
-
-			var before = null, after = null;
-
-			$('.dd').nestable({
-				afterInit: function ( event ) { }
-			});
-
-			$('.dd').nestable('collapseAll');
-			before = JSON.stringify($('.dd').nestable('serialize'));
-			$('.dd').on('dragEnd', function(event, item, source, destination, position) {
-
-				id = item.attr('data-id');
-				parentId = item.closest('li').parent().closest('li').attr('data-id');
-
-				// if parent id is null of if parent id and id is the same, it is the top level.
-				parentId = (parentId == id || typeof(parentId)  === "undefined") ?  '' : parentId;
-
-				after = JSON.stringify($('.dd').nestable('serialize'));
-
-				if (before != after) {
-					$.ajax({
-						type: "POST",
-						url: "{{ path('bpeh_page_reorder') }}",
-						data: {id: id, parentId: parentId, position: position},
-						success: function (data, dataType) {
-							if (data.success) {
-								$('.alert').addClass('alert-success');
-							}
-							else {
-								$('.alert').addClass('alert-danger');
-							}
-							$('.alert').html(data.message);
-							$('.alert').fadeTo( 0 , 1, function() {});
-							$('.alert').fadeTo( 4000 , 0, function() {});
-						},
-
-						error: function (XMLHttpRequest, textStatus, errorThrown) {
-							console.log(XMLHttpRequest);
-						}
-					});
-					before = after;
-				}
-			});
-		});
-	</script>
+{% block script %}
+    <script src="{{ asset('minified/js/javascript.js') }}"></script>
+    <script>
+    $(function() {
+        $('#top_menu').smartmenus();
+        // select the box based on locale
+        $('#lang').val('{{ app.request.getLocale() }}');
+        // redirect user if user change locale
+        $('#lang').change(function() {
+            window.location='{{ urlPrefix }}'+$(this).val()+'/locale';
+        });
+    });
+    </script>
 {% endblock %}
 
-{% block main %}
-
-	<div class="alert alert-dismissable">
-		{{ 'flash_reorder_instructions' | trans({}, 'BpehNestablePageBundle') }}
-	</div>
-
-
-	<button type="button" onclick="$('.dd').nestable('expandAll')">{{ 'expand_all'|trans({}, 'BpehNestablePageBundle') }}</button>
-	<button type="button" onclick="$('.dd').nestable('collapseAll')">{{ 'collapse_all'|trans({}, 'BpehNestablePageBundle') }}</button>
-	<button onclick=window.location="{{ path('easyadmin') }}?entity=Page&action=new">{{ 'new_page'|trans({}, 'BpehNestablePageBundle') }}</button>
-	<button onclick=window.location="{{ path('easyadmin') }}?entity=PageMeta&action=new">{{ 'new_pagemeta'|trans({}, 'BpehNestablePageBundle') }}</button>
-	<div id="nestable" class="dd">
-		<ol class="dd-list">
-			{% include "AppBundle:Page:tree.html.twig" with { 'tree':tree } %}
-		</ol>
-	</div>
-{% endblock main %}
+</body>
+</html>
 ```
 
-and
+We will now create a homepage view.
 
 ```
-# src/AppBundle/Resources/views/tree.html.twig
+# src/AppBundle/Resources/views/Frontend/index.html.twig
+
+{% extends "AppBundle::base.html.twig" %}
+
+{% block title %}
+	{{ page.getPageMetas()[0].getPageTitle() }}
+{% endblock %}
+
+{% block content %}
+{% if page is not null %}
+<div class="jumbotron">
+	<h1>{{ page.getPageMetas()[0].getShortDescription() | raw }}</h1>
+</div>
+
+{{ page.getPageMetas()[0].getContent() | raw }}
+
+{% endif %}
+{% endblock %}
+
+```
+
+and pages view
+
+```
+# src/AppBundle/Resources/views/Frontend/page.html.twig
+
+{% extends "AppBundle::base.html.twig" %}
+
+{% block title %}
+	{{ page.getPageMetas()[0].getPageTitle() }}
+{% endblock %}
+
+{% block content %}
+
+{% if page is not null %}
+<h1>{{ page.getPageMetas()[0].getShortDescription() | raw }}</h1>
+
+{{ page.getPageMetas()[0].getContent() | raw }}
+
+{% endif %}
+
+{% endblock %}
+```
+
+and lastly, recursive view for the menu
+
+```
+# src/AppBundle/Resources/views/Frontend/tree.html.twig
 
 {% for v in tree %}
-    <li class='dd-item' data-id='{{ v.getId() }}'>
-        <div class='dd-handle'>
-            <a class="dd-nodrag" href="{{ path('easyadmin') }}?entity={{ _entity_config.name }}&action=edit&{{ _entity_config.primary_key_field_name }}={{ v.getId() }}">{{ v.getSlug() }}</a>
-        </div>
-
+    <li>
+        <a href="{{ v.getSlug() }}">{{ getMenuLocaleTitle(v.getSlug()) }}</a>      
         {% set children = v.getChildren()|length %}
         {% if children > 0 %}
-            <ol class='dd-list'>
+            <ul>
                 {% include "AppBundle:Page:tree.html.twig" with { 'tree':v.getChildren() } %}
-            </ol>
+            </ul>
         {% endif %}
     </li>
 {% endfor %}
 ```
-
-Finally - the easyadmin config. We do not want to display the pagemeta menu.
-
-```
-# app/config/easyadmin/design.yml
-
-easy_admin:
-    design:
-        brand_color: '#337ab7'
-        assets:
-            css:
-              - /bundles/app/css/style.css
-        menu:
-          - { entity: 'User', icon: 'user' }
-          - { entity: 'Page', icon: 'file' }
-          - { entity: 'UserLog', icon: 'database' }
-```
-
-and
+Note the new getMenuLocaleTitle function in the twig. We will create a custom function usable by twig - Twig Extension.
 
 ```
-# app/config/easyadmin/page.yml
+# src/AppBundle/Twig/Extension/MenuLocaleTitle.php
 
-easy_admin:
-    entities:
-        Page:
-            class: AppBundle\Entity\Page
-            label: admin.link.page_management
-            # for new page
-            new:
-                fields:
-                  - slug
-                  - isPublished
-                  - sequence
-                  - parent
-            edit:
-                fields:
-                  - slug
-                  - isPublished
-                  - sequence
-                  - parent
-                  - pageMetas
-            show:
-                fields:
-                  - id
-                  - slug
-                  - isPublished
-                  - sequence
-                  - parent
-                  - modified
-                  - created
-                  - pageMetas
-            list:
-                actions: ['show', 'edit', 'delete']
-                fields:
-                  - id
-                  - slug
-                  - isPublished
-                  - sequence
-                  - parent
-                  - modified
-        PageMeta:
-            class: AppBundle\Entity\PageMeta
-            form:
-              fields:
-                - page_title
-                - menu_title
-                - { property: 'locale', type: 'AppBundle\Form\LocaleType' }
-                - { type: 'divider' }
-                - { property: 'featuredImageFile', type: 'vich_image' }
-                - { property: 'short_description', type: 'ckeditor' }
-                - { property: 'content', type: 'ckeditor' }
-                - page
-```
+namespace AppBundle\Twig\Extension;
 
-Noticed the new field type we have used, ie ckeditor, vich_image, and AppBundle\Form\LocaleType. EasyAdminBundle has internal support for ckeditor and vich_image but AppBundle\Form\LocaleType is our own custom form selector which will be discussed in the next section.
-
-## Creating Custom Locale Selector Form Type
-
-If you are looking at the pagemeta page, say http://songbird.app/app_dev.php/admin/?entity=PageMeta&action=new for example, you should have noticed by now that user can enter anything under the locale textbox. What if we want to load only the languages that we defined in the config file (ie, english and french)? It is a good idea to create our own select form type.
-
-```
-# src/AppBundle/Form/LocaleType.php
-
-namespace AppBundle\Form;
-
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-
-class LocaleType extends AbstractType
+/**
+ * Twig Extension to get Menu title based on locale
+ */
+class MenuLocaleTitle extends \Twig_Extension
 {
-    private $localeChoices;
+    /**
+     * @var EntityManager
+     */
+    private $em;
 
-    public function __construct(array $localeChoices)
+	private $container;
+
+    public function __construct($em, $request)
     {
-    	foreach ($localeChoices as $v) {
-            $this->localeChoices[$v] = $v;
-        }
+        $this->em = $em;
+        $this->request = $request->getCurrentRequest();
     }
 
-    public function configureOptions(OptionsResolver $resolver)
+    public function getName()
     {
-        $resolver->setDefaults(array(
-            'choices' => $this->localeChoices,
-        ));
+        return 'menu_locale_title_extension';
     }
 
-    public function getParent()
+    public function getFunctions()
     {
-        return ChoiceType::class;
+        return array(
+            'getMenuLocaleTitle' => new \Twig_Function_Method($this, 'getMenuLocaleTitle')
+        );
     }
 
+    public function getMenuLocaleTitle($slug)
+    {
+    	
+    	$page = $this->em->getRepository('AppBundle:Page')->findOneBySlug($slug);
+	    $pagemeta = $this->em->getRepository('AppBundle:PageMeta')->findPageMetaByLocale($page, $this->request->getLocale());
+
+    	return $pagemeta->getMenuTitle();
+    }
 }
 ```
 
-We then need to define the class in the service.yml
+we now need to make this class available as a service.
 
 ```
 # src/AppBundle/Resources/config/services.yml
 ...
-  app.form.type.locale:
-    class: AppBundle\Form\LocaleType
+  menu_locale_title.twig_extension:
+    class: AppBundle\Twig\Extension\MenuLocaleTitle
     arguments:
-      - '%supported_lang%'
+      - "@doctrine.orm.entity_manager"
+      - "@service_container"
     tags:
-      - { name: form.type }
+      - { name: twig.extension }
 ...
 ```
 
-Go to any pagemeta new or edit page (ie http://songbird.app/app_dev.php/admin/?entity=PageMeta&action=new for example) and you should see the locale dropdown updated to only 2 enties.
-
-## Update BDD Tests (Optional)
-
-Let us create the cest files,
+Since we have added a new top navbar, we need to remove the SongBird logo from the login and password reset pages. Update the following pages as you see fit:
 
 ```
--> ./vendor/bin/codecept generate:cest -c src/AppBundle acceptance As_An_Admin/IWantToManagePages
--> ./vendor/bin/codecept generate:cest -c src/AppBundle acceptance As_Test1_User/IDontWantToManagePages
+src/AppBundle/Resources/views/Resetting/checkEmail.html.twig
+src/AppBundle/Resources/views/Resetting/passwordAlreadyRequested.html.twig
+src/AppBundle/Resources/views/Resetting/request.html.twig
+src/AppBundle/Resources/views/Resetting/reset.html.twig
+src/AppBundle/Resources/views/Security/login.html.twig
 ```
 
-Create the test cases from the scenarios above and make sure all your tests passes before moving on.
+Let us update bower.json to pull in smartmenus js.
 
-Remember to commit all your code before moving on to the next chapter.
+```
+-> bower install smartmenus --S
+```
+
+then make gulp to pull the libraries in
+
+```
+# gulpfile.js
+...
+// Minify JS
+gulp.task('js', function () {
+    return gulp.src(['bower_components/jquery/dist/jquery.js',
+        'bower_components/bootstrap/dist/js/bootstrap.js',
+        'bower_components/smartmenus/dist/jquery.smartmenus.js'])
+        .pipe(concat('javascript.js'))
+        .pipe(uglify())
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest('web/minified/js'));
+});
+
+// Minify CSS
+gulp.task('css', function () {
+    return gulp.src([
+        'bower_components/bootstrap/dist/css/bootstrap.css',
+        'bower_components/smartmenus/dist/css/sm-core-css.css',
+        'bower_components/smartmenus/dist/css/sm-clean/sm-clean.css',
+        'src/AppBundle/Resources/public/less/*.less',
+        'src/AppBundle/Resources/public/sass/*.scss',
+        'src/AppBundle/Resources/public/css/*.css'])
+        .pipe(gulpif(/[.]less/, less()))
+        .pipe(gulpif(/[.]scss/, sass()))
+        .pipe(concat('styles.css'))
+        .pipe(uglifycss())
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest('web/minified/css'));
+});
+...
+```
+
+Lastly, let us update the stylesheets. We might as well update them in scss
+
+```
+# src/AppBundle/Resources/public/sass/styles.scss
+
+// variables
+$black: #000;
+$white: #fff;
+$radius: 6px;
+$spacing: 20px;
+$font_big: 16px;
+
+body {
+    color: $black;
+    background: $white;
+    padding-top: $spacing;
+}
+.vspace {
+    height: $spacing;
+}
+.skin-black {
+    .logo {
+        background-color: $black;
+    }
+    .left-side {
+        background-color: $black;
+    }
+}
+.sidebar {
+    ul {
+        padding-top: $spacing;
+    }
+    li {
+        padding-top: $spacing;
+    }
+}
+.admin_top_left {
+    padding-top: $spacing 0 0 $spacing;
+}
+#top_menu {
+    padding: $spacing 0 $spacing;
+
+    #page_logo {
+        padding: 0 $spacing;
+        margin: -$spacing/2 0;
+    }
+
+    #login_link {
+        float:right;
+    }
+
+    #frontend_lang_toggle {
+        float: right;
+        padding: $spacing/2 $spacing;
+    }
+}
+.sm-clean {
+    border-radius: $radius;
+
+}
+// admin area
+#page_logo img {
+    display: inline;
+    max-height: 100%;
+    max-width: 50%;
+}
+#page_menu li {
+    line-height: $spacing;
+    padding-top: $spacing;
+}
+.navbar-brand img {
+    margin-top: -8px;
+}
+
+.form-signin {
+    max-width: 330px;
+    padding: 15px;
+    margin: 0 auto;
+    .form-signin-heading {
+        margin-bottom: $spacing;
+    }
+    .checkbox {
+        margin-bottom: $spacing;
+        font-weight: normal;
+    }
+    .form-control {
+        position: relative;
+        height: auto;
+        box-sizing: border-box;
+        padding: $spacing;
+        font-size: $font_big;
+        &:focus {
+            z-index: 2;
+        }
+    }
+    input[type="email"] {
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    input[type="password"] {
+        margin-bottom: $spacing;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+    }
+}
+.form-control {
+    margin-top: $spacing;
+    margin-bottom: $spacing;
+}
+
+```
+
+Then empty our .css files
+
+```
+-> echo "" > src/AppBundle/Resources/public/css/signin.css
+-> echo "" > src/AppBundle/Resources/public/css/style.css
+```
+
+Now run gulp and refresh the homepage and everything should renders.
+
+```
+-> gulp
+```
+
+Go to homepage and this should be the end result.
+
+
+
+## Update BDD
+
+Let us create the cest file:
+
+```
+-> bin/codecept generate:cest -c src/AppBundle acceptance As_Test3_User/IWantToViewTheFrontend
+```
+
+Write your test and make sure everything passes.
+
+If you see all the tests passes, you should be happy
+
+```
+-> ./scripts/runtest
+Dropped database for connection named `songbird`
+Created database `songbird` for connection named default
+ATTENTION: This operation should not be executed in a production environment.
+
+Creating database schema...
+Database schema created successfully!
+  > purging database
+  > loading AppBundle\DataFixtures\ORM\LoadPageData
+  > loading [1] AppBundle\DataFixtures\ORM\LoadUserData
+  > loading [2] AppBundle\DataFixtures\ORM\LoadMediaData
+Codeception PHP Testing Framework v2.1.1
+Powered by PHPUnit 4.7.7 by Sebastian Bergmann and contributors.
+
+Acceptance Tests (56) ----------------------------------------------------------
+Wrong login credentials (As_An_Admin\IWantToLoginCest::wrongLoginCredentials)                                               Ok
+See my dashboard content (As_An_Admin\IWantToLoginCest::seeMyDashboardContent)                                               Ok
+Logout successfully (As_An_Admin\IWantToLoginCest::logoutSuccessfully)                                                  Ok
+Access admin without logging in (As_An_Admin\IWantToLoginCest::AccessAdminWithoutLoggingIn)                                         Ok
+View gallery list (As_An_Admin\IWantToManageAllGalleriesCest::viewGalleryList)                                        Ok
+Show gallery1 (As_An_Admin\IWantToManageAllGalleriesCest::showGallery1)                                           Ok
+Edit gallery3 (As_An_Admin\IWantToManageAllGalleriesCest::editGallery3)                                           Ok
+Add and delete media under gallery3 (As_An_Admin\IWantToManageAllGalleriesCest::AddAndDeleteMediaUnderGallery3)                         Ok
+Add and delete new gallery (As_An_Admin\IWantToManageAllGalleriesCest::AddAndDeleteNewGallery)                                 Ok
+View media list (As_An_Admin\IWantToManageAllMediaCest::viewMediaList)                                              Ok
+Show file1 (As_An_Admin\IWantToManageAllMediaCest::showFile1)                                                  Ok
+Edit file3 (As_An_Admin\IWantToManageAllMediaCest::editFile3)                                                  Ok
+Upload and delete media (As_An_Admin\IWantToManageAllMediaCest::uploadAndDeleteMedia)                                       Ok
+List all profiles (As_An_Admin\IWantToManageAllUsersCest::listAllProfiles)                                            Ok
+Show test3 user (As_An_Admin\IWantToManageAllUsersCest::showTest3User)                                              Ok
+Edit test3 user (As_An_Admin\IWantToManageAllUsersCest::editTest3User)                                              Ok
+Create and delete new user (As_An_Admin\IWantToManageAllUsersCest::createAndDeleteNewUser)                                     Ok
+List pages (As_An_Admin\IWantToManagePagesCest::listPages)                                                     Ok
+Show contact us page (As_An_Admin\IWantToManagePagesCest::showContactUsPage)                                             Ok
+Reorder home (As_An_Admin\IWantToManagePagesCest::reorderHome)                                                   Ok
+Edit homepage meta (As_An_Admin\IWantToManagePagesCest::editHomepageMeta)                                              Ok
+Create and delete test page (As_An_Admin\IWantToManagePagesCest::createAndDeleteTestPage)                                       Ok
+List user log (As_An_Admin\IWantToAccessUserLogCest::listUserLog)                                                 Ok
+Show user log1 (As_An_Admin\IWantToAccessUserLogCest::showUserLog1)                                                Ok
+Create user log (As_An_Admin\IWantToAccessUserLogCest::createUserLog)                                               Ok
+View gallery list (As_Test1_User\IDontWantToManageAllGalleriesCest::viewGalleryList)                                  Ok
+Show gallery1 (As_Test1_User\IDontWantToManageAllGalleriesCest::showGallery1)                                     Ok
+Edit gallery3 (As_Test1_User\IDontWantToManageAllGalleriesCest::editGallery3)                                     Ok
+View media list (As_Test1_User\IDontWantToManageAllMediaCest::viewMediaList)                                        Ok
+Show file1 (As_Test1_User\IDontWantToManageAllMediaCest::showFile1)                                            Ok
+Edit file3 (As_Test1_User\IDontWantToManageAllMediaCest::EditFile3)                                            Ok
+List all profiles (As_Test1_User\IShouldNotBeAbleToManageOtherProfilesCest::listAllProfiles)                          Ok
+Show test2 profile (As_Test1_User\IShouldNotBeAbleToManageOtherProfilesCest::showTest2Profile)                         Ok
+Edit test2 profile (As_Test1_User\IShouldNotBeAbleToManageOtherProfilesCest::editTest2Profile)                         Ok
+See admin dashboard content (As_Test1_User\IShouldNotBeAbleToManageOtherProfilesCest::seeAdminDashboardContent)                 Ok
+List pages (As_Test1_User\IDontWantToManagePagesCest::listPages)                                               Ok
+Show about us page (As_Test1_User\IDontWantToManagePagesCest::showAboutUsPage)                                         Ok
+Edit about us page (As_Test1_User\IDontWantToManagePagesCest::editAboutUsPage)                                         Ok
+List user log (As_Test1_User\IDontWantToAccessUserLogCest::listUserLog)                                           Ok
+Show log1 (As_Test1_User\IDontWantToAccessUserLogCest::showLog1)                                              Ok
+Editlog1 (As_Test1_User\IDontWantToAccessUserLogCest::Editlog1)                                              Ok
+Wrong login credentials (As_Test1_User\IWantToLoginCest::wrongLoginCredentials)                                             Ok
+See my dashboard content (As_Test1_User\IWantToLoginCest::seeMyDashboardContent)                                             Ok
+Logout successfully (As_Test1_User\IWantToLoginCest::logoutSuccessfully)                                                Ok
+Access admin without logging in (As_Test1_User\IWantToLoginCest::AccessAdminWithoutLoggingIn)                                       Ok
+Show my profile (As_Test1_User\IWantToManageMyOwnProfileCest::showMyProfile)                                        Ok
+Hid uneditable fields (As_Test1_User\IWantToManageMyOwnProfileCest::hidUneditableFields)                                  Ok
+Update firstname only (As_Test1_User\IWantToManageMyOwnProfileCest::updateFirstnameOnly)                                  Ok
+Update password only (As_Test1_User\IWantToManageMyOwnProfileCest::updatePasswordOnly)                                   Ok
+Reset password successfully (As_Test1_User\IWantToResetPasswordWithoutLoggingInCest::resetPasswordSuccessfully)                 Ok
+Locale in french (As_Test1_User\IWantToSwitchLanguageCest::localeInFrench)                                           Ok
+Account disabled (As_test3_user\IDontWantTologinCest::AccountDisabled)                                               Ok
+Home page working (As_test3_user\IWantToViewTheFrontendCest::homePageWorking)                                         Ok
+Menus are working (As_test3_user\IWantToViewTheFrontendCest::menusAreWorking)                                         Ok
+Sub pages are working (As_test3_user\IWantToViewTheFrontendCest::subPagesAreWorking)                                      Ok
+Login menu working (As_test3_user\IWantToViewTheFrontendCest::loginMenuWorking)                                        Ok
+-------------------------------------------------------------------------------
+
+
+Time: 3.7 minutes, Memory: 29.00Mb
+
+OK (56 tests, 114 assertions)
+```
 
 ## Summary
 
-In this chapter, we have extended our NestablePageBundle in EasyAdmin. We have installed CKEditor in our textarea and created a customised locale dropdown based on values from our config.yml file. Our CMS is looking more complete now.
+In this chapter, we have created the frontend controllers and views. We used smartmenus to render the menus and converted our css to sass. Finally, we wrote BDD tests to make sure our frontend renders correctly. The CMS is now complete.
 
-Next Chapter: [Chapter 20: The Front View](https://github.com/bernardpeh/songbird/tree/chapter_20)
+Next Chapter: [Chapter 21: Conclusion](https://github.com/bernardpeh/songbird/tree/chapter_21)
 
-Previous Chapter: [Chapter 18: Making Your Bundle Reusable](https://github.com/bernardpeh/songbird/tree/chapter_18)
+Previous Chapter: [Chapter 19: The Page Manager Part 2](https://github.com/bernardpeh/songbird/tree/chapter_19)
 
 
 ## Stuck? Checkout my code
 
 ```
--> git checkout -b chapter_19 origin/chapter_19
+-> git checkout -b chapter_20 origin/chapter_20
 -> git clean -fd
 ```
 
 ## Exercises
 
-* From the debug toolbar, update the missing translations.
-* TinyMCE is also a widely used WYSIWYG editor. How do you integrate it in Sonata Media?
-* What if you want to add a new user field to the Page Management System? What is going to happen to the page if the user is deleted? 
-
+* Try extending the NestablePageBundle so that you can have multiple menus, say a top and bottom menu?
+* One of the argument against using a language toggle is that it is bad for SEO. Language toggle can be good for usability. Can you think of a way to overcome the SEO issue?
+ 
 ## References
 
-* [Create custom form type](http://symfony.com/doc/current/cookbook/form/create_custom_field_type.html)
-* [EasyAdmin Templating](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/book/3-list-search-show-configuration.md)
-* [CKEditor Bundle](https://github.com/egeloen/IvoryCKEditorBundle)
-* [Adding Wysiwyg Editor](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/Resources/doc/tutorials/wysiwyg-editor.md)
+* [Controllers best practice](http://symfony.com/doc/current/best_practices/controllers.html)
+* [Smart Menus](http://www.smartmenus.org/)
+* [Twig Extension](http://symfony.com/doc/current/cookbook/templating/twig_extension.html)
