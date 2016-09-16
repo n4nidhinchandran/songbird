@@ -7,12 +7,12 @@
 {% block content %}
 {% if pagemeta is not null %}
 	<div class="jumbotron">
-		<h1>{{ pagemeta.getShortDescription() | raw }}</h1>
+		<h1 class="text-center">{{ pagemeta.getShortDescription() | raw }}</h1>
+		{%  if pagemeta.featuredImage is not null %}
+			<img class="featured_image" src="{{ vich_uploader_asset(pagemeta, 'featuredImageFile') }}" alt="{{ pagemeta.getShortDescription() | striptags }}"/>
+		{% endif %}
 	</div>
 
-	{%  if pagemeta.featuredImage is not null %}
-		{{ pagemeta.featuredImage }}
-	{% endif %}
 	{{ pagemeta.getContent() | raw }}
 
 {% endif %}

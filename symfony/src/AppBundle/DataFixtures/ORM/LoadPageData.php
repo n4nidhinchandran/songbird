@@ -6,6 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\DataFixtures\OrderedFixtureInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\File\File;
 use AppBundle\Entity\Page;
 use AppBundle\Entity\PageMeta;
 
@@ -42,20 +43,24 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         $homemetaEN = new PageMeta();
         $homemetaEN->setPage($homepage);
         $homemetaEN->setMenuTitle('Home');
-        $homemetaEN->setPageTitle('Welcome to SongBird CMS Demo');
-        $homemetaEN->setShortDescription('Welcome to SongBird CMS Demo');
+        $homemetaEN->setPageTitle('SongBird CMS Demo');
+        $homemetaEN->setShortDescription('SongBird CMS Demo');
         $homemetaEN->setContent('<p>SongBird is a simple CMS built with popular bundles like FOSUserBundle and EasyAdminBundle.
             The CMS is meant to showcase Rapid Application Development with Symfony.</p>');
+	    copy(__DIR__.'/images/home_en.png', __DIR__.'/../../../../web/uploads/featured_images/home_en.png');
+	    $homemetaEN->setFeaturedImage('home_en.png');
         $manager->persist($homemetaEN);
 
         $homemetaFR = new PageMeta();
         $homemetaFR->setPage($homepage);
         $homemetaFR->setMenuTitle('Accueil');
-        $homemetaFR->setPageTitle('Bienvenue a SongBird CMS Démo');
-        $homemetaFR->setShortDescription('Bienvenue a SongBird CMS Démo');
-        $homemetaFR->setLocale('fr');
+        $homemetaFR->setPageTitle('SongBird CMS Démo');
+        $homemetaFR->setShortDescription('SongBird CMS Démo');
+	    $homemetaFR->setLocale('fr');
         $homemetaFR->setContent('<p>SongBird est un simple CMS construit avec des faisceaux populaires comme FOSUserBundle et EasyAdminBundle.
             Le CMS est destinée à mettre en valeur Rapid Application Development avec Symfony .</p>');
+	    copy(__DIR__.'/images/home_fr.png', __DIR__.'/../../../../web/uploads/featured_images/home_fr.png');
+	    $homemetaFR->setFeaturedImage('home_fr.png');
         $manager->persist($homemetaFR);
 
         $aboutpage = new Page();

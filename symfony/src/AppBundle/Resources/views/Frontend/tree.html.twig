@@ -1,7 +1,7 @@
 {% for v in tree %}
 
     <li>
-        <a href="{{ v.getSlug() }}">{{ getMenuLocaleTitle(v.getSlug()) }}</a>
+        <a href="{{ urlPrefix }}/{{ v.getSlug() }}">{{ getMenuLocaleTitle(v.getSlug()) }}</a>
         {% set children = v.getChildren()|length %}
         {% if children > 0 %}
             <ul>

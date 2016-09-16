@@ -20,7 +20,9 @@ class LocaleController extends Controller
         $auth_checker = $this->get('security.authorization_checker');
 
         // if referrer exists, redirect to referrer
+
         $referer = $request->headers->get('referer');
+
         if ($referer) {
             return $this->redirect($referer);
         }

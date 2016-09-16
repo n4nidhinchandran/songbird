@@ -33,7 +33,7 @@ class AppSubscriber implements EventSubscriberInterface
      */
     public static function getSubscribedEvents()
     {
-        // return the subscribed events, their methods and priorities
+    	// return the subscribed events, their methods and priorities
         return array(
             EasyAdminEvents::PRE_LIST => 'checkUserRights',
             EasyAdminEvents::PRE_EDIT => 'checkUserRights',
@@ -91,7 +91,8 @@ class AppSubscriber implements EventSubscriberInterface
 
     public function onKernelRequest(GetResponseEvent $event)
     {
-        $request = $event->getRequest();
+
+    	$request = $event->getRequest();
         $current_url = $request->server->get('REQUEST_URI');
         // ensures we track admin only.
         $admin_path = $this->container->getParameter('admin_path');

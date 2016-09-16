@@ -20,7 +20,9 @@ class FrontendController extends Controller
 	 */
 	public function indexAction(Request $request)
 	{
-		$page = $this->getDoctrine()->getRepository('AppBundle:Page')->findOneBySlug($request->get('_route_params')['slug']);
+		$slug = $request->get('_route_params')['slug'];
+		$slug = ($slug) ?: 'home';
+		$page = $this->getDoctrine()->getRepository('AppBundle:Page')->findOneBySlug($slug);
 		$pagemeta = $this->getDoctrine()->getRepository('AppBundle:PageMeta')->findPageMetaByLocale($page, $request->getLocale());
 		$rootMenuItems = $this->getDoctrine()->getRepository('AppBundle:Page')->findParent();
 
@@ -38,7 +40,6 @@ class FrontendController extends Controller
 	*/
 	public function pageAction(Request $request)
 	{
-
 		$page = $this->getDoctrine()->getRepository('AppBundle:Page')->findOneBySlug($request->get('_route_params')['slug']);
 		$pagemeta = $this->getDoctrine()->getRepository('AppBundle:PageMeta')->findPageMetaByLocale($page, $request->getLocale());
 		$rootMenuItems = $this->getDoctrine()->getRepository('AppBundle:Page')->findParent();
@@ -46,6 +47,6 @@ class FrontendController extends Controller
 		return array(
 			'pagemeta' => $pagemeta,
 			'tree' => $rootMenuItems,
-			);
+		);
 	}
 }

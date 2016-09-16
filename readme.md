@@ -10,7 +10,7 @@ Lastly, we'll add a language toggle so that the page can render different langua
 
 > * Define User Stories
 > * Creating the Frontend
-> * Update BDD
+> * Update BDD (Optional)
 
 ## Pre-setup
 
@@ -36,11 +36,10 @@ Make sure we are in the right branch. Let us branch off from the previous chapte
 
 <table>
 <tr><td><strong>Scenario Id</strong></td><td><strong>Given</strong></td><td><strong>When</strong></td><td><strong>Then</strong></td></tr>
-<tr><td>20.11</td><td>Home page is working</td><td>I go to the / or /home</td><td>I can see the jumbotron class and the text "Welcome to SongBird CMS Demo"</td></tr>
+<tr><td>20.11</td><td>Home page is working</td><td>I go to the / or /home</td><td>I can see the jumbotron class and the text "SongBird CMS Demo"</td></tr>
 <tr><td>20.12</td><td>Menus are working</td><td>I mouseover the about menu</td><td>I should see 2 menus under the about menu</td></tr>
 <tr><td>20.13</td><td>Subpages are working</td><td>I click on contact memu</td><td>I should see the text "This project is hosted in"</td></tr>
 <tr><td>20.14</td><td>Login menu is working</td><td>I click on login memu</td><td>I should see 2 menu items only</td></tr>
-<tr><td>20.15</td><td>Internalisation is working on homepage</td><td>I change language to french</td><td>I should see all menu and homepage in french</td></tr>
 </table>
 
 ## Creating the Frontend
@@ -120,7 +119,7 @@ frontend:
 Let us update the frontend base view.
 
 ```
-# src/AppBundle/Resources/Views/frontend.html.twig
+# src/AppBundle/Resources/Views/base.html.twig
 
 <!DOCTYPE HTML>
 <html lang="en-US">
@@ -128,47 +127,47 @@ Let us update the frontend base view.
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{% block title %}{% endblock %}</title>
-        {% block stylesheets %}
-           <link href="{{ asset('minified/css/styles.css') }}" rel="stylesheet" />
-        {% endblock %}
+    <title>{% block title %}{% endblock %}</title>
+    {% block stylesheets %}
+        <link href="{{ asset('minified/css/styles.css') }}" rel="stylesheet" />
+    {% endblock %}
 </head>
 <body>
 
-{% set urlPrefix = (app.environment == 'dev') ? '/app_dev.php/' : '/' %}
+{% set urlPrefix = (app.environment == 'dev') ? '/app_dev.php' : '' %}
 
 {% block body %}
 
-	<div class="container">
+    <div class="container">
         {% block topnav %}
-        <ul id="top_menu" class="sm sm-clean">
-            <li id="page_logo">
-                <a href="{{ urlPrefix }}" alt="songbird">
-                    <img src="{{ asset('bundles/app/images/logo_small.png') }}" alt="Songbird">
-                </a>
-            </li>
-            {% if tree is defined %}
-                {% include "AppBundle:Page:tree.html.twig" with { 'tree':tree } %}
-            {% endif %}
-            <li>
-            {% if is_granted("IS_AUTHENTICATED_REMEMBERED") %}
-                <a href="{{ path('fos_user_security_logout') }}">
-                    {{ 'layout.logout'|trans({}, 'FOSUserBundle') }}
-                </a>
-            {% else %}
-                <a href="{{ path('fos_user_security_login') }}">
-                    {{ 'layout.login'|trans({}, 'FOSUserBundle') }}
-                </a>
-            {% endif %}
-            </li>
-            <li id="frontend_lang_toggle">
-                <select id="lang" name="lang">
-                    {% for lang in supported_lang %}
-                        <option value="{{ lang }}">{{ lang }}</option>
-                    {% endfor %}
-                </select>
-            </li>
-        </ul>
+            <ul id="top_menu" class="sm sm-clean">
+                <li id="page_logo">
+                    <a href="{{ urlPrefix }}" alt="songbird">
+                        <img src="{{ asset('bundles/app/images/logo.png') }}" class="center-block img-responsive" alt="Songbird" />
+                    </a>
+                </li>
+                {% if tree is defined %}
+                    {% include "AppBundle:Frontend:tree.html.twig" with { 'tree':tree } %}
+                {% endif %}
+                <li id="frontend_lang_toggle">
+                    <select id="lang" name="lang">
+                        {% for lang in supported_lang %}
+                            <option value="{{ lang }}">{{ lang }}</option>
+                        {% endfor %}
+                    </select>
+                </li>
+                <li id="login_link">
+                    {% if is_granted("IS_AUTHENTICATED_REMEMBERED") %}
+                        <a href="{{ path('fos_user_security_logout') }}">
+                            {{ 'layout.logout'|trans({}, 'FOSUserBundle') }}
+                        </a>
+                    {% else %}
+                        <a href="{{ path('fos_user_security_login') }}">
+                            {{ 'layout.login'|trans({}, 'FOSUserBundle') }}
+                        </a>
+                    {% endif %}
+                </li>
+            </ul>
 
         {% endblock %}
 
@@ -177,26 +176,27 @@ Let us update the frontend base view.
         {% block content %}{% endblock %}
 
         {% block footer %}
-        <hr />
-        <footer>
+            <hr />
+            <footer>
                 <p class="text-center">© Songbird {{ "now" | date("Y")}}</p>
-        </footer>
+            </footer>
         {% endblock %}
     </div>
+
 {% endblock %}
 
 {% block script %}
     <script src="{{ asset('minified/js/javascript.js') }}"></script>
     <script>
-    $(function() {
-        $('#top_menu').smartmenus();
-        // select the box based on locale
-        $('#lang').val('{{ app.request.getLocale() }}');
-        // redirect user if user change locale
-        $('#lang').change(function() {
-            window.location='{{ urlPrefix }}'+$(this).val()+'/locale';
+        $(function() {
+            $('#top_menu').smartmenus();
+            // select the box based on locale
+            $('#lang').val('{{ app.request.getLocale() }}');
+            // redirect user if user change locale
+            $('#lang').change(function() {
+                window.location='{{ urlPrefix }}'+$(this).val()+'/locale';
+            });
         });
-    });
     </script>
 {% endblock %}
 
@@ -212,19 +212,23 @@ We will now create a homepage view.
 {% extends "AppBundle::base.html.twig" %}
 
 {% block title %}
-	{{ page.getPageMetas()[0].getPageTitle() }}
+	{{ pagemeta.getPageTitle() }}
 {% endblock %}
 
 {% block content %}
-{% if page is not null %}
-<div class="jumbotron">
-	<h1>{{ page.getPageMetas()[0].getShortDescription() | raw }}</h1>
-</div>
+{% if pagemeta is not null %}
+	<div class="jumbotron">
+		<h1 class="text-center">{{ pagemeta.getShortDescription() | raw }}</h1>
+		{%  if pagemeta.featuredImage is not null %}
+			<img class="featured_image" src="{{ vich_uploader_asset(pagemeta, 'featuredImageFile') }}" alt="{{ pagemeta.getShortDescription() | striptags }}"/>
+		{% endif %}
+	</div>
 
-{{ page.getPageMetas()[0].getContent() | raw }}
+	{{ pagemeta.getContent() | raw }}
 
 {% endif %}
 {% endblock %}
+
 
 ```
 
@@ -236,19 +240,25 @@ and pages view
 {% extends "AppBundle::base.html.twig" %}
 
 {% block title %}
-	{{ page.getPageMetas()[0].getPageTitle() }}
+	{{ pagemeta.getPageTitle() }}
 {% endblock %}
 
 {% block content %}
 
-{% if page is not null %}
-<h1>{{ page.getPageMetas()[0].getShortDescription() | raw }}</h1>
+	{% if pagemeta is not null %}
+	<h1>{{ pagemeta.getShortDescription() | raw }}</h1>
 
-{{ page.getPageMetas()[0].getContent() | raw }}
+	{%  if pagemeta.featuredImage is not null %}
+		<img class="featured_image" src="{{ vich_uploader_asset(pagemeta, 'featuredImageFile') }}" alt="{{ pagemeta.getShortDescription() | striptags }}"/>
+	{% endif %}
 
-{% endif %}
+	{{ pagemeta.getContent() | raw }}
+
+	{% endif %}
 
 {% endblock %}
+
+
 ```
 
 and lastly, recursive view for the menu
@@ -257,16 +267,18 @@ and lastly, recursive view for the menu
 # src/AppBundle/Resources/views/Frontend/tree.html.twig
 
 {% for v in tree %}
+
     <li>
-        <a href="{{ v.getSlug() }}">{{ getMenuLocaleTitle(v.getSlug()) }}</a>      
+        <a href="{{ urlPrefix }}/{{ v.getSlug() }}">{{ getMenuLocaleTitle(v.getSlug()) }}</a>
         {% set children = v.getChildren()|length %}
         {% if children > 0 %}
             <ul>
-                {% include "AppBundle:Page:tree.html.twig" with { 'tree':v.getChildren() } %}
+                {% include "AppBundle:Frontend:tree.html.twig" with { 'tree':v.getChildren() } %}
             </ul>
         {% endif %}
     </li>
 {% endfor %}
+
 ```
 Note the new getMenuLocaleTitle function in the twig. We will create a custom function usable by twig - Twig Extension.
 
@@ -285,31 +297,51 @@ class MenuLocaleTitle extends \Twig_Extension
      */
     private $em;
 
-	private $container;
+	/**
+	 * @var $request
+	 */
+	private $request;
 
+	/**
+	 * MenuLocaleTitle constructor.
+	 *
+	 * @param $em
+	 * @param $request
+	 */
     public function __construct($em, $request)
     {
         $this->em = $em;
         $this->request = $request->getCurrentRequest();
     }
 
+	/**
+	 * @return string
+	 */
     public function getName()
     {
         return 'menu_locale_title_extension';
     }
 
+	/**
+	 * @return array
+	 */
     public function getFunctions()
     {
         return array(
-            'getMenuLocaleTitle' => new \Twig_Function_Method($this, 'getMenuLocaleTitle')
+            new \Twig_SimpleFunction('getMenuLocaleTitle', array($this, 'getMenuLocaleTitle'))
         );
     }
 
-    public function getMenuLocaleTitle($slug)
+	/**
+	 * @param string $slug
+	 *
+	 * @return mixed
+	 */
+    public function getMenuLocaleTitle($slug = 'home')
     {
-    	
+	    $locale = ($this->request) ? $this->request->getLocale() : 'en';
     	$page = $this->em->getRepository('AppBundle:Page')->findOneBySlug($slug);
-	    $pagemeta = $this->em->getRepository('AppBundle:PageMeta')->findPageMetaByLocale($page, $this->request->getLocale());
+	    $pagemeta = $this->em->getRepository('AppBundle:PageMeta')->findPageMetaByLocale($page, $locale);
 
     	return $pagemeta->getMenuTitle();
     }
@@ -325,7 +357,7 @@ we now need to make this class available as a service.
     class: AppBundle\Twig\Extension\MenuLocaleTitle
     arguments:
       - "@doctrine.orm.entity_manager"
-      - "@service_container"
+      - "@request_stack"
     tags:
       - { name: twig.extension }
 ...
@@ -393,10 +425,11 @@ $white: #fff;
 $radius: 6px;
 $spacing: 20px;
 $font_big: 16px;
+$featured_image_width: 200px;
 
 body {
     color: $black;
-    background: $white;
+    background: $white !important;
     padding-top: $spacing;
 }
 .vspace {
@@ -492,13 +525,20 @@ body {
     margin-bottom: $spacing;
 }
 
+// frontend
+.featured_image {
+    margin: auto;
+    display: block;
+    width: $featured_image_width;
+}
+
 ```
 
-Then empty our .css files
+We no longer need our old .css files
 
 ```
--> echo "" > src/AppBundle/Resources/public/css/signin.css
--> echo "" > src/AppBundle/Resources/public/css/style.css
+-> git rm src/AppBundle/Resources/public/css/signin.css
+-> git rm  src/AppBundle/Resources/public/css/style.css
 ```
 
 Now run gulp and refresh the homepage and everything should renders.
@@ -511,97 +551,15 @@ Go to homepage and this should be the end result.
 
 
 
-## Update BDD
+## Update BDD (Optional)
 
 Let us create the cest file:
 
 ```
--> bin/codecept generate:cest -c src/AppBundle acceptance As_Test3_User/IWantToViewTheFrontend
+-> vendor/bin/codecept generate:cest -c src/AppBundle acceptance As_Test3_User/IWantToViewTheFrontend
 ```
 
 Write your test and make sure everything passes.
-
-If you see all the tests passes, you should be happy
-
-```
--> ./scripts/runtest
-Dropped database for connection named `songbird`
-Created database `songbird` for connection named default
-ATTENTION: This operation should not be executed in a production environment.
-
-Creating database schema...
-Database schema created successfully!
-  > purging database
-  > loading AppBundle\DataFixtures\ORM\LoadPageData
-  > loading [1] AppBundle\DataFixtures\ORM\LoadUserData
-  > loading [2] AppBundle\DataFixtures\ORM\LoadMediaData
-Codeception PHP Testing Framework v2.1.1
-Powered by PHPUnit 4.7.7 by Sebastian Bergmann and contributors.
-
-Acceptance Tests (56) ----------------------------------------------------------
-Wrong login credentials (As_An_Admin\IWantToLoginCest::wrongLoginCredentials)                                               Ok
-See my dashboard content (As_An_Admin\IWantToLoginCest::seeMyDashboardContent)                                               Ok
-Logout successfully (As_An_Admin\IWantToLoginCest::logoutSuccessfully)                                                  Ok
-Access admin without logging in (As_An_Admin\IWantToLoginCest::AccessAdminWithoutLoggingIn)                                         Ok
-View gallery list (As_An_Admin\IWantToManageAllGalleriesCest::viewGalleryList)                                        Ok
-Show gallery1 (As_An_Admin\IWantToManageAllGalleriesCest::showGallery1)                                           Ok
-Edit gallery3 (As_An_Admin\IWantToManageAllGalleriesCest::editGallery3)                                           Ok
-Add and delete media under gallery3 (As_An_Admin\IWantToManageAllGalleriesCest::AddAndDeleteMediaUnderGallery3)                         Ok
-Add and delete new gallery (As_An_Admin\IWantToManageAllGalleriesCest::AddAndDeleteNewGallery)                                 Ok
-View media list (As_An_Admin\IWantToManageAllMediaCest::viewMediaList)                                              Ok
-Show file1 (As_An_Admin\IWantToManageAllMediaCest::showFile1)                                                  Ok
-Edit file3 (As_An_Admin\IWantToManageAllMediaCest::editFile3)                                                  Ok
-Upload and delete media (As_An_Admin\IWantToManageAllMediaCest::uploadAndDeleteMedia)                                       Ok
-List all profiles (As_An_Admin\IWantToManageAllUsersCest::listAllProfiles)                                            Ok
-Show test3 user (As_An_Admin\IWantToManageAllUsersCest::showTest3User)                                              Ok
-Edit test3 user (As_An_Admin\IWantToManageAllUsersCest::editTest3User)                                              Ok
-Create and delete new user (As_An_Admin\IWantToManageAllUsersCest::createAndDeleteNewUser)                                     Ok
-List pages (As_An_Admin\IWantToManagePagesCest::listPages)                                                     Ok
-Show contact us page (As_An_Admin\IWantToManagePagesCest::showContactUsPage)                                             Ok
-Reorder home (As_An_Admin\IWantToManagePagesCest::reorderHome)                                                   Ok
-Edit homepage meta (As_An_Admin\IWantToManagePagesCest::editHomepageMeta)                                              Ok
-Create and delete test page (As_An_Admin\IWantToManagePagesCest::createAndDeleteTestPage)                                       Ok
-List user log (As_An_Admin\IWantToAccessUserLogCest::listUserLog)                                                 Ok
-Show user log1 (As_An_Admin\IWantToAccessUserLogCest::showUserLog1)                                                Ok
-Create user log (As_An_Admin\IWantToAccessUserLogCest::createUserLog)                                               Ok
-View gallery list (As_Test1_User\IDontWantToManageAllGalleriesCest::viewGalleryList)                                  Ok
-Show gallery1 (As_Test1_User\IDontWantToManageAllGalleriesCest::showGallery1)                                     Ok
-Edit gallery3 (As_Test1_User\IDontWantToManageAllGalleriesCest::editGallery3)                                     Ok
-View media list (As_Test1_User\IDontWantToManageAllMediaCest::viewMediaList)                                        Ok
-Show file1 (As_Test1_User\IDontWantToManageAllMediaCest::showFile1)                                            Ok
-Edit file3 (As_Test1_User\IDontWantToManageAllMediaCest::EditFile3)                                            Ok
-List all profiles (As_Test1_User\IShouldNotBeAbleToManageOtherProfilesCest::listAllProfiles)                          Ok
-Show test2 profile (As_Test1_User\IShouldNotBeAbleToManageOtherProfilesCest::showTest2Profile)                         Ok
-Edit test2 profile (As_Test1_User\IShouldNotBeAbleToManageOtherProfilesCest::editTest2Profile)                         Ok
-See admin dashboard content (As_Test1_User\IShouldNotBeAbleToManageOtherProfilesCest::seeAdminDashboardContent)                 Ok
-List pages (As_Test1_User\IDontWantToManagePagesCest::listPages)                                               Ok
-Show about us page (As_Test1_User\IDontWantToManagePagesCest::showAboutUsPage)                                         Ok
-Edit about us page (As_Test1_User\IDontWantToManagePagesCest::editAboutUsPage)                                         Ok
-List user log (As_Test1_User\IDontWantToAccessUserLogCest::listUserLog)                                           Ok
-Show log1 (As_Test1_User\IDontWantToAccessUserLogCest::showLog1)                                              Ok
-Editlog1 (As_Test1_User\IDontWantToAccessUserLogCest::Editlog1)                                              Ok
-Wrong login credentials (As_Test1_User\IWantToLoginCest::wrongLoginCredentials)                                             Ok
-See my dashboard content (As_Test1_User\IWantToLoginCest::seeMyDashboardContent)                                             Ok
-Logout successfully (As_Test1_User\IWantToLoginCest::logoutSuccessfully)                                                Ok
-Access admin without logging in (As_Test1_User\IWantToLoginCest::AccessAdminWithoutLoggingIn)                                       Ok
-Show my profile (As_Test1_User\IWantToManageMyOwnProfileCest::showMyProfile)                                        Ok
-Hid uneditable fields (As_Test1_User\IWantToManageMyOwnProfileCest::hidUneditableFields)                                  Ok
-Update firstname only (As_Test1_User\IWantToManageMyOwnProfileCest::updateFirstnameOnly)                                  Ok
-Update password only (As_Test1_User\IWantToManageMyOwnProfileCest::updatePasswordOnly)                                   Ok
-Reset password successfully (As_Test1_User\IWantToResetPasswordWithoutLoggingInCest::resetPasswordSuccessfully)                 Ok
-Locale in french (As_Test1_User\IWantToSwitchLanguageCest::localeInFrench)                                           Ok
-Account disabled (As_test3_user\IDontWantTologinCest::AccountDisabled)                                               Ok
-Home page working (As_test3_user\IWantToViewTheFrontendCest::homePageWorking)                                         Ok
-Menus are working (As_test3_user\IWantToViewTheFrontendCest::menusAreWorking)                                         Ok
-Sub pages are working (As_test3_user\IWantToViewTheFrontendCest::subPagesAreWorking)                                      Ok
-Login menu working (As_test3_user\IWantToViewTheFrontendCest::loginMenuWorking)                                        Ok
--------------------------------------------------------------------------------
-
-
-Time: 3.7 minutes, Memory: 29.00Mb
-
-OK (56 tests, 114 assertions)
-```
 
 ## Summary
 

@@ -4,10 +4,11 @@ $white: #fff;
 $radius: 6px;
 $spacing: 20px;
 $font_big: 16px;
+$featured_image_width: 200px;
 
 body {
     color: $black;
-    background: $white;
+    background: $white !important;
     padding-top: $spacing;
 }
 .vspace {
@@ -101,4 +102,11 @@ body {
 .form-control {
     margin-top: $spacing;
     margin-bottom: $spacing;
+}
+
+// frontend
+.featured_image {
+    margin: auto;
+    display: block;
+    width: $featured_image_width;
 }

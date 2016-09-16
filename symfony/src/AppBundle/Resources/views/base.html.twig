@@ -11,7 +11,7 @@
 </head>
 <body>
 
-{% set urlPrefix = (app.environment == 'dev') ? '/app_dev.php/' : '/' %}
+{% set urlPrefix = (app.environment == 'dev') ? '/app_dev.php' : '' %}
 
 {% block body %}
 
