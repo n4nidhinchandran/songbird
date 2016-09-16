@@ -549,6 +549,7 @@ Now run gulp and refresh the homepage and everything should renders.
 
 Go to homepage and this should be the end result.
 
+![cms final](images/cms_final.png)
 
 
 ## Update BDD (Optional)
