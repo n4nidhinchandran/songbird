@@ -414,6 +414,38 @@ gulp.task('css', function () {
 ...
 ```
 
+Let us update the datafixtures as well.
+
+```
+# src/AppBundle/DataFixtures/ORM/LoadPageData.php
+
+...
+        $homemetaEN = new PageMeta();
+        $homemetaEN->setPage($homepage);
+        $homemetaEN->setMenuTitle('Home');
+        $homemetaEN->setPageTitle('SongBird CMS Demo');
+        $homemetaEN->setShortDescription('SongBird CMS Demo');
+        $homemetaEN->setContent('<p>SongBird is a simple CMS built with popular bundles like FOSUserBundle and EasyAdminBundle.
+            The CMS is meant to showcase Rapid Application Development with Symfony.</p>');
+        copy(__DIR__.'/images/home_en.png', __DIR__.'/../../../../web/uploads/featured_images/home_en.png');
+        $homemetaEN->setFeaturedImage('home_en.png');
+        $manager->persist($homemetaEN);
+
+        $homemetaFR = new PageMeta();
+        $homemetaFR->setPage($homepage);
+        $homemetaFR->setMenuTitle('Accueil');
+        $homemetaFR->setPageTitle('SongBird CMS Démo');
+        $homemetaFR->setShortDescription('SongBird CMS Démo');
+        $homemetaFR->setLocale('fr');
+        $homemetaFR->setContent('<p>SongBird est un simple CMS construit avec des faisceaux populaires comme FOSUserBundle et EasyAdminBundle.
+            Le CMS est destinée à mettre en valeur Rapid Application Development avec Symfony .</p>');
+        copy(__DIR__.'/images/home_fr.png', __DIR__.'/../../../../web/uploads/featured_images/home_fr.png');
+        $homemetaFR->setFeaturedImage('home_fr.png');
+        $manager->persist($homemetaFR);
+```
+
+I've added new images to the homepage. The new images are in the src/AppBundle/DataFixtures/ORM/images folder.
+
 Lastly, let us update the stylesheets. We might as well update them in scss
 
 ```
@@ -566,7 +598,7 @@ Write your test and make sure everything passes.
 
 In this chapter, we have created the frontend controllers and views. We used smartmenus to render the menus and converted our css to sass. Finally, we wrote BDD tests to make sure our frontend renders correctly. The CMS is now complete.
 
-Next Chapter: [Chapter 21: Conclusion](https://github.com/bernardpeh/songbird/tree/chapter_21)
+Next Chapter: [Final Chapter: Conclusion](https://github.com/bernardpeh/songbird/tree/chapter_final)
 
 Previous Chapter: [Chapter 19: The Page Manager Part 2](https://github.com/bernardpeh/songbird/tree/chapter_19)
 
