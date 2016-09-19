@@ -1,26 +1,17 @@
-# Final Chapter: Conclusion
+# Introduction
 
-Congratulations for perservering for so long... It's been a long journey. In the previous chapters, we have created a simple CMS using a [modular](https://en.wikipedia.org/wiki/Modular_design) approach in Symfony. The CMS is *really simple* but is secure, supports user logging and internalisation.  While going through the exercises, we have explored different possibilities to create parts of the CMS. 
+![songbird cms](images/cms_final.png)
 
-So, what's next from here? Ready for more adventures?
+This is the code repo of SongBird - A simple CMS created in Symfony 3.
 
-Here are some suggestions:
+The manuscript for the whole creation process is documented in a separate [repo](https://github.com/bernardpeh/practical-symfony-3).
 
-* Improve on the NestablePageBundle to reduce the amount of work required to integrate with EasyAdminBundle.
+The leanpub book is [here](https://leanpub.com/practicalsymfony3/).
 
-* Create API for 3rd party services to connect to.
+See [changelog](CHANGELOG.md) for historical updates.
 
-* Improve on look and feel. The frontend still looks ugly.
+If you find any typos or errors, feel free to create a pull request.
 
-* Investigate the best practices to deploy your application to a reliable server and configure the production settings.
+## Donation
 
-* What if your application becomes popular and you are getting a lot of traffic? What are the options to optimise your application? 
-
-* What about configuring cron jobs to clean up user logging table?
-
-* How about packing your application up into an installable bundle? That way, you can distribute your application easily.
-
-Good luck on your next Symfony Journey!
-
-
-
+You can show support by purchasing the [leanpub book](https://leanpub.com/practicalsymfony3/).
