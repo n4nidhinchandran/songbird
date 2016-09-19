@@ -8,8 +8,6 @@ The manuscript for the whole creation process is documented in a separate [repo]
 
 The leanpub book is [here](https://leanpub.com/practicalsymfony3/).
 
-See [changelog](CHANGELOG.md) for historical updates.
-
 If you find any typos or errors, feel free to create a pull request.
 
 ## Donation
