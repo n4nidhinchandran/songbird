@@ -7,7 +7,7 @@
 {% block content %}
 
 	{% if pagemeta is not null %}
-	<h1>{{ pagemeta.getShortDescription() | raw }}</h1>
+	<h2>{{ pagemeta.getShortDescription() | raw }}</h2>
 
 	{%  if pagemeta.featuredImage is not null %}
 		<img class="featured_image" src="{{ vich_uploader_asset(pagemeta, 'featuredImageFile') }}" alt="{{ pagemeta.getShortDescription() | striptags }}"/>
