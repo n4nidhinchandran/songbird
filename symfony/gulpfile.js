@@ -67,5 +67,5 @@ var logStdOutAndErr = function (err, stdout, stderr) {
     console.log(stdout + stderr);
 };
 //define executable tasks when running "gulp" command
-gulp.task('default', ['js', 'css', 'fonts', 'installAssets', 'watch']);
+gulp.task('default', ['js', 'css', 'fonts', 'installAssets']);
 
