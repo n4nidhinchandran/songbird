@@ -4,6 +4,7 @@ namespace AppBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
@@ -12,7 +13,7 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 *
 * To learn more see {@link http://symfony.com/doc/current/cookbook/bundles/extension.html}
 */
-class AppExtension extends Extension
+class AppExtension extends Extension implements PrependExtensionInterface
 {
     /**
      * {@inheritdoc}
@@ -25,4 +26,17 @@ class AppExtension extends Extension
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yml');
     }
+
+    /**
+     * http://symfony.com/doc/current/bundles/prepend_extension.html
+     */
+	public function prepend(ContainerBuilder $container)
+	{
+
+		$doctrineConfig = [];
+		$doctrineConfig['orm']['resolve_target_entities']['Bpeh\NestablePageBundle\Model\PageBase'] = 'AppBundle\Entity\Page';
+		$doctrineConfig['orm']['resolve_target_entities']['Bpeh\NestablePageBundle\Model\PageMetaBase'] = 'AppBundle\Entity\PageMeta';
+
+		$container->prependExtensionConfig('doctrine', $doctrineConfig);
+	}
 }
