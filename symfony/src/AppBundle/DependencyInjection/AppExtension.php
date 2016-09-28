@@ -32,11 +32,23 @@ class AppExtension extends Extension implements PrependExtensionInterface
      */
 	public function prepend(ContainerBuilder $container)
 	{
-
-		$doctrineConfig = [];
-		$doctrineConfig['orm']['resolve_target_entities']['Bpeh\NestablePageBundle\Model\PageBase'] = 'AppBundle\Entity\Page';
-		$doctrineConfig['orm']['resolve_target_entities']['Bpeh\NestablePageBundle\Model\PageMetaBase'] = 'AppBundle\Entity\PageMeta';
-
-		$container->prependExtensionConfig('doctrine', $doctrineConfig);
+		// doctrine config
+		$doctrine = [];
+		$doctrine['orm']['resolve_target_entities']['Bpeh\NestablePageBundle\Model\PageBase'] = 'AppBundle\Entity\Page';
+		$doctrine['orm']['resolve_target_entities']['Bpeh\NestablePageBundle\Model\PageMetaBase'] = 'AppBundle\Entity\PageMeta';
+		$container->prependExtensionConfig('doctrine', $doctrine);
+		// fos config
+		$fosuser = [];
+		$fosuser['db_driver'] = 'orm';
+		$fosuser['firewall_name'] = 'main';
+		$fosuser['user_class'] = 'AppBundle\Entity\User';
+		$container->prependExtensionConfig('fos_user', $fosuser);
+		# Nestable Page Configuration
+		$page = [];
+		$page['page_entity'] = 'AppBundle\Entity\Page';
+		$page['pagemeta_entity'] = 'AppBundle\Entity\PageMeta';
+		$page['page_form_type'] = 'AppBundle\Form\PageType';
+		$page['pagemeta_form_type'] = 'AppBundle\Form\PageMetaType';
+		$container->prependExtensionConfig('bpeh_nestable_page', $page);
 	}
 }

@@ -10,18 +10,10 @@ class ConfigPass implements CompilerPassInterface
 	public function process( ContainerBuilder $container ) {
 
 		// print_r($container->getParameterBag());
-		// print_r($container->getServiceIds());
-
-//		$def = $container->findDefinition('doctrine.orm.listeners.resolve_target_entity');
-//		$def->addMethodCall('addResolveTargetEntity', array(
-//			'Bpeh\NestablePageBundle\Model\PageBase', 'AppBundle\Entity\Page', array()
-//		));
-//		$def->addMethodCall('addResolveTargetEntity', array(
-//			'Bpeh\NestablePageBundle\Model\PageMetaBase', 'AppBundle\Entity\PageMeta', array()
-//		));
-
+		// print_r($container->getServiceIds());exit;
+		// $def = $container->findDefinition('easyadmin.config.manager');
 
 	}
-
+	
 
 }

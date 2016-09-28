@@ -64,16 +64,6 @@ doctrine:
         auto_generate_proxy_classes: "%kernel.debug%"
         naming_strategy: doctrine.orm.naming_strategy.underscore
         auto_mapping: true
-#        resolve_target_entities:
-#            Bpeh\NestablePageBundle\Model\PageBase: AppBundle\Entity\Page
-#            Bpeh\NestablePageBundle\Model\PageMetaBase: AppBundle\Entity\PageMeta
-
-# Nestable Page Configuration
-bpeh_nestable_page:
-      page_entity: AppBundle\Entity\Page
-      pagemeta_entity: AppBundle\Entity\PageMeta
-      page_form_type: AppBundle\Form\PageType
-      pagemeta_form_type: AppBundle\Form\PageMetaType
 
 # Swiftmailer Configuration
 swiftmailer:
@@ -82,12 +72,6 @@ swiftmailer:
     username:  "%mailer_user%"
     password:  "%mailer_password%"
     spool:     { type: memory }
-
-# fosuser config
-fos_user:
-    db_driver: orm
-    firewall_name: main
-    user_class: AppBundle\Entity\User
 
 # Vich Configuration
 vich_uploader:

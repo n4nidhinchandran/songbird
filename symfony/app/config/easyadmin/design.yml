@@ -5,6 +5,6 @@ easy_admin:
             css:
               - /bundles/app/css/style.css
         menu:
-          - { entity: 'User', icon: 'user' }
-          - { entity: 'Page', icon: 'file' }
-          - { entity: 'UserLog', icon: 'database' }
+          - { entity: 'User', icon: 'user', role: ROLE_ADMIN }
+          - { entity: 'Page', icon: 'file', role: ROLE_ADMIN }
+          - { entity: 'UserLog', icon: 'database', role: ROLE_ADMIN }
