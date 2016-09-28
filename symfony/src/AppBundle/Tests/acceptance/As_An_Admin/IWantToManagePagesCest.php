@@ -78,6 +78,7 @@ class IWantToManagePagesCest
 	public function editHomePage(AcceptanceTester $I)
 	{
 		$I->click('home');
+		$I->click('Edit');
 		$I->fillField('//input[@name="page[slug]"]', 'home1');
 		// update
 		$I->click('Save changes');
@@ -85,6 +86,7 @@ class IWantToManagePagesCest
 		$I->click('Page Management');
 		$I->canSee('home1');
 		$I->click('home1');
+		$I->click('Edit');
 		$I->fillField('//input[@name="page[slug]"]', 'home');
 		// update
 		$I->click('Save changes');
