@@ -38,6 +38,7 @@ class AppSubscriber implements EventSubscriberInterface
             EasyAdminEvents::PRE_LIST => 'checkUserRights',
             EasyAdminEvents::PRE_EDIT => 'checkUserRights',
             EasyAdminEvents::PRE_SHOW => 'checkUserRights',
+	        EasyAdminEvents::PRE_DELETE => 'checkUserRights',
             FOSUserEvents::RESETTING_RESET_SUCCESS => 'redirectUserAfterPasswordReset',
             KernelEvents::REQUEST => 'onKernelRequest'
         );
@@ -54,7 +55,8 @@ class AppSubscriber implements EventSubscriberInterface
     {
 
         // if super admin, allow all
-        if ($this->container->get('security.authorization_checker')->isGranted('ROLE_SUPER_ADMIN')) {
+	    $authorization = $this->container->get('security.authorization_checker');
+        if ($authorization->isGranted('ROLE_SUPER_ADMIN')) {
             return;
         }
 
@@ -62,7 +64,7 @@ class AppSubscriber implements EventSubscriberInterface
         $action = $this->container->get('request_stack')->getCurrentRequest()->query->get('action');
         $user_id = $this->container->get('request_stack')->getCurrentRequest()->query->get('id');
 
-        // if user management
+        // This is an exception, allow user to view and edit their own profile irregardless of permissions
         if ($entity == 'User') {
             // if edit and show
             if ($action == 'edit' || $action == 'show') {
@@ -73,8 +75,15 @@ class AppSubscriber implements EventSubscriberInterface
             }
         }
 
-        // throw exception in all cases
-        throw new AccessDeniedException();
+        // scan through the easyadmin and check for roles
+	    $config = $this->container->get('easyadmin.config.manager')->getBackendConfig();
+
+	    foreach ($config['entities'] as $k => $v) {
+	    	if ($entity == $k && !$authorization->isGranted($v['role'])) {
+			    throw new AccessDeniedException();
+		    }
+	    }
+
     }
 
     /**

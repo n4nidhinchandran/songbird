@@ -73,15 +73,3 @@ swiftmailer:
     password:  "%mailer_password%"
     spool:     { type: memory }
 
-# Vich Configuration
-vich_uploader:
-    db_driver: orm
-    mappings:
-        profile_images:
-            uri_prefix: '%app.profile_image.path%'
-            upload_destination: '%kernel.root_dir%/../web/uploads/profiles'
-            namer: vich_uploader.namer_uniqid
-        featured_image:
-            uri_prefix: '%app.featured_image.path%'
-            upload_destination: '%kernel.root_dir%/../web/uploads/featured_images'
-            namer: vich_uploader.namer_uniqid

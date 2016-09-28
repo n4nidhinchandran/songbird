@@ -3,6 +3,7 @@ easy_admin:
         User:
             class: AppBundle\Entity\User
             label: admin.link.user_management
+            role: ROLE_ADMIN
             # for new user
             new:
                 fields:

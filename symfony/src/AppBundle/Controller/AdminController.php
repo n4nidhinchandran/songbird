@@ -42,7 +42,9 @@ class AdminController extends BaseAdminController
 	 */
     public function listPageAction()
     {
-		$rootMenuItems = $this->container->get('doctrine')->getRepository('AppBundle\Entity\Page')->findParent();
+	    $this->dispatch(EasyAdminEvents::PRE_LIST);
+
+    	$rootMenuItems = $this->container->get('doctrine')->getRepository('AppBundle\Entity\Page')->findParent();
 
 		return $this->render('AppBundle:Page:list.html.twig', array(
 			'tree' => $rootMenuItems,

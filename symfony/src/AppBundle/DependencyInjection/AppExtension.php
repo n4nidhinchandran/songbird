@@ -37,12 +37,14 @@ class AppExtension extends Extension implements PrependExtensionInterface
 		$doctrine['orm']['resolve_target_entities']['Bpeh\NestablePageBundle\Model\PageBase'] = 'AppBundle\Entity\Page';
 		$doctrine['orm']['resolve_target_entities']['Bpeh\NestablePageBundle\Model\PageMetaBase'] = 'AppBundle\Entity\PageMeta';
 		$container->prependExtensionConfig('doctrine', $doctrine);
+
 		// fos config
 		$fosuser = [];
 		$fosuser['db_driver'] = 'orm';
 		$fosuser['firewall_name'] = 'main';
 		$fosuser['user_class'] = 'AppBundle\Entity\User';
 		$container->prependExtensionConfig('fos_user', $fosuser);
+
 		# Nestable Page Configuration
 		$page = [];
 		$page['page_entity'] = 'AppBundle\Entity\Page';
@@ -50,5 +52,17 @@ class AppExtension extends Extension implements PrependExtensionInterface
 		$page['page_form_type'] = 'AppBundle\Form\PageType';
 		$page['pagemeta_form_type'] = 'AppBundle\Form\PageMetaType';
 		$container->prependExtensionConfig('bpeh_nestable_page', $page);
+
+		# Vich Configuration
+		$vich = [];
+		$vich['db_driver'] = 'orm';
+		$vich['mappings']['profile_images']['uri_prefix'] = '%app.profile_image.path%';
+		$vich['mappings']['profile_images']['upload_destination'] = '%kernel.root_dir%/../web/uploads/profiles';
+		$vich['mappings']['profile_images']['namer'] = 'vich_uploader.namer_uniqid';
+		$vich['mappings']['featured_image']['uri_prefix'] = '%app.featured_image.path%';
+		$vich['mappings']['featured_image']['upload_destination'] = '%kernel.root_dir%/../web/uploads/featured_images';
+		$vich['mappings']['featured_image']['namer'] = 'vich_uploader.namer_uniqid';
+		$container->prependExtensionConfig('vich_uploader', $vich);
+
 	}
 }
