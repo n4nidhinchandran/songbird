@@ -5,6 +5,7 @@ easy_admin:
             label: admin.link.user_log
             role: ROLE_USER
             show:
-                  actions: ['list', '-edit', '-delete']
+                role: ROLE_ADMIN
+                actions: ['list', '-edit', '-delete']
             list:
                 actions: ['show', '-edit', '-delete']

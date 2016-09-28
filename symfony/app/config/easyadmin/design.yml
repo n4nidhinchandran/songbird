@@ -8,4 +8,4 @@ easy_admin:
           - { label: 'Dashboard', route: 'dashboard', default: true }
           - { entity: 'User', icon: 'user', role: ROLE_ADMIN }
           - { entity: 'Page', icon: 'file', role: ROLE_ADMIN }
-          - { entity: 'UserLog', icon: 'database', role: ROLE_ADMIN }
+          - { entity: 'UserLog', icon: 'database', role: ROLE_USER }

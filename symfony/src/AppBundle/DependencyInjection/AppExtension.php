@@ -45,7 +45,7 @@ class AppExtension extends Extension implements PrependExtensionInterface
 		$fosuser['user_class'] = 'AppBundle\Entity\User';
 		$container->prependExtensionConfig('fos_user', $fosuser);
 
-		# Nestable Page Configuration
+		# Nestable page config
 		$page = [];
 		$page['page_entity'] = 'AppBundle\Entity\Page';
 		$page['pagemeta_entity'] = 'AppBundle\Entity\PageMeta';
@@ -53,7 +53,7 @@ class AppExtension extends Extension implements PrependExtensionInterface
 		$page['pagemeta_form_type'] = 'AppBundle\Form\PageMetaType';
 		$container->prependExtensionConfig('bpeh_nestable_page', $page);
 
-		# Vich Configuration
+		# Vich config
 		$vich = [];
 		$vich['db_driver'] = 'orm';
 		$vich['mappings']['profile_images']['uri_prefix'] = '%app.profile_image.path%';
