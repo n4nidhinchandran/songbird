@@ -9,3 +9,7 @@ easy_admin:
                 actions: ['list', '-edit', '-delete']
             list:
                 actions: ['show', '-edit', '-delete']
+            edit:
+                role: ROLE_SUPER_ADMIN
+            new:
+                role: ROLE_SUPER_ADMIN

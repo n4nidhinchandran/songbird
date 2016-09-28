@@ -32,6 +32,8 @@ class IWantToLoginCest
      */
     public function seeMyDashboardContent(AcceptanceTester $I) {
         $I->canSeeInCurrentUrl('/admin/dashboard');
+	    # i should see 4 sidebar menu items
+	    $I->canSeeNumberOfElements('//ul[@class="sidebar-menu"]/li', 4);
         $I->canSee('Dear Admin');
     }
 

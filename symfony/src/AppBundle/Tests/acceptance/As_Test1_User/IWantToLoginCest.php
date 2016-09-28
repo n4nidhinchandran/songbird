@@ -32,6 +32,7 @@ class IWantToLoginCest
      */
     public function seeMyDashboardContent(AcceptanceTester $I) {
         $I->canSee('Dear test1');
+	    $I->canSeeNumberOfElements('//ul[@class="sidebar-menu"]/li', 2);
     }
 
     /**

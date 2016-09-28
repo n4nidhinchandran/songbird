@@ -25,7 +25,7 @@ class IDontWantToManagePagesCest
 	 */
 	public function listPages(AcceptanceTester $I)
 	{
-		$I->amOnPage('/admin/app/page/list');
+		$I->amOnPage('/admin/?entity=Page&action=list');
 		$I->canSee('Access Denied');
 	}
 	/**
@@ -34,7 +34,7 @@ class IDontWantToManagePagesCest
 	 */
 	public function showAboutUsPage(AcceptanceTester $I)
 	{
-		$I->amOnPage('/admin/app/page/2/show');
+		$I->amOnPage('/admin/?entity=Page&action=show&id=2');
 		$I->canSee('Access Denied');
 	}
 	/**
@@ -42,7 +42,7 @@ class IDontWantToManagePagesCest
 	 * @before login
 	 */
 	public function editAboutUsPage(AcceptanceTester $I) {
-		$I->amOnPage('/admin/app/page/2/edit');
+		$I->amOnPage('/admin/?entity=Page&action=edit&id=2');
 		$I->canSee('Access Denied');
 	}
 }
