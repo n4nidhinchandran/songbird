@@ -30,11 +30,13 @@
 
 				after = JSON.stringify($('.dd').nestable('serialize'));
 
+				token = '{{ csrf_token("bpeh_page_reorder") }}';
+
 				if (before != after) {
 					$.ajax({
 						type: "POST",
 						url: "{{ path('bpeh_page_reorder') }}",
-						data: {id: id, parentId: parentId, position: position},
+						data: { id: id, parentId: parentId, position: position, csrf: token },
 						success: function (data, dataType) {
 							if (data.success) {
 								$('.alert').addClass('alert-success');
