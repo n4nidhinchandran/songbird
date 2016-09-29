@@ -35,6 +35,7 @@ class AppSubscriber implements EventSubscriberInterface
     {
     	// return the subscribed events, their methods and priorities
         return array(
+	        EasyAdminEvents::PRE_NEW => 'checkUserRights',
             EasyAdminEvents::PRE_LIST => 'checkUserRights',
             EasyAdminEvents::PRE_EDIT => 'checkUserRights',
             EasyAdminEvents::PRE_SHOW => 'checkUserRights',
@@ -57,7 +58,8 @@ class AppSubscriber implements EventSubscriberInterface
         // if super admin, allow all
 	    $authorization = $this->container->get('security.authorization_checker');
         $request = $this->container->get('request_stack')->getCurrentRequest()->query;
-        if ($authorization->isGranted('ROLE_SUPER_ADMIN')) {
+
+	    if ($authorization->isGranted('ROLE_SUPER_ADMIN')) {
             return;
         }
 
@@ -77,6 +79,7 @@ class AppSubscriber implements EventSubscriberInterface
         }
 
 	    $config = $this->container->get('easyadmin.config.manager')->getBackendConfig();
+
         // check for permission for each action
 	    foreach ($config['entities'] as $k => $v) {
 	    	if ($entity == $k && !$authorization->isGranted($v[$action]['role'])) {

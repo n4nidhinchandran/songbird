@@ -1,10 +1,10 @@
 <?php
-namespace As_An_Admin;
+namespace As_Test1_User;
 
 use \AcceptanceTester;
 use \Common;
 
-class IWantToManagePagesCest
+class IDontWantToManagePagesCest
 {
     public function _before(AcceptanceTester $I)
     {
@@ -16,14 +16,12 @@ class IWantToManagePagesCest
 
 	protected function login(AcceptanceTester $I)
 	{
-		Common::login($I, ADMIN_USERNAME, ADMIN_PASSWORD);
+		Common::login($I, TEST1_USERNAME, TEST1_PASSWORD);
 		$I->click('Page Management');
 	}
 
 	/**
-	 * Test page list action
-	 *
-	 * scenario 19.11
+	 * Scenario 19.21
 	 * @before login
 	 */
 	public function listPages(AcceptanceTester $I)
@@ -36,9 +34,7 @@ class IWantToManagePagesCest
 	}
 
 	/**
-	 * Test page show action
-	 *
-	 * scenario 19.12
+	 * Scenario 19.22
 	 * @before login
 	 */
 	public function showContactUsPage(AcceptanceTester $I)
@@ -49,9 +45,7 @@ class IWantToManagePagesCest
 	}
 
 	/**
-	 * Test ajax submission by reordering menu
-	 *
-	 * scenario 19.13
+	 * Scenario 19.23
 	 * @before login
 	 */
 	public function reorderHomePage(AcceptanceTester $I)
@@ -72,7 +66,7 @@ class IWantToManagePagesCest
 	/**
 	 * Test page edit action
 	 *
-	 * scenario 19.14
+	 * scenario 19.24
 	 * @before login
 	 */
 	public function editHomePage(AcceptanceTester $I)
@@ -94,8 +88,9 @@ class IWantToManagePagesCest
 
 	/**
 	 * Test new and delete action for both page and pagemeta
+	 * Test1 User should be able to create but not delete page.
 	 *
-	 * scenario 19.15
+	 * scenario 19.25
 	 * @before login
 	 */
 	public function createDeleteTestPage(AcceptanceTester $I)
@@ -121,42 +116,7 @@ class IWantToManagePagesCest
 		$I->click('Delete');
 		$I->waitForElementVisible('#modal-delete-button');
 		$I->click('#modal-delete-button');
-		// now back to list page.
-		$I->click('expand all');
-		$I->cantSee('test_page');
-	}
-
-	/**
-	 * If we remove a page, the associated pagemeta should be removed as well.
-	 *
-	 * scenario 19.16
-	 * @before login
-	 */
-	public function deleteContactUsPage(AcceptanceTester $I)
-	{
-		$I->click('contact_us');
-		$I->click('Delete');
-		$I->waitForElementVisible('#modal-delete-button');
-		$I->click('#modal-delete-button');
-
-		// we now connect to do and make sure the page and pagemetas are updated.
-		$I->seeNumRecords(0, 'page', ['id' => 5]);
-		$I->seeNumRecords(0, 'pagemeta', ['page_id' => 5]);
-
-	}
-
-	/**
-	 * check that there should only be 1 locale of each type per pagemeta
-	 *
-	 * scenario 19.17
-	 * @before login
-	 */
-	public function singleLocalePerPageMeta(AcceptanceTester $I)
-	{
-		$I->click('new pagemeta');
-		$I->fillField('//input[@name="pagemeta[page_title]"]', 'test page title');
-		$I->fillField('//input[@name="pagemeta[menu_title]"]', 'test menu title');
-		$I->click('Save changes');
-		$I->canSee('Sorry, there is already a pagemeta with this locale.');
+		// I should see access denied
+		$I->canSee('access denied');
 	}
 }

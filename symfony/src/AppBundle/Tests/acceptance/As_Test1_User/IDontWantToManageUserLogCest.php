@@ -24,11 +24,9 @@ class IDontWantToManageUserLogCest
      */
     public function listUserLogs(AcceptanceTester $I)
     {
-        $I->canSee('User Log');
+        $I->cantSee('User Log');
         $I->amOnPage('/admin/?entity=UserLog&action=list');
-	    $I->cantSee('access denied');
-	    $count = $I->grabMultiple('tr');
-	    $I->assertGreaterThan(0, $count);
+	    $I->canSee('access denied');
     }
 
     /**
