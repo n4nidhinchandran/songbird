@@ -4,7 +4,7 @@ namespace As_Test1_User;
 use \AcceptanceTester;
 use \Common;
 
-class IDontWantToManagePagesCest
+class IWantToManagePagesCest
 {
     public function _before(AcceptanceTester $I)
     {
