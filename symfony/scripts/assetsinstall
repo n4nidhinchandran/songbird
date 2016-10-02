@@ -1,2 +1,2 @@
 #!/bin/bash
-vagrant ssh -c "cd /home/vagrant/symfony;app/console assets:install --symlink"
+vagrant ssh -c "cd /home/vagrant/symfony;bin/console assets:install --symlink"
