@@ -24,7 +24,7 @@ class AppKernel extends Kernel
 	        new AppBundle\User(),
             new Vich\UploaderBundle\VichUploaderBundle(),
             new AppBundle\Page(),
-            new Songbird\NestablePageBundle\SongbirdNestablePageBundle()
+            new Bpeh\NestablePageBundle\BpehNestablePageBundle()
         ];
 
         if (in_array($this->getEnvironment(), ['dev', 'test'], true)) {
