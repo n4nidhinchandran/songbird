@@ -39,7 +39,8 @@
         "symfony/phpunit-bridge": "^3.0",
         "codeception/codeception": "~2.1",
         "doctrine/doctrine-fixtures-bundle": "^2.3",
-        "captbaritone/mailcatcher-codeception-module": "1.*"
+        "captbaritone/mailcatcher-codeception-module": "1.*",
+        "friendsofphp/php-cs-fixer": "^1.12"
     },
     "scripts": {
         "symfony-scripts": [
