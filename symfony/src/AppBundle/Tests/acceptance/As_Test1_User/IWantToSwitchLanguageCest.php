@@ -1,7 +1,9 @@
 <?php
+
 namespace As_Test1_User;
-use \AcceptanceTester;
-use \Common;
+
+use AcceptanceTester;
+use Common;
 
 class IWantToSwitchLanguageCest
 {
@@ -15,7 +17,7 @@ class IWantToSwitchLanguageCest
     }
 
     /**
-     * Scenario 13.1.1
+     * Scenario 13.1.1.
      */
     public function localeInFrench(AcceptanceTester $I)
     {
@@ -25,7 +27,7 @@ class IWantToSwitchLanguageCest
         $I->canSee('Déconnexion');
         $I->click('test1');
         // now in show profile page
-        $I->canSee("Éditer");
+        $I->canSee('Éditer');
         // now switch back to english
         $I->selectOption('//select[@id="lang"]', 'en');
         $I->canSee('Edit');

@@ -21,6 +21,7 @@ class AppSubscriber implements EventSubscriberInterface
 
     /**
      * AppSubscriber constructor.
+     *
      * @param ContainerInterface $container
      */
     public function __construct(ContainerInterface $container) // this is @service_container
@@ -33,33 +34,33 @@ class AppSubscriber implements EventSubscriberInterface
      */
     public static function getSubscribedEvents()
     {
-    	// return the subscribed events, their methods and priorities
+        // return the subscribed events, their methods and priorities
         return array(
-	        EasyAdminEvents::PRE_NEW => 'checkUserRights',
+            EasyAdminEvents::PRE_NEW => 'checkUserRights',
             EasyAdminEvents::PRE_LIST => 'checkUserRights',
             EasyAdminEvents::PRE_EDIT => 'checkUserRights',
             EasyAdminEvents::PRE_SHOW => 'checkUserRights',
-	        EasyAdminEvents::PRE_DELETE => 'checkUserRights',
+            EasyAdminEvents::PRE_DELETE => 'checkUserRights',
             FOSUserEvents::RESETTING_RESET_SUCCESS => 'redirectUserAfterPasswordReset',
-            KernelEvents::REQUEST => 'onKernelRequest'
+            KernelEvents::REQUEST => 'onKernelRequest',
         );
     }
 
     /**
-     * show an error if user is not superadmin and tries to manage restricted stuff
+     * show an error if user is not superadmin and tries to manage restricted stuff.
      *
      * @param GenericEvent $event event
-     * @return null
+     *
      * @throws AccessDeniedException
      */
     public function checkUserRights(GenericEvent $event)
     {
 
         // if super admin, allow all
-	    $authorization = $this->container->get('security.authorization_checker');
+        $authorization = $this->container->get('security.authorization_checker');
         $request = $this->container->get('request_stack')->getCurrentRequest()->query;
 
-	    if ($authorization->isGranted('ROLE_SUPER_ADMIN')) {
+        if ($authorization->isGranted('ROLE_SUPER_ADMIN')) {
             return;
         }
 
@@ -78,21 +79,20 @@ class AppSubscriber implements EventSubscriberInterface
             }
         }
 
-	    $config = $this->container->get('easyadmin.config.manager')->getBackendConfig();
+        $config = $this->container->get('easyadmin.config.manager')->getBackendConfig();
 
         // check for permission for each action
-	    foreach ($config['entities'] as $k => $v) {
-	    	if ($entity == $k && !$authorization->isGranted($v[$action]['role'])) {
-			    throw new AccessDeniedException();
-		    }
-	    }
+        foreach ($config['entities'] as $k => $v) {
+            if ($entity == $k && !$authorization->isGranted($v[$action]['role'])) {
+                throw new AccessDeniedException();
+            }
+        }
     }
 
     /**
-     * Redirect user to another page after password reset is success
+     * Redirect user to another page after password reset is success.
      *
-     * @param  Configure $event GetResponseUserEvent
-     * @return null
+     * @param Configure $event GetResponseUserEvent
      */
     public function redirectUserAfterPasswordReset(FormEvent $event)
     {
@@ -102,8 +102,7 @@ class AppSubscriber implements EventSubscriberInterface
 
     public function onKernelRequest(GetResponseEvent $event)
     {
-
-    	$request = $event->getRequest();
+        $request = $event->getRequest();
         $current_url = $request->server->get('REQUEST_URI');
         // ensures we track admin only.
         $admin_path = $this->container->getParameter('admin_path');
@@ -111,7 +110,6 @@ class AppSubscriber implements EventSubscriberInterface
         // only log admin area and only if user is logged in. Dont log search by filter
         if (!is_null($this->container->get('security.token_storage')->getToken()) && preg_match('/\/'.$admin_path.'\//', $current_url)
             && ($request->query->get('filter') === null) && !preg_match('/\/userlog\//', $current_url)) {
-
             $em = $this->container->get('doctrine.orm.entity_manager');
             $log = new UserLog();
             $log->setData(json_encode($request->request->all()));

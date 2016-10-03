@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 /**
- * User
+ * User.
  *
  * @ORM\Table(name="user")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\UserRepository")
@@ -49,15 +49,17 @@ class User extends BaseUser
      * @ORM\Column(type="datetime")
      */
     private $created;
-    
+
     /**
      * @ORM\Column(type="string", length=255)
+     *
      * @var string
      */
     private $image = '';
 
     /**
      * @Vich\UploadableField(mapping="profile_images", fileNameProperty="image")
+     *
      * @var File
      */
     private $imageFile;
@@ -130,7 +132,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get id
+     * Get id.
      *
      * @return int
      */
@@ -140,7 +142,7 @@ class User extends BaseUser
     }
 
     /**
-     * Set firstname
+     * Set firstname.
      *
      * @param string $firstname
      *
@@ -154,7 +156,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get firstname
+     * Get firstname.
      *
      * @return string
      */
@@ -164,7 +166,7 @@ class User extends BaseUser
     }
 
     /**
-     * Set lastname
+     * Set lastname.
      *
      * @param string $lastname
      *
@@ -178,7 +180,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get lastname
+     * Get lastname.
      *
      * @return string
      */
@@ -191,6 +193,7 @@ class User extends BaseUser
      * Override parent's method. Don't set passwd if its null.
      *
      * @param string $password
+     *
      * @return $this
      */
     public function setPassword($password)
@@ -198,11 +201,12 @@ class User extends BaseUser
         if ($password) {
             $this->password = $password;
         }
+
         return $this;
     }
 
     /**
-     * Set modified
+     * Set modified.
      *
      * @param \DateTime $modified
      *
@@ -216,7 +220,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get modified
+     * Get modified.
      *
      * @return \DateTime
      */
@@ -226,7 +230,7 @@ class User extends BaseUser
     }
 
     /**
-     * Set created
+     * Set created.
      *
      * @param \DateTime $created
      *
@@ -240,7 +244,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get created
+     * Get created.
      *
      * @return \DateTime
      */

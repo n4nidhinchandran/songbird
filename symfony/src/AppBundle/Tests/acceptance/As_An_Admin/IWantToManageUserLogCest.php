@@ -1,8 +1,9 @@
 <?php
+
 namespace As_An_Admin;
 
-use \AcceptanceTester;
-use \Common;
+use AcceptanceTester;
+use Common;
 
 class IWantToManageUserLogCest
 {
@@ -20,7 +21,8 @@ class IWantToManageUserLogCest
     }
 
     /**
-     * Scenario 15.1.1
+     * Scenario 15.1.1.
+     *
      * @before login
      */
     public function listUserLogs(AcceptanceTester $I)
@@ -31,7 +33,8 @@ class IWantToManageUserLogCest
     }
 
     /**
-     * Scenario 15.1.2
+     * Scenario 15.1.2.
+     *
      * @before login
      */
     public function showFirstEntry(AcceptanceTester $I)
@@ -40,5 +43,4 @@ class IWantToManageUserLogCest
         $I->amOnPage('/admin/?entity=UserLog&action=show&id=1');
         $I->canSee('/admin/dashboard');
     }
-    
 }

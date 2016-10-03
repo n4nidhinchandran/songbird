@@ -17,15 +17,15 @@ class AppKernel extends Kernel
             new Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle(),
             new JavierEguiluz\Bundle\EasyAdminBundle\EasyAdminBundle(),
             // Sonata Admin dependencies
-	        // init my main app
-	        new AppBundle\AppBundle(),
-	        // init my fosuser
-	        new FOS\UserBundle\FOSUserBundle(),
-	        new AppBundle\User(),
+            // init my main app
+            new AppBundle\AppBundle(),
+            // init my fosuser
+            new FOS\UserBundle\FOSUserBundle(),
+            new AppBundle\User(),
             new Vich\UploaderBundle\VichUploaderBundle(),
-	        new Bpeh\NestablePageBundle\BpehNestablePageBundle(),
+            new Bpeh\NestablePageBundle\BpehNestablePageBundle(),
             new AppBundle\Page(),
-	        new Ivory\CKEditorBundle\IvoryCKEditorBundle()
+            new Ivory\CKEditorBundle\IvoryCKEditorBundle(),
         ];
 
         if (in_array($this->getEnvironment(), ['dev', 'test'], true)) {

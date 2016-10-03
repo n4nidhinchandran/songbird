@@ -10,7 +10,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 class LocaleController extends Controller
 {
     /**
-     * Redirects user based on their referer
+     * Redirects user based on their referer.
      *
      * @Route("/{_locale}/locale", name="app_set_locale")
      * @Method("GET")

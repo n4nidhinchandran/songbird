@@ -1,4 +1,5 @@
 <?php
+
 define('ADMIN_USERNAME', 'admin');
 define('ADMIN_PASSWORD', 'admin');
 define('TEST1_USERNAME', 'test1');
@@ -8,7 +9,6 @@ define('TEST2_PASSWORD', 'test2');
 // test3 Account is disabled? See data fixtures to confirm.
 define('TEST3_USERNAME', 'test3');
 define('TEST3_PASSWORD', 'test3');
-
 
 class Common
 {

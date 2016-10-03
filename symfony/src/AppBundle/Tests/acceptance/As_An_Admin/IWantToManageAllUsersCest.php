@@ -1,7 +1,9 @@
 <?php
+
 namespace As_An_Admin;
-use \AcceptanceTester;
-use \Common;
+
+use AcceptanceTester;
+use Common;
 
 class IWantToManageAllUsersCest
 {
@@ -19,18 +21,20 @@ class IWantToManageAllUsersCest
     }
 
     /**
-     * Scenario 10.6.1
+     * Scenario 10.6.1.
+     *
      * @before login
      */
     public function listAllProfiles(AcceptanceTester $I)
     {
-    	$I->click('User Management');
-        $I->canSeeNumberOfElements('//table/tbody/tr',4);
-        $I->seeNumberOfElements('//td[@data-label="Image"]',4);
+        $I->click('User Management');
+        $I->canSeeNumberOfElements('//table/tbody/tr', 4);
+        $I->seeNumberOfElements('//td[@data-label="Image"]', 4);
     }
 
     /**
-     * Scenario 10.6.2
+     * Scenario 10.6.2.
+     *
      * @before login
      */
     public function showTest3User(AcceptanceTester $I)
@@ -44,7 +48,8 @@ class IWantToManageAllUsersCest
     }
 
     /**
-     * Scenario 10.6.3
+     * Scenario 10.6.3.
+     *
      * @before login
      */
     public function editTest3User(AcceptanceTester $I)
@@ -70,7 +75,8 @@ class IWantToManageAllUsersCest
     }
 
     /**
-     * Scenario 10.6.4
+     * Scenario 10.6.4.
+     *
      * @before login
      */
     public function createAndDeleteNewUser(AcceptanceTester $I)

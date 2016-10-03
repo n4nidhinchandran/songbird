@@ -5,11 +5,8 @@ namespace AppBundle\Repository;
 use Bpeh\NestablePageBundle\Entity\PageMetaRepository as BasePageMetaRepository;
 
 /**
- * PageRepository
- *
+ * PageRepository.
  */
 class PageMetaRepository extends BasePageMetaRepository
 {
-
 }
-

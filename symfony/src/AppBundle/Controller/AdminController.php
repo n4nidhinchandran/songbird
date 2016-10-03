@@ -1,4 +1,5 @@
 <?php
+
 namespace AppBundle\Controller;
 
 use AppBundle\Entity\PageMeta;
@@ -13,8 +14,8 @@ class AdminController extends BaseAdminController
      * @Route("/dashboard", name="dashboard")
      *
      * @param Request $request
-     * @return \Symfony\Component\HttpFoundation\Response
      *
+     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function dashboardAction(Request $request)
     {
@@ -30,38 +31,39 @@ class AdminController extends BaseAdminController
     {
         $this->get('fos_user.user_manager')->updateUser($user, false);
     }
-    
+
     public function preUpdateUserEntity($user)
     {
         $this->get('fos_user.user_manager')->updateUser($user, false);
     }
 
-	/**
-	 * Show Page List page
-	 * @return \Symfony\Component\HttpFoundation\Response
-	 */
+    /**
+     * Show Page List page.
+     *
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
     public function listPageAction()
     {
-	    $this->dispatch(EasyAdminEvents::PRE_LIST);
+        $this->dispatch(EasyAdminEvents::PRE_LIST);
 
-    	$rootMenuItems = $this->container->get('doctrine')->getRepository('AppBundle\Entity\Page')->findParent();
+        $rootMenuItems = $this->container->get('doctrine')->getRepository('AppBundle\Entity\Page')->findParent();
 
-		return $this->render('AppBundle:Page:list.html.twig', array(
-			'tree' => $rootMenuItems,
-		));
-	}
+        return $this->render('AppBundle:Page:list.html.twig', array(
+            'tree' => $rootMenuItems,
+        ));
+    }
 
-	/**
-	 * Redirect to Page listing page
-	 *
-	 * @return \Symfony\Component\HttpFoundation\RedirectResponse
-	 */
-	public function listPageMetaAction()
-	{
-		return $this->redirect($this->generateUrl('easyadmin', array('entity' => 'Page', 'action' => 'list')));
-	}
+    /**
+     * Redirect to Page listing page.
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse
+     */
+    public function listPageMetaAction()
+    {
+        return $this->redirect($this->generateUrl('easyadmin', array('entity' => 'Page', 'action' => 'list')));
+    }
 
-	/**
+    /**
      * @return \Symfony\Component\HttpFoundation\Response
      */
     public function showUserAction()
@@ -86,86 +88,83 @@ class AdminController extends BaseAdminController
         ));
     }
 
-	/**
-	 * @param PageMeta $pageMeta
-	 */
-	public function prePersistPageMetaEntity(PageMeta $pageMeta)
-	{
+    /**
+     * @param PageMeta $pageMeta
+     */
+    public function prePersistPageMetaEntity(PageMeta $pageMeta)
+    {
+        if ($this->em->getRepository('AppBundle\Entity\PageMeta')->findPageMetaByLocale($pageMeta->getPage(), $pageMeta->getLocale())) {
+            throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle'));
+        }
+    }
 
-		if ( $this->em->getRepository('AppBundle\Entity\PageMeta')->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale() ) ) {
-			throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
-		}
+    /**
+     * edit pagemeta.
+     *
+     * @return Response|\Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+     */
+    protected function editPageMetaAction()
+    {
+        $this->dispatch(EasyAdminEvents::PRE_EDIT);
 
-	}
+        $id = $this->request->query->get('id');
+        $easyadmin = $this->request->attributes->get('easyadmin');
+        $entity = $easyadmin['item'];
 
-	/**
-	 * edit pagemeta
-	 *
-	 * @return Response|\Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
-	 */
-	protected function editPageMetaAction()
-	{
-		$this->dispatch(EasyAdminEvents::PRE_EDIT);
+        // get id before submission
+        $pageMeta = $this->em->getRepository('AppBundle\Entity\PageMeta')->find($id);
+        $origId = $pageMeta->getPage()->getId();
+        $origLocale = $pageMeta->getLocale();
 
-		$id = $this->request->query->get('id');
-		$easyadmin = $this->request->attributes->get('easyadmin');
-		$entity = $easyadmin['item'];
+        if ($this->request->isXmlHttpRequest() && $property = $this->request->query->get('property')) {
+            $newValue = 'true' === strtolower($this->request->query->get('newValue'));
+            $fieldsMetadata = $this->entity['list']['fields'];
 
-		// get id before submission
-		$pageMeta = $this->em->getRepository('AppBundle\Entity\PageMeta')->find($id);
-		$origId = $pageMeta->getPage()->getId();
-		$origLocale = $pageMeta->getLocale();
+            if (!isset($fieldsMetadata[$property]) || 'toggle' !== $fieldsMetadata[$property]['dataType']) {
+                throw new \RuntimeException(sprintf('The type of the "%s" property is not "toggle".', $property));
+            }
 
-		if ($this->request->isXmlHttpRequest() && $property = $this->request->query->get('property')) {
-			$newValue = 'true' === strtolower($this->request->query->get('newValue'));
-			$fieldsMetadata = $this->entity['list']['fields'];
+            $this->updateEntityProperty($entity, $property, $newValue);
 
-			if (!isset($fieldsMetadata[$property]) || 'toggle' !== $fieldsMetadata[$property]['dataType']) {
-				throw new \RuntimeException(sprintf('The type of the "%s" property is not "toggle".', $property));
-			}
+            return new Response((string) $newValue);
+        }
 
-			$this->updateEntityProperty($entity, $property, $newValue);
+        $fields = $this->entity['edit']['fields'];
 
-			return new Response((string) $newValue);
-		}
+        $editForm = $this->createEditForm($entity, $fields);
+        $deleteForm = $this->createDeleteForm($this->entity['name'], $id);
 
-		$fields = $this->entity['edit']['fields'];
+        $editForm->handleRequest($this->request);
+        if ($editForm->isValid()) {
+            $this->dispatch(EasyAdminEvents::PRE_UPDATE, array('entity' => $entity));
 
-		$editForm = $this->createEditForm($entity, $fields);
-		$deleteForm = $this->createDeleteForm($this->entity['name'], $id);
+            // if page and local is the same, dont need to check locale count
+            if ($origLocale == $entity->getLocale() && $origId == $entity->getPage()->getId()) {
+                // all good
+            } elseif ($this->em->getRepository('AppBundle\Entity\PageMeta')->findPageMetaByLocale($pageMeta->getPage(), $pageMeta->getLocale(), true)) {
+                throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle'));
+            }
 
-		$editForm->handleRequest($this->request);
-		if ($editForm->isValid()) {
-			$this->dispatch(EasyAdminEvents::PRE_UPDATE, array('entity' => $entity));
+            $this->em->flush();
 
-			// if page and local is the same, dont need to check locale count
-			if ($origLocale == $entity->getLocale() && $origId == $entity->getPage()->getId()) {
-				// all good
-			}
-			elseif ( $this->em->getRepository('AppBundle\Entity\PageMeta')->findPageMetaByLocale( $pageMeta->getPage(), $pageMeta->getLocale(), true ) ) {
-				throw new \RuntimeException($this->get('translator')->trans('one_locale_per_pagemeta_only', array(), 'BpehNestablePageBundle') );
-			}
+            $this->dispatch(EasyAdminEvents::POST_UPDATE, array('entity' => $entity));
 
-			$this->em->flush();
+            $refererUrl = $this->request->query->get('referer', '');
 
-			$this->dispatch(EasyAdminEvents::POST_UPDATE, array('entity' => $entity));
+            return !empty($refererUrl)
+                ? $this->redirect(urldecode($refererUrl))
+                : $this->redirect($this->generateUrl('easyadmin', array('action' => 'list', 'entity' => $this->entity['name'])));
+        }
 
-			$refererUrl = $this->request->query->get('referer', '');
+        $this->dispatch(EasyAdminEvents::POST_EDIT);
 
-			return !empty($refererUrl)
-				? $this->redirect(urldecode($refererUrl))
-				: $this->redirect($this->generateUrl('easyadmin', array('action' => 'list', 'entity' => $this->entity['name'])));
-		}
-
-		$this->dispatch(EasyAdminEvents::POST_EDIT);
-
-		return $this->render($this->entity['templates']['edit'], array(
-			'form' => $editForm->createView(),
-			'entity_fields' => $fields,
-			'entity' => $entity,
-			'delete_form' => $deleteForm->createView(),
-		));
-	}
+        return $this->render($this->entity['templates']['edit'], array(
+            'form' => $editForm->createView(),
+            'entity_fields' => $fields,
+            'entity' => $entity,
+            'delete_form' => $deleteForm->createView(),
+        ));
+    }
 
     /**
      * The method that is executed when the user performs a 'edit' action on an entity.
@@ -189,7 +188,7 @@ class AdminController extends BaseAdminController
 
             $this->updateEntityProperty($entity, $property, $newValue);
 
-            return new Response((string)$newValue);
+            return new Response((string) $newValue);
         }
 
         $fields = $this->entity['edit']['fields'];

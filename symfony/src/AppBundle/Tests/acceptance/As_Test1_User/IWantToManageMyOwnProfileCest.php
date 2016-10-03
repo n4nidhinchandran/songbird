@@ -1,8 +1,9 @@
 <?php
-namespace As_Test1_User;
-use \AcceptanceTester;
-use \Common;
 
+namespace As_Test1_User;
+
+use AcceptanceTester;
+use Common;
 
 class IWantToManageMyOwnProfileCest
 {
@@ -20,7 +21,8 @@ class IWantToManageMyOwnProfileCest
     }
 
     /**
-     * Scenario 10.4.1
+     * Scenario 10.4.1.
+     *
      * @before login
      */
     public function showMyProfile(AcceptanceTester $I)
@@ -32,7 +34,8 @@ class IWantToManageMyOwnProfileCest
     }
 
     /**
-     * Scenario 10.4.2
+     * Scenario 10.4.2.
+     *
      * @before login
      */
     public function hidUneditableFields(AcceptanceTester $I)
@@ -45,7 +48,8 @@ class IWantToManageMyOwnProfileCest
     }
 
     /**
-     * Scenario 10.4.3
+     * Scenario 10.4.3.
+     *
      * @before login
      */
     public function updateFirstnameOnly(AcceptanceTester $I)
@@ -67,12 +71,12 @@ class IWantToManageMyOwnProfileCest
     }
 
     /**
-     * Scenario 10.4.4
+     * Scenario 10.4.4.
+     *
      * @before login
      */
     public function updatePasswordOnly(AcceptanceTester $I)
     {
-
         $I->click('test1');
         $I->click('Edit');
         $I->fillField('//input[contains(@id, "_plainPassword_first")]', '123');
@@ -100,7 +104,8 @@ class IWantToManageMyOwnProfileCest
     }
 
     /**
-     * Scenario 10.4.5
+     * Scenario 10.4.5.
+     *
      * @before login
      */
     public function deleteAndAddProfileImage(AcceptanceTester $I)
@@ -136,7 +141,8 @@ class IWantToManageMyOwnProfileCest
     }
 
     /**
-     * Scenario 10.4.6
+     * Scenario 10.4.6.
+     *
      * @before login
      */
     public function updateProfileImageOnly(AcceptanceTester $I)
