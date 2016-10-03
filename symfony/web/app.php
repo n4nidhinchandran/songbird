@@ -7,7 +7,7 @@ use Symfony\Component\ClassLoader\ApcClassLoader;
  * @var Composer\Autoload\ClassLoader
  */
 $loader = require __DIR__.'/../app/autoload.php';
-include_once __DIR__.'/../app/bootstrap.php.cache';
+include_once __DIR__.'/../var/bootstrap.php.cache';
 
 $apcLoader = new ApcClassLoader(sha1('songbird'), $loader);
 $loader->unregister();
