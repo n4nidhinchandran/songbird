@@ -4,21 +4,21 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "89e448358b1c30c37385be1a5608e49c",
-    "content-hash": "9ce9c61bfc9224b004b2bc7f45aa24dc",
+    "hash": "6bcfcec5b4406bc88cae2795852b4d7a",
+    "content-hash": "9f3d5c1be7ddc9bcf1a9d095116dadec",
     "packages": [
         {
             "name": "bpeh/nestable-page-bundle",
-            "version": "0.4.6",
+            "version": "0.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bernardpeh/NestablePageBundle.git",
-                "reference": "57eefbfd224bcebe8f78a8022b86d79aad545e84"
+                "reference": "89a35451e8b1b84b187d6f5be021761d7039a9f0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bernardpeh/NestablePageBundle/zipball/57eefbfd224bcebe8f78a8022b86d79aad545e84",
-                "reference": "57eefbfd224bcebe8f78a8022b86d79aad545e84",
+                "url": "https://api.github.com/repos/bernardpeh/NestablePageBundle/zipball/89a35451e8b1b84b187d6f5be021761d7039a9f0",
+                "reference": "89a35451e8b1b84b187d6f5be021761d7039a9f0",
                 "shasum": ""
             },
             "require": {
@@ -44,10 +44,10 @@
             ],
             "description": "Simple NestableJs Bundle",
             "support": {
-                "source": "https://github.com/bernardpeh/NestablePageBundle/tree/0.4.6",
+                "source": "https://github.com/bernardpeh/NestablePageBundle/tree/0.5.0",
                 "issues": "https://github.com/bernardpeh/NestablePageBundle/issues"
             },
-            "time": "2016-09-28 23:30:59"
+            "time": "2016-10-03 01:23:06"
         },
         {
             "name": "doctrine/annotations",
@@ -2336,16 +2336,16 @@
         },
         {
             "name": "twig/twig",
-            "version": "v1.25.0",
+            "version": "v1.26.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "f16a634ab08d87e520da5671ec52153d627f10f6"
+                "reference": "81c2b5fd36581370c7731387f05dcdb577050513"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/f16a634ab08d87e520da5671ec52153d627f10f6",
-                "reference": "f16a634ab08d87e520da5671ec52153d627f10f6",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/81c2b5fd36581370c7731387f05dcdb577050513",
+                "reference": "81c2b5fd36581370c7731387f05dcdb577050513",
                 "shasum": ""
             },
             "require": {
@@ -2358,7 +2358,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.25-dev"
+                    "dev-master": "1.26-dev"
                 }
             },
             "autoload": {
@@ -2393,7 +2393,7 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2016-09-21 23:05:12"
+            "time": "2016-10-02 16:19:13"
         },
         {
             "name": "vich/uploader-bundle",

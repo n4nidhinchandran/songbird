@@ -2,7 +2,7 @@
 
 namespace AppBundle\Entity;
 
-use Bpeh\NestablePageBundle\Entity\PageMeta as BasePageMeta;
+use Bpeh\NestablePageBundle\Model\PageMetaBase as PageMetaBase;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Table(name="pagemeta")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\PageMetaRepository")
  */
-class PageMeta extends BasePageMeta
+class PageMeta extends PageMetaBase
 {
     /**
      * @var integer
