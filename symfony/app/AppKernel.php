@@ -17,14 +17,13 @@ class AppKernel extends Kernel
             new Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle(),
             new JavierEguiluz\Bundle\EasyAdminBundle\EasyAdminBundle(),
             // Sonata Admin dependencies
-	        // init my main app
-	        new AppBundle\AppBundle(),
-	        // init my fosuser
-	        new FOS\UserBundle\FOSUserBundle(),
-	        new AppBundle\User(),
-            new Vich\UploaderBundle\VichUploaderBundle()
+            // init my main app
+            new AppBundle\AppBundle(),
+            // init my fosuser
+            new FOS\UserBundle\FOSUserBundle(),
+            new AppBundle\User(),
+            new Vich\UploaderBundle\VichUploaderBundle(),
         ];
-
 
         if (in_array($this->getEnvironment(), ['dev', 'test'], true)) {
             $bundles[] = new Symfony\Bundle\DebugBundle\DebugBundle();
