@@ -2,7 +2,7 @@
 
 namespace AppBundle\Entity;
 
-use Bpeh\NestablePageBundle\Entity\PageMeta as BasePageMeta;
+use Bpeh\NestablePageBundle\Model\PageMetaBase as PageMetaBase;
 use Doctrine\ORM\Mapping as ORM;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 use Symfony\Component\HttpFoundation\File\File;
@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\File\File;
  * @ORM\HasLifecycleCallbacks()
  * @Vich\Uploadable
  */
-class PageMeta extends BasePageMeta
+class PageMeta extends PageMetaBase
 {
     /**
      * @var integer
