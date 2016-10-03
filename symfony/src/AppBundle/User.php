@@ -9,6 +9,6 @@ class User extends Bundle
     // use a child bundle
     public function getParent()
     {
-	return 'FOSUserBundle';
+        return 'FOSUserBundle';
     }
 }

@@ -5,7 +5,7 @@ namespace AppBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * UserLog
+ * UserLog.
  *
  * @ORM\Table(name="user_log")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\UserLogRepository")
@@ -63,9 +63,8 @@ class UserLog
      */
     private $created;
 
-
     /**
-     * Get id
+     * Get id.
      *
      * @return int
      */
@@ -75,7 +74,7 @@ class UserLog
     }
 
     /**
-     * Set username
+     * Set username.
      *
      * @param string $username
      *
@@ -89,7 +88,7 @@ class UserLog
     }
 
     /**
-     * Get username
+     * Get username.
      *
      * @return string
      */
@@ -99,7 +98,7 @@ class UserLog
     }
 
     /**
-     * Set currentUrl
+     * Set currentUrl.
      *
      * @param string $currentUrl
      *
@@ -113,7 +112,7 @@ class UserLog
     }
 
     /**
-     * Get currentUrl
+     * Get currentUrl.
      *
      * @return string
      */
@@ -123,7 +122,7 @@ class UserLog
     }
 
     /**
-     * Set referrer
+     * Set referrer.
      *
      * @param string $referrer
      *
@@ -137,7 +136,7 @@ class UserLog
     }
 
     /**
-     * Get referrer
+     * Get referrer.
      *
      * @return string
      */
@@ -147,7 +146,7 @@ class UserLog
     }
 
     /**
-     * Set action
+     * Set action.
      *
      * @param string $action
      *
@@ -161,7 +160,7 @@ class UserLog
     }
 
     /**
-     * Get action
+     * Get action.
      *
      * @return string
      */
@@ -171,7 +170,7 @@ class UserLog
     }
 
     /**
-     * Set data
+     * Set data.
      *
      * @param string $data
      *
@@ -185,7 +184,7 @@ class UserLog
     }
 
     /**
-     * Get data
+     * Get data.
      *
      * @return string
      */
@@ -195,7 +194,7 @@ class UserLog
     }
 
     /**
-     * Set created
+     * Set created.
      *
      * @param \DateTime $created
      *
@@ -209,7 +208,7 @@ class UserLog
     }
 
     /**
-     * Get created
+     * Get created.
      *
      * @return \DateTime
      */
@@ -218,4 +217,3 @@ class UserLog
         return $this->created;
     }
 }
-

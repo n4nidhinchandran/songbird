@@ -12,7 +12,7 @@ class LocaleType extends AbstractType
 
     public function __construct(array $localeChoices)
     {
-    	foreach ($localeChoices as $v) {
+        foreach ($localeChoices as $v) {
             $this->localeChoices[$v] = $v;
         }
     }
@@ -28,5 +28,4 @@ class LocaleType extends AbstractType
     {
         return ChoiceType::class;
     }
-
 }

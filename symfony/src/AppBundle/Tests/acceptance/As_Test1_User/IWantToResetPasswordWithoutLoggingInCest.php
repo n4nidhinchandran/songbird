@@ -1,7 +1,9 @@
 <?php
+
 namespace As_Test1_User;
-use \AcceptanceTester;
-use \Common;
+
+use AcceptanceTester;
+use Common;
 
 class IWantToResetPasswordWithoutLoggingInCest
 {
@@ -13,13 +15,13 @@ class IWantToResetPasswordWithoutLoggingInCest
     {
     }
 
-    protected function login(AcceptanceTester $I, $username=TEST1_USERNAME, $password=TEST1_PASSWORD)
+    protected function login(AcceptanceTester $I, $username = TEST1_USERNAME, $password = TEST1_PASSWORD)
     {
         Common::login($I, $username, $password);
     }
 
     /**
-     * Scenario 11.1.1
+     * Scenario 11.1.1.
      */
     public function resetPasswordSuccessfully(AcceptanceTester $I)
     {
@@ -32,7 +34,7 @@ class IWantToResetPasswordWithoutLoggingInCest
         $I->canSee('It contains a link');
 
         // Clear old emails from MailCatcher
-        $I->seeInLastEmail("Hello test1");
+        $I->seeInLastEmail('Hello test1');
         $link = $I->grabFromLastEmail('@http://(.*)@');
         $I->amOnUrl($link);
 

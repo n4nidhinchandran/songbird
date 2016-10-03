@@ -1,9 +1,11 @@
 <?php
-namespace As_Test1_User;
-use \AcceptanceTester;
-use \Common;
 
-class IShouldNotBeAbleToManageOtherProfilesCest
+namespace As_Test1_User;
+
+use AcceptanceTester;
+use Common;
+
+class IDontWantToManageOtherProfilesCest
 {
     public function _before(AcceptanceTester $I)
     {
@@ -19,7 +21,8 @@ class IShouldNotBeAbleToManageOtherProfilesCest
     }
 
     /**
-     * Scenario 10.5.1
+     * Scenario 10.5.1.
+     *
      * @before login
      */
     public function listAllProfiles(AcceptanceTester $I)
@@ -29,7 +32,8 @@ class IShouldNotBeAbleToManageOtherProfilesCest
     }
 
     /**
-     * Scenario 10.5.2
+     * Scenario 10.5.2.
+     *
      * @before login
      */
     public function showTest2Profile(AcceptanceTester $I)
@@ -39,7 +43,8 @@ class IShouldNotBeAbleToManageOtherProfilesCest
     }
 
     /**
-     * Scenario 10.5.3
+     * Scenario 10.5.3.
+     *
      * @before login
      */
     public function editTest2Profile(AcceptanceTester $I)
@@ -48,11 +53,13 @@ class IShouldNotBeAbleToManageOtherProfilesCest
         $I->canSee('Access Denied');
     }
 
-     /**
-     * Scenario 10.5.4
+    /**
+     * Scenario 10.5.4.
+     *
      * @before login
      */
-    public function seeAdminDashboardContent(AcceptanceTester $I) {
+    public function seeAdminDashboardContent(AcceptanceTester $I)
+    {
         $I->cantSee('User Management');
     }
 }

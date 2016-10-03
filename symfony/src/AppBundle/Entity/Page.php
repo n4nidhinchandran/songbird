@@ -6,7 +6,7 @@ use Bpeh\NestablePageBundle\Model\PageBase;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * PageMeta
+ * PageMeta.
  *
  * @ORM\Table(name="page")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\PageRepository")
@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Page extends PageBase
 {
     /**
-     * @var integer
+     * @var int
      *
      * @ORM\Column(name="id", type="integer")
      * @ORM\Id
@@ -24,13 +24,12 @@ class Page extends PageBase
     protected $id;
 
     /**
-     * Get id
+     * Get id.
      *
-     * @return integer 
+     * @return int
      */
     public function getId()
     {
         return $this->id;
     }
-
 }

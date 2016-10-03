@@ -1,7 +1,9 @@
 <?php
+
 namespace As_Test1_User;
-use \AcceptanceTester;
-use \Common;
+
+use AcceptanceTester;
+use Common;
 
 class IDontWantToManageUserLogCest
 {
@@ -19,18 +21,20 @@ class IDontWantToManageUserLogCest
     }
 
     /**
-     * Scenario 15.2.1
+     * Scenario 15.2.1.
+     *
      * @before login
      */
     public function listUserLogs(AcceptanceTester $I)
     {
         $I->cantSee('User Log');
         $I->amOnPage('/admin/?entity=UserLog&action=list');
-	    $I->canSee('access denied');
+        $I->canSee('access denied');
     }
 
     /**
-     * Scenario 15.2.2
+     * Scenario 15.2.2.
+     *
      * @before login
      */
     public function showFirstEntry(AcceptanceTester $I)
@@ -41,7 +45,8 @@ class IDontWantToManageUserLogCest
     }
 
     /**
-     * Scenario 15.2.3
+     * Scenario 15.2.3.
+     *
      * @before login
      */
     public function editFirstEntry(AcceptanceTester $I)

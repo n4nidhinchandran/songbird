@@ -1,7 +1,9 @@
 <?php
-namespace As_test3_user;
-use \AcceptanceTester;
-use \Common;
+
+namespace As_Test3_User;
+
+use AcceptanceTester;
+use Common;
 
 class IDontWantTologinCest
 {
@@ -14,12 +16,12 @@ class IDontWantTologinCest
     }
 
     /**
-     * Scenario 10.3.1
+     * Scenario 10.3.1.
      */
-    public function AccountDisabled(AcceptanceTester $I) {
+    public function AccountDisabled(AcceptanceTester $I)
+    {
         Common::login($I, TEST3_USERNAME, TEST3_PASSWORD);
         // i cannot login and at dashboard now
         $I->canSee('account is disabled.');
     }
-
 }

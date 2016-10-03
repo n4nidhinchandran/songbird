@@ -8,7 +8,7 @@ use Vich\UploaderBundle\Mapping\Annotation as Vich;
 use Symfony\Component\HttpFoundation\File\File;
 
 /**
- * PageMeta
+ * PageMeta.
  *
  * @ORM\Table(name="pagemeta")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\PageMetaRepository")
@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\File\File;
 class PageMeta extends PageMetaBase
 {
     /**
-     * @var integer
+     * @var int
      *
      * @ORM\Column(name="id", type="integer")
      * @ORM\Id
@@ -27,53 +27,55 @@ class PageMeta extends PageMetaBase
     protected $id;
 
     /**
-     * Get id
+     * Get id.
      *
-     * @return integer 
+     * @return int
      */
     public function getId()
     {
         return $this->id;
     }
 
-	/**
-	 * @ORM\Column(type="string", length=255, nullable=true)
-	 * @var string
-	 */
-	private $featuredImage;
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     *
+     * @var string
+     */
+    private $featuredImage;
 
-	/**
-	 * @Vich\UploadableField(mapping="featured_image", fileNameProperty="featuredImage")
-	 * @var File
-	 */
-	private $featuredImageFile;
+    /**
+     * @Vich\UploadableField(mapping="featured_image", fileNameProperty="featuredImage")
+     *
+     * @var File
+     */
+    private $featuredImageFile;
 
-	public function __toString()
-	{
-		return $this->getLocale().': '.$this->getMenuTitle();
-	}
+    public function __toString()
+    {
+        return $this->getLocale().': '.$this->getMenuTitle();
+    }
 
-	public function setFeaturedImageFile(File $image = null)
-	{
-		$this->featuredImageFile = $image;
+    public function setFeaturedImageFile(File $image = null)
+    {
+        $this->featuredImageFile = $image;
 
-		if ($image) {
-			$this->setModified(new \DateTime());
-		}
-	}
+        if ($image) {
+            $this->setModified(new \DateTime());
+        }
+    }
 
-	public function getFeaturedImageFile()
-	{
-		return $this->featuredImageFile;
-	}
+    public function getFeaturedImageFile()
+    {
+        return $this->featuredImageFile;
+    }
 
-	public function setFeaturedImage($image)
-	{
-		$this->featuredImage = $image;
-	}
+    public function setFeaturedImage($image)
+    {
+        $this->featuredImage = $image;
+    }
 
-	public function getFeaturedImage()
-	{
-		return $this->featuredImage;
-	}
+    public function getFeaturedImage()
+    {
+        return $this->featuredImage;
+    }
 }

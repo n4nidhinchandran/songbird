@@ -1,8 +1,8 @@
 <?php
+
 namespace AppBundle\EventListener;
 
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class LocaleListener
 {
@@ -15,7 +15,7 @@ class LocaleListener
 
     public function onKernelRequest(GetResponseEvent $event)
     {
-    	$request = $event->getRequest();
+        $request = $event->getRequest();
         if (!$request->hasPreviousSession()) {
             return;
         }

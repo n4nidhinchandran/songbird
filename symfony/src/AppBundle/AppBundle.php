@@ -8,9 +8,9 @@ use AppBundle\DependencyInjection\Compiler\ConfigPass;
 
 class AppBundle extends Bundle
 {
-	public function build(ContainerBuilder $container)
-	{
-		parent::build($container);
-		$container->addCompilerPass(new ConfigPass());
-	}
+    public function build(ContainerBuilder $container)
+    {
+        parent::build($container);
+        $container->addCompilerPass(new ConfigPass());
+    }
 }

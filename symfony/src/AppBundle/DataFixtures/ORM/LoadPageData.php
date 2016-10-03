@@ -1,4 +1,5 @@
 <?php
+
 namespace AppBundle\DataFixtures\ORM;
 
 use Doctrine\Common\DataFixtures\AbstractFixture;
@@ -6,20 +7,18 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\DataFixtures\OrderedFixtureInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\File\File;
 use AppBundle\Entity\Page;
 use AppBundle\Entity\PageMeta;
 
 class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, ContainerAwareInterface
 {
-    
     /**
      * @var ContainerInterface
      */
     private $container;
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function setContainer(ContainerInterface $container = null)
     {
@@ -27,11 +26,10 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function load(ObjectManager $manager)
     {
-
         $homepage = new Page();
         $homepage->setSlug('home');
         $homepage->setIsPublished(1);
@@ -47,8 +45,8 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         $homemetaEN->setShortDescription('SongBird CMS Demo');
         $homemetaEN->setContent('<p>SongBird is a simple CMS built with popular bundles like FOSUserBundle and EasyAdminBundle.
             The CMS is meant to showcase Rapid Application Development with Symfony.</p>');
-	    copy(__DIR__.'/images/home_en.png', __DIR__.'/../../../../web/uploads/featured_images/home_en.png');
-	    $homemetaEN->setFeaturedImage('home_en.png');
+        copy(__DIR__.'/images/home_en.png', __DIR__.'/../../../../web/uploads/featured_images/home_en.png');
+        $homemetaEN->setFeaturedImage('home_en.png');
         $manager->persist($homemetaEN);
 
         $homemetaFR = new PageMeta();
@@ -56,11 +54,11 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         $homemetaFR->setMenuTitle('Accueil');
         $homemetaFR->setPageTitle('SongBird CMS Démo');
         $homemetaFR->setShortDescription('SongBird CMS Démo');
-	    $homemetaFR->setLocale('fr');
+        $homemetaFR->setLocale('fr');
         $homemetaFR->setContent('<p>SongBird est un simple CMS construit avec des faisceaux populaires comme FOSUserBundle et EasyAdminBundle.
             Le CMS est destinée à mettre en valeur Rapid Application Development avec Symfony .</p>');
-	    copy(__DIR__.'/images/home_fr.png', __DIR__.'/../../../../web/uploads/featured_images/home_fr.png');
-	    $homemetaFR->setFeaturedImage('home_fr.png');
+        copy(__DIR__.'/images/home_fr.png', __DIR__.'/../../../../web/uploads/featured_images/home_fr.png');
+        $homemetaFR->setFeaturedImage('home_fr.png');
         $manager->persist($homemetaFR);
 
         $aboutpage = new Page();
@@ -101,7 +99,6 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         <li>Frontend - L\'interface du site.</li>
         </ul>');
         $manager->persist($aboutmetaFR);
-
 
         $whypage = new Page();
         $whypage->setSlug('why_songbird');
@@ -190,12 +187,12 @@ class LoadPageData extends AbstractFixture implements OrderedFixtureInterface, C
         $manager->flush();
     }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getOrder()
-	{
-		// load this second
-		return 2;
-	}
+    /**
+     * {@inheritdoc}
+     */
+    public function getOrder()
+    {
+        // load this second
+        return 2;
+    }
 }
