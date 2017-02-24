@@ -1,0 +1,3 @@
+#!/bin/bash
+symfony/bin/console cache:clear --no-warmup
+vendor/bin/codecept run acceptance

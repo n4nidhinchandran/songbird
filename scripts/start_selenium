@@ -1,0 +1,2 @@
+#!/bin/bash
+java -Dwebdriver.chrome.driver=chromedriver -jar selenium-server-standalone-3.1.0.jar
